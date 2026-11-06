@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "sanitized": true,
+    "source": "gitlab.com public (gitlab-org/cli !4338), 2026-11-06"
+  },
+  "request": {
+    "operation": "MrReviewers",
+    "variables": {
+      "fullPath": "gitlab-org/cli",
+      "iid": "4338"
+    }
+  },
+  "response": {
+    "body": {
+      "data": {
+        "project": {
+          "mergeRequest": {
+            "approvedBy": {
+              "nodes": [
+                {
+                  "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                  "id": "gid://gitlab/User/21826781",
+                  "name": "Test User 1",
+                  "state": "active",
+                  "username": "user-1",
+                  "webUrl": "https://gitlab.example.com/user-1"
+                },
+                {
+                  "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                  "id": "gid://gitlab/User/3457201",
+                  "name": "Test User 2",
+                  "state": "active",
+                  "username": "user-2",
+                  "webUrl": "https://gitlab.example.com/user-2"
+                }
+              ],
+              "pageInfo": {
+                "hasNextPage": false
+              }
+            },
+            "reviewers": {
+              "nodes": [
+                {
+                  "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                  "id": "gid://gitlab/User/21826781",
+                  "mergeRequestInteraction": {
+                    "approved": true,
+                    "reviewState": "APPROVED"
+                  },
+                  "name": "Test User 1",
+                  "state": "active",
+                  "username": "user-1",
+                  "webUrl": "https://gitlab.example.com/user-1"
+                },
+                {
+                  "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                  "id": "gid://gitlab/User/3457201",
+                  "mergeRequestInteraction": {
+                    "approved": true,
+                    "reviewState": "APPROVED"
+                  },
+                  "name": "Test User 2",
+                  "state": "active",
+                  "username": "user-2",
+                  "webUrl": "https://gitlab.example.com/user-2"
+                }
+              ],
+              "pageInfo": {
+                "hasNextPage": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "headers": {},
+    "status": 200
+  }
+}

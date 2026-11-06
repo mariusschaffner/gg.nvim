@@ -1,0 +1,27 @@
+#import "user"
+query MrReviewers($fullPath: ID!, $iid: String!) {
+  project(fullPath: $fullPath) {
+    mergeRequest(iid: $iid) {
+      reviewers(first: 100) {
+        nodes {
+          ...UserFields
+          mergeRequestInteraction {
+            reviewState
+            approved
+          }
+        }
+        pageInfo {
+          hasNextPage
+        }
+      }
+      approvedBy(first: 100) {
+        nodes {
+          ...UserFields
+        }
+        pageInfo {
+          hasNextPage
+        }
+      }
+    }
+  }
+}

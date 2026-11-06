@@ -1,0 +1,54 @@
+[
+  {
+    "meta": { "source": "docs.gitlab.com example (api/milestones: Create new milestone), sanitized" },
+    "request": { "method": "POST", "path": "/api/v4/projects/my-group%2Fmy-project/milestones", "body_contains": { "title": "v1.0", "due_date": "2026-12-31" } },
+    "response": {
+      "status": 201,
+      "body": {
+        "id": 12,
+        "iid": 3,
+        "project_id": 16,
+        "title": "v1.0",
+        "description": "First release",
+        "due_date": "2026-12-31",
+        "start_date": "2026-11-01",
+        "state": "active",
+        "updated_at": "2026-11-06T10:00:00.000Z",
+        "created_at": "2026-11-06T10:00:00.000Z",
+        "expired": false,
+        "web_url": "https://gitlab.example.com/my-group/my-project/-/milestones/3"
+      }
+    }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com example (api/milestones: Edit milestone), sanitized" },
+    "request": { "method": "PUT", "path": "/api/v4/projects/my-group%2Fmy-project/milestones/12", "body_contains": { "state_event": "close" } },
+    "response": {
+      "status": 200,
+      "body": {
+        "id": 12,
+        "iid": 3,
+        "project_id": 16,
+        "title": "v1.0",
+        "description": "First release",
+        "due_date": "2026-12-31",
+        "start_date": "2026-11-01",
+        "state": "closed",
+        "updated_at": "2026-11-07T10:00:00.000Z",
+        "created_at": "2026-11-06T10:00:00.000Z",
+        "expired": false,
+        "web_url": "https://gitlab.example.com/my-group/my-project/-/milestones/3"
+      }
+    }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com example (api/rest: 404 response shape)" },
+    "request": { "method": "PUT", "path": "/api/v4/projects/my-group%2Fmy-project/milestones/999" },
+    "response": { "status": 404, "body": { "message": "404 Milestone Not Found" } }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com example (api/rest: 400 validation response shape)" },
+    "request": { "method": "POST", "path": "/api/v4/projects/my-group%2Fmy-project/milestones", "body_contains": { "title": "dup" } },
+    "response": { "status": 400, "body": { "message": "Milestone title already exists in project" } }
+  }
+]

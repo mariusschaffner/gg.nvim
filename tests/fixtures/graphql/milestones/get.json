@@ -1,0 +1,37 @@
+{
+  "meta": {
+    "sanitized": true,
+    "source": "gitlab.com public (gitlab-org), 2026-11-06"
+  },
+  "request": {
+    "operation": "MilestoneGet",
+    "variables": {
+      "id": "gid://gitlab/Milestone/7324669"
+    }
+  },
+  "response": {
+    "body": {
+      "data": {
+        "milestone": {
+          "createdAt": "2026-03-03T22:58:31Z",
+          "description": "",
+          "dueDate": "2026-11-13",
+          "expired": false,
+          "group": {
+            "fullPath": "gitlab-org"
+          },
+          "id": "gid://gitlab/Milestone/7324669",
+          "iid": "144",
+          "project": null,
+          "startDate": "2026-10-10",
+          "state": "active",
+          "title": "19.6",
+          "updatedAt": "2026-03-03T22:58:31Z",
+          "webPath": "/groups/gitlab-org/-/milestones/144"
+        }
+      }
+    },
+    "headers": {},
+    "status": 200
+  }
+}

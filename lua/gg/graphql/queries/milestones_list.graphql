@@ -1,0 +1,29 @@
+#import "milestone"
+query MilestonesList(
+  $fullPath: ID!
+  $first: Int
+  $after: String
+  $state: MilestoneStateEnum
+  $searchTitle: String
+  $includeAncestors: Boolean
+  $sort: MilestoneSort
+) {
+  project(fullPath: $fullPath) {
+    milestones(
+      first: $first
+      after: $after
+      state: $state
+      searchTitle: $searchTitle
+      includeAncestors: $includeAncestors
+      sort: $sort
+    ) {
+      nodes {
+        ...MilestoneFields
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+    }
+  }
+}

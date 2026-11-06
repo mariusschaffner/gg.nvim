@@ -315,7 +315,7 @@ Every item follows the same pattern:
   - Note (2026-11-06):
     - The scopes use GitLab's REST names: `created_by_me`, `assigned_to_me`, `reviews_for_me` (GraphQL `currentUser.*MergeRequests`), and `all` (REST).
     - docs.gitlab.com shows no `draft` parameter for REST create or update, so draft status goes through the GraphQL `mergeRequestSetDraft` mutation.
-- [ ] **6.7 milestones** — `feat(milestones)`
+- [x] **6.7 milestones** — `feat(milestones)`
   - Model `gg.Milestone`: id, iid, project/group, title, description, state, start_date, due_date, expired?, web_url, created_at, updated_at.
   - `list`/`list_all` (`state = "active"` by default, GraphQL), `get`, `issues`/`_all` → `gg.Issue`, `merge_requests`/`_all` → `gg.MergeRequest`.
   - `create` and `update` (title, description, dates, state_event; REST).

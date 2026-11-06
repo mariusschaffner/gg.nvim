@@ -1,0 +1,19 @@
+fragment MilestoneFields on Milestone {
+  id
+  iid
+  title
+  description
+  state
+  startDate
+  dueDate
+  expired
+  webPath
+  createdAt
+  updatedAt
+  project {
+    fullPath
+  }
+  group {
+    fullPath
+  }
+}

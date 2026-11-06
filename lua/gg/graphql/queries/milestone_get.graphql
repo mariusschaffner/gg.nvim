@@ -1,0 +1,6 @@
+#import "milestone"
+query MilestoneGet($id: MilestoneID!) {
+  milestone(id: $id) {
+    ...MilestoneFields
+  }
+}

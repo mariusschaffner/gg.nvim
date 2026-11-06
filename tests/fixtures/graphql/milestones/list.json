@@ -1,0 +1,135 @@
+[
+  {
+    "meta": {
+      "sanitized": true,
+      "source": "gitlab.com public (gitlab-org/cli), 2026-11-06"
+    },
+    "request": {
+      "operation": "MilestonesList",
+      "variables": {
+        "first": 2,
+        "fullPath": "gitlab-org/cli",
+        "includeAncestors": true,
+        "sort": "DUE_DATE_ASC",
+        "state": "active"
+      }
+    },
+    "response": {
+      "body": {
+        "data": {
+          "project": {
+            "milestones": {
+              "nodes": [
+                {
+                  "createdAt": "2025-03-26T00:16:55Z",
+                  "description": "| Milestone | Quarter    | Start Date - Code Merging | End Date - Code Merging | Release Date  |\r\n|-----------|------------|---------------------------|-------------------------|---------------|\r\n| 18.3      | FY26-Q3-M1 | 2025-08-07                | 2025-08-08              | 2025-08-14    |",
+                  "dueDate": "2025-08-15",
+                  "expired": true,
+                  "group": {
+                    "fullPath": "gitlab-org"
+                  },
+                  "id": "gid://gitlab/Milestone/5948912",
+                  "iid": "121",
+                  "project": null,
+                  "startDate": "2025-07-12",
+                  "state": "active",
+                  "title": "18.3",
+                  "updatedAt": "2025-11-04T07:09:22Z",
+                  "webPath": "/groups/gitlab-org/-/milestones/121"
+                },
+                {
+                  "createdAt": "2025-03-26T00:18:30Z",
+                  "description": "| Milestone | Quarter    | Start Date - Code Merging | End Date - Code Merging | Release Date  |\r\n|-----------|------------|---------------------------|-------------------------|---------------|\r\n| 18.4      | FY26-Q3-M2 | 2025-09-11                | 2025-09-12              | 2025-09-18    |\r\n",
+                  "dueDate": "2025-09-12",
+                  "expired": true,
+                  "group": {
+                    "fullPath": "gitlab-org"
+                  },
+                  "id": "gid://gitlab/Milestone/5948913",
+                  "iid": "122",
+                  "project": null,
+                  "startDate": "2025-08-16",
+                  "state": "active",
+                  "title": "18.4",
+                  "updatedAt": "2025-10-31T15:15:47Z",
+                  "webPath": "/groups/gitlab-org/-/milestones/122"
+                }
+              ],
+              "pageInfo": {
+                "endCursor": "eyJkdWVfZGF0ZSI6IjIwMjUtMDktMTIiLCJpZCI6IjU5NDg5MTMifQ",
+                "hasNextPage": true
+              }
+            }
+          }
+        }
+      },
+      "headers": {},
+      "status": 200
+    }
+  },
+  {
+    "meta": {
+      "sanitized": true,
+      "source": "gitlab.com public (gitlab-org/cli), 2026-11-06"
+    },
+    "request": {
+      "operation": "MilestonesList",
+      "variables": {
+        "after": "eyJkdWVfZGF0ZSI6IjIwMjUtMDktMTIiLCJpZCI6IjU5NDg5MTMifQ",
+        "fullPath": "gitlab-org/cli"
+      }
+    },
+    "response": {
+      "body": {
+        "data": {
+          "project": {
+            "milestones": {
+              "nodes": [
+                {
+                  "createdAt": "2025-03-26T00:19:53Z",
+                  "description": "| Milestone | Quarter    | Start Date - Code Merging | End Date - Code Merging | Release Date  |\r\n|-----------|------------|---------------------------|-------------------------|---------------|\r\n| 18.5      | FY26-Q3-M3 | 2025-10-09                | 2025-10-10              | 2025-10-16    |\r\n",
+                  "dueDate": "2025-10-10",
+                  "expired": true,
+                  "group": {
+                    "fullPath": "gitlab-org"
+                  },
+                  "id": "gid://gitlab/Milestone/5948915",
+                  "iid": "123",
+                  "project": null,
+                  "startDate": "2025-09-13",
+                  "state": "active",
+                  "title": "18.5",
+                  "updatedAt": "2025-06-30T16:27:11Z",
+                  "webPath": "/groups/gitlab-org/-/milestones/123"
+                },
+                {
+                  "createdAt": "2025-03-26T00:20:35Z",
+                  "description": "| Milestone | Quarter    | Start Date - Code Merging | End Date - Code Merging | Release Date  |\r\n|-----------|------------|---------------------------|-------------------------|---------------|\r\n| 18.6      | FY26-Q4-M1 | 2025-11-13                | 2025-11-14              | 2025-11-20    |\r\n",
+                  "dueDate": "2025-11-14",
+                  "expired": true,
+                  "group": {
+                    "fullPath": "gitlab-org"
+                  },
+                  "id": "gid://gitlab/Milestone/5948917",
+                  "iid": "124",
+                  "project": null,
+                  "startDate": "2025-10-11",
+                  "state": "active",
+                  "title": "18.6",
+                  "updatedAt": "2025-06-30T16:27:38Z",
+                  "webPath": "/groups/gitlab-org/-/milestones/124"
+                }
+              ],
+              "pageInfo": {
+                "endCursor": "eyJkdWVfZGF0ZSI6IjIwMjUtMTEtMTQiLCJpZCI6IjU5NDg5MTcifQ",
+                "hasNextPage": true
+              }
+            }
+          }
+        }
+      },
+      "headers": {},
+      "status": 200
+    }
+  }
+]

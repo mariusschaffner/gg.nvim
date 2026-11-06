@@ -253,7 +253,7 @@ Each entry gives the problem in INVENTORY.md (or a conflict with CLAUDE.md), the
       - subgroups, `.git` or no `.git`, trailing slashes, uppercase hosts, IPv6 literals
     - Rejected: a single-segment path, `file://`, local paths, empty input.
   - Test: `test_remote.lua`, a table of about 25 URLs, with an exact expected table per row.
-- [ ] **5.2 context: web URLs and short references** — `feat(context)`
+- [x] **5.2 context: web URLs and short references** — `feat(context)`
   - Files: `lua/gg/context/web.lua`, `tests/unit/context/test_web.lua`.
   - Acceptance:
     - `parse_web_url(url, {hosts?})` returns `{host, project, kind, iid|id}` for `/-/issues/N`, `/-/merge_requests/N[/diffs|/pipelines…]`, `/-/pipelines/N`, `/-/jobs/N`, `/-/milestones/N`, `/-/work_items/N`, and the bare project URL. Query strings and fragments are ignored.

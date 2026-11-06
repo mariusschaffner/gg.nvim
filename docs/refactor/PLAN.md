@@ -76,7 +76,7 @@ Each entry gives the problem in INVENTORY.md (or a conflict with CLAUDE.md), the
 
 ## 1. Scaffold and test harness
 
-- [ ] **1.1 scaffold: mini.test harness** — `chore(scaffold)`
+- [x] **1.1 scaffold: mini.test harness** — `chore(scaffold)`
   - Files: `Makefile` (`test`, `test-file FILE=`, and a `deps/mini.nvim` file target that clones a pinned mini.nvim tag), `tests/minimal_init.lua` (puts the repo and `deps/mini.nvim` on the rtp), `.gitignore` (`deps/`), `lua/gg/init.lua` (empty facade), `.luarc.json`.
   - Acceptance: `make test` runs `nvim --headless --noplugin -u tests/minimal_init.lua` with `MiniTest.run()`, finds `tests/**/test_*.lua`, reports 0 cases and exits 0. A temporary failing case makes it exit non-zero (checked by hand, not committed). It works from mingw make on Windows and from sh.
   - Test: `make test` itself, on the empty suite.

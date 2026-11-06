@@ -80,7 +80,7 @@ Each entry gives the problem in INVENTORY.md (or a conflict with CLAUDE.md), the
   - Files: `Makefile` (`test`, `test-file FILE=`, and a `deps/mini.nvim` file target that clones a pinned mini.nvim tag), `tests/minimal_init.lua` (puts the repo and `deps/mini.nvim` on the rtp), `.gitignore` (`deps/`), `lua/gg/init.lua` (empty facade), `.luarc.json`.
   - Acceptance: `make test` runs `nvim --headless --noplugin -u tests/minimal_init.lua` with `MiniTest.run()`, finds `tests/**/test_*.lua`, reports 0 cases and exits 0. A temporary failing case makes it exit non-zero (checked by hand, not committed). It works from mingw make on Windows and from sh.
   - Test: `make test` itself, on the empty suite.
-- [ ] **1.2 guard tests for the conventions** — `test(scaffold)`
+- [x] **1.2 guard tests for the conventions** — `test(scaffold)`
   - Files: `tests/helpers.lua` (repo file walker), `tests/unit/test_architecture.lua`.
   - Acceptance: these checks scan `lua/gg/**`:
     - Layering: core < config < transport < graphql/rest < resources < health < init. context and models require nothing from gg outside their own folder.

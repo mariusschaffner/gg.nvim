@@ -239,7 +239,7 @@ Each entry gives the problem in INVENTORY.md (or a conflict with CLAUDE.md), the
 
 ## 5. context
 
-- [ ] **5.1 context: remote URLs** — `feat(context)`
+- [x] **5.1 context: remote URLs** — `feat(context)`
   - Files: `lua/gg/context/remote.lua`, `lua/gg/context/init.lua`, `tests/unit/context/test_remote.lua`.
   - Acceptance:
     - Pure. `parse(url, {hosts?})` returns a `gg.Remote { host, port?, scheme, project, base_url }`, or `nil, {kind="validation", …}` (a plain table of the same shape).

@@ -1,0 +1,51 @@
+#import "merge_request"
+query MergeRequestsListProject(
+  $fullPath: ID!
+  $first: Int
+  $after: String
+  $state: MergeRequestState
+  $labelName: [String]
+  $milestoneTitle: String
+  $milestoneWildcardId: MilestoneWildcardId
+  $authorUsername: String
+  $assigneeUsernames: [String!]
+  $assigneeWildcardId: AssigneeWildcardId
+  $reviewerUsername: String
+  $reviewerWildcardId: ReviewerWildcardId
+  $search: String
+  $iids: [String!]
+  $sourceBranches: [String!]
+  $targetBranches: [String!]
+  $draft: Boolean
+  $sort: MergeRequestSort
+) {
+  project(fullPath: $fullPath) {
+    mergeRequests(
+      first: $first
+      after: $after
+      state: $state
+      labelName: $labelName
+      milestoneTitle: $milestoneTitle
+      milestoneWildcardId: $milestoneWildcardId
+      authorUsername: $authorUsername
+      assigneeUsernames: $assigneeUsernames
+      assigneeWildcardId: $assigneeWildcardId
+      reviewerUsername: $reviewerUsername
+      reviewerWildcardId: $reviewerWildcardId
+      search: $search
+      iids: $iids
+      sourceBranches: $sourceBranches
+      targetBranches: $targetBranches
+      draft: $draft
+      sort: $sort
+    ) {
+      nodes {
+        ...MergeRequestFields
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+    }
+  }
+}

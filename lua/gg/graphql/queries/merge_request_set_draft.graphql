@@ -1,0 +1,11 @@
+#import "merge_request"
+mutation MergeRequestSetDraft($projectPath: ID!, $iid: String!, $draft: Boolean!) {
+  mergeRequestSetDraft(input: { projectPath: $projectPath, iid: $iid, draft: $draft }) {
+    errors
+    mergeRequest {
+      ...MergeRequestFields
+      description
+      subscribed
+    }
+  }
+}

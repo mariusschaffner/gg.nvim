@@ -304,7 +304,7 @@ Every item follows the same pattern:
   - `list`/`list_all` (REST `/repository/branches` with `search`; GraphQL only exposes names, with offset paging; default 100) → `gg.Branch {name, commit_sha?, default, protected, merged, web_url?}`.
   - `create({branch, ref})`.
   - `related_to_issue({iid})` = `list({search = "^<iid>-"})`. This fixes the "misses past 100" bug (§5.2).
-- [ ] **6.6 merge_requests** — `feat(merge_requests)`
+- [x] **6.6 merge_requests** — `feat(merge_requests)`
   - Model `gg.MergeRequest`: id, iid, project, title, description?, state, draft, author, assignees, reviewers, labels, milestone?, source_branch, target_branch, source/target_project_id, sha?, diff_refs?, merge_status?, detailed_merge_status?, has_conflicts?, user_notes_count, should_remove_source_branch?, squash?, web_url, references, timestamps, subscribed?, truncated?
     - atlas renames: state open/declined/draft ← state + draft; destination.branch ← target_branch; comments_count ← user_notes_count; link.html ← web_url; repo_full_name ← project.
   - Functions and backends:
@@ -312,6 +312,9 @@ Every item follows the same pattern:
     - `by_iids` and `get` (details).
     - `create`, `update` (title, description, state_event, target_branch, labels, milestone, assignees, reviewers, remove_source_branch, draft per the docs) and `merge` (REST). 405/406/409/422 → `validation`, with GitLab's message.
     - `related_to_issue({project, iid})`/`_all` (default 20).
+  - Note (2026-11-06):
+    - The scopes use GitLab's REST names: `created_by_me`, `assigned_to_me`, `reviews_for_me` (GraphQL `currentUser.*MergeRequests`), and `all` (REST).
+    - docs.gitlab.com shows no `draft` parameter for REST create or update, so draft status goes through the GraphQL `mergeRequestSetDraft` mutation.
 - [ ] **6.7 milestones** — `feat(milestones)`
   - Model `gg.Milestone`: id, iid, project/group, title, description, state, start_date, due_date, expired?, web_url, created_at, updated_at.
   - `list`/`list_all` (`state = "active"` by default, GraphQL), `get`, `issues`/`_all` → `gg.Issue`, `merge_requests`/`_all` → `gg.MergeRequest`.

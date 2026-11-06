@@ -1,0 +1,122 @@
+{
+  "meta": {
+    "sanitized": true,
+    "source": "gitlab.com public (gitlab-org/quality), 2026-11-06"
+  },
+  "request": {
+    "operation": "MergeRequestsListGroup",
+    "variables": {
+      "first": 1,
+      "fullPath": "gitlab-org/quality",
+      "includeSubgroups": true,
+      "state": "opened"
+    }
+  },
+  "response": {
+    "body": {
+      "data": {
+        "group": {
+          "mergeRequests": {
+            "nodes": [
+              {
+                "assignees": {
+                  "nodes": [
+                    {
+                      "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                      "id": "gid://gitlab/User/35311237",
+                      "name": "Test User 1",
+                      "state": "active",
+                      "username": "user-1",
+                      "webUrl": "https://gitlab.example.com/user-1"
+                    }
+                  ],
+                  "pageInfo": {
+                    "hasNextPage": false
+                  }
+                },
+                "author": {
+                  "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                  "id": "gid://gitlab/User/35311237",
+                  "name": "Test User 1",
+                  "state": "active",
+                  "username": "user-1",
+                  "webUrl": "https://gitlab.example.com/user-1"
+                },
+                "closedAt": null,
+                "conflicts": false,
+                "createdAt": "2026-11-06T17:33:54Z",
+                "detailedMergeStatus": "NOT_APPROVED",
+                "diffHeadSha": "7b6952fce12d0c08ced45fee42882cf0e39b1a7a",
+                "diffRefs": {
+                  "baseSha": "c9df39259768b2c04c76cc496f1a30c8b4c8588b",
+                  "headSha": "7b6952fce12d0c08ced45fee42882cf0e39b1a7a",
+                  "startSha": "c9df39259768b2c04c76cc496f1a30c8b4c8588b"
+                },
+                "draft": false,
+                "forceRemoveSourceBranch": true,
+                "id": "gid://gitlab/MergeRequest/563491264",
+                "iid": "4529",
+                "labels": {
+                  "nodes": [
+                    {
+                      "color": "#FFECDB",
+                      "description": "Identifies merge requests that are authored by bot tooling",
+                      "id": "gid://gitlab/GroupLabel/23220399",
+                      "textColor": "#1F1E24",
+                      "title": "automation:bot-authored"
+                    },
+                    {
+                      "color": "#7f8c8d",
+                      "description": "Issues and merge request related to improvements to the engineering workflow automation",
+                      "id": "gid://gitlab/GroupLabel/15119519",
+                      "textColor": "#FFFFFF",
+                      "title": "maintenance::workflow"
+                    },
+                    {
+                      "color": "#330066",
+                      "description": "Upkeeping efforts and catch-up corrective improvements that are not Feature nor Bugs. Read more at https://gitlab.example.com/handbook/product/groups/product-analysis/engineering/metrics/#work-type-classification",
+                      "id": "gid://gitlab/GroupLabel/15119514",
+                      "textColor": "#FFFFFF",
+                      "title": "type::maintenance"
+                    }
+                  ],
+                  "pageInfo": {
+                    "hasNextPage": false
+                  }
+                },
+                "mergeStatusEnum": "CAN_BE_MERGED",
+                "mergedAt": null,
+                "milestone": null,
+                "reference": "!4529",
+                "referenceFull": "gitlab-org/quality/triage-ops!4529",
+                "reviewers": {
+                  "nodes": [],
+                  "pageInfo": {
+                    "hasNextPage": false
+                  }
+                },
+                "shouldRemoveSourceBranch": null,
+                "sourceBranch": "regenerate-stale-policies",
+                "sourceProjectId": 7776928,
+                "squash": false,
+                "state": "opened",
+                "targetBranch": "master",
+                "targetProjectId": 7776928,
+                "title": "Regenerate stale policies",
+                "updatedAt": "2026-11-06T20:34:01Z",
+                "userNotesCount": 0,
+                "webUrl": "https://gitlab.com/gitlab-org/quality/triage-ops/-/merge_requests/4529"
+              }
+            ],
+            "pageInfo": {
+              "endCursor": "eyJjcmVhdGVkX2F0IjoiMjAyNi0xMS0wNiAxNzozMzo1NC41NDg1NzUwMDAgKzAwMDAiLCJpZCI6IjU2MzQ5MTI2NCJ9",
+              "hasNextPage": true
+            }
+          }
+        }
+      }
+    },
+    "headers": {},
+    "status": 200
+  }
+}

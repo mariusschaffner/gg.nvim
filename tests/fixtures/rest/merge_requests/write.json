@@ -1,0 +1,742 @@
+[
+  {
+    "meta": {
+      "sanitized": true,
+      "source": "gitlab.com public (gitlab-org/cli MR 4002 response shape), 2026-11-06, adapted"
+    },
+    "request": {
+      "body_contains": {
+        "labels": "bug,ui",
+        "reviewer_ids": [
+          2
+        ],
+        "source_branch": "feature",
+        "target_branch": "main",
+        "title": "Add feature"
+      },
+      "method": "POST",
+      "path": "/api/v4/projects/my-group%2Fmy-project/merge_requests"
+    },
+    "response": {
+      "body": {
+        "allow_collaboration": true,
+        "allow_maintainer_to_push": true,
+        "approvals_before_merge": null,
+        "assignee": {
+          "avatar_url": "https://gitlab.example.com/uploads/avatar.png",
+          "id": 42048126,
+          "locked": false,
+          "name": "Test User 1",
+          "public_email": "user1@example.com",
+          "state": "active",
+          "username": "user-1",
+          "web_url": "https://gitlab.example.com/user-1"
+        },
+        "assignees": [
+          {
+            "avatar_url": "https://gitlab.example.com/uploads/avatar.png",
+            "id": 42048126,
+            "locked": false,
+            "name": "Test User 1",
+            "public_email": "user1@example.com",
+            "state": "active",
+            "username": "user-1",
+            "web_url": "https://gitlab.example.com/user-1"
+          }
+        ],
+        "author": {
+          "avatar_url": "https://gitlab.example.com/uploads/avatar.png",
+          "bot": false,
+          "id": 42048126,
+          "locked": false,
+          "name": "Test User 1",
+          "public_email": "user1@example.com",
+          "state": "active",
+          "username": "user-1",
+          "web_url": "https://gitlab.example.com/user-1"
+        },
+        "blocking_discussions_resolved": true,
+        "changes_count": "4",
+        "closed_at": null,
+        "closed_by": null,
+        "created_at": "2026-10-06T09:03:04.422Z",
+        "description": "## What does this MR do and why?\n\n`LocalConfigDir` resolved through `git rev-parse --git-dir`, which in a linked worktree is `.git/worktrees/<name>`. Local config set in the main checkout was therefore invisible in every worktree, and each new worktree started empty and silently fell back to global.\n\nThis resolves through `git rev-parse --git-common-dir` instead, so one repository has one local config. Git shares `.git/config` the same way and makes per-worktree config opt-in, and these keys describe the repository rather than the checkout. Stacks were moved to the common dir for the same reason in `0a119c022`.\n\n## References\n\nCloses https://gitlab.com/gitlab-org/cli/-/issues/8568\n\nPrior art in the same repository: https://gitlab.com/gitlab-org/cli/-/issues/8355 moved stacks to the common dir. The per-worktree location came from https://gitlab.com/gitlab-org/cli/-/issues/7872, which this keeps available as an existing-file override rather than the default.\n\n## Differences\n\n**Before:** in a linked worktree, `glab config get` read `.git/worktrees/<name>/glab-cli/config.yml` and saw none of the repository's config.\n\n**After:** it reads `.git/glab-cli/config.yml`, the same file the main checkout writes.\n\nA worktree that already carries its own file keeps using it, so a config written before this change still applies where it was written. A normal checkout is unaffected, because both flags resolve to the same directory, and a submodule keeps its own under `.git/modules/<name>`.\n\n## Two details worth a reviewer's eye\n\n`git` answers `--git-common-dir` with a relative, forward-slash path where it answers `--git-dir` with an absolute one, when run from a subdirectory:\n\n```\n$ cd a/b\n$ git rev-parse --git-dir\nC:/.../repo/.git\n$ git rev-parse --git-common-dir\n../../.git\n```\n\nThe old code always went through `filepath.Rel`, which normalised separators. The relative branch now cleans the result to the platform separator, otherwise `Test_LocalConfigDir` fails on Windows with `../../.git` against `..\\..\\.git`.\n\n`CheckPathExists` returns `info.IsDir()`, so it reports only directories. The backwards-compatible lookup uses `CheckFileExists` instead. My first attempt used the wrong one and the existing-file override silently never fired.\n\n## How to set up and validate locally\n\nEnd to end, which is the reproduction from the issue:\n\n```shell\ngo build -o /tmp/glab ./cmd/glab\nmkdir -p /tmp/repro/main && cd /tmp/repro/main\ngit init -q . && git commit -q --allow-empty -m init\n/tmp/glab config set editor main-only-editor\ngit worktree add -q --detach ../wt && cd ../wt\n/tmp/glab config get editor\n```\n\n```markdown\n## MR acceptance checklist\n\n- [x] Tests added, verified to fail without the fix\n- [x] Reproduced end to end against binaries built from this branch and from `main`\n- [x] Existing per-worktree files keep working\n- [x] Packages that share `GitDir` pass unchanged\n- [x] Conforms to the code review guidelines\n```",
+        "detailed_merge_status": "not_open",
+        "diff_refs": {
+          "base_sha": "1ab692e5cfc809947e1852c77e0692e09b2eacde",
+          "head_sha": "fc1a118b066a56deac5b26a27e336932a0356c0f",
+          "start_sha": "1ab692e5cfc809947e1852c77e0692e09b2eacde"
+        },
+        "discussion_locked": null,
+        "downvotes": 0,
+        "draft": false,
+        "first_contribution": false,
+        "first_deployed_to_production_at": null,
+        "force_remove_source_branch": true,
+        "has_conflicts": false,
+        "head_pipeline": {
+          "archived": false,
+          "before_sha": "72e1568150682191984acb9ac218f828c9112bdb",
+          "committed_at": null,
+          "coverage": "75.50",
+          "created_at": "2026-11-06T05:10:19.511Z",
+          "detailed_status": {
+            "details_path": "/gitlab-org/cli/-/pipelines/3035022716",
+            "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png",
+            "group": "success",
+            "has_details": true,
+            "icon": "status_success",
+            "illustration": null,
+            "label": "passed",
+            "text": "Passed",
+            "tooltip": "passed"
+          },
+          "duration": 1215,
+          "finished_at": "2026-11-06T05:30:39.975Z",
+          "id": 3035022716,
+          "iid": 16966,
+          "project_id": 34675721,
+          "queued_duration": 2,
+          "ref": "refs/merge-requests/4002/train",
+          "sha": "72e1568150682191984acb9ac218f828c9112bdb",
+          "source": "merge_request_event",
+          "started_at": "2026-11-06T05:10:22.393Z",
+          "status": "success",
+          "tag": false,
+          "updated_at": "2026-11-06T05:30:39.987Z",
+          "user": {
+            "avatar_url": "https://gitlab.example.com/uploads/avatar.png",
+            "id": 11809982,
+            "locked": false,
+            "name": "Test User 2",
+            "public_email": "",
+            "state": "active",
+            "username": "user-2",
+            "web_url": "https://gitlab.example.com/user-2"
+          },
+          "web_url": "https://gitlab.com/gitlab-org/cli/-/pipelines/3035022716",
+          "yaml_errors": null
+        },
+        "id": 543613929,
+        "iid": 12,
+        "imported": false,
+        "imported_from": "none",
+        "labels": [
+          "Community contribution",
+          "Hackathon",
+          "devops::ai clients",
+          "group::developer clients",
+          "linked-issue",
+          "section::ai",
+          "type::bug",
+          "workflow::ready for review"
+        ],
+        "latest_build_finished_at": "2026-11-06T05:30:39.975Z",
+        "latest_build_started_at": "2026-11-06T05:10:22.393Z",
+        "merge_after": null,
+        "merge_commit_sha": "c298159b72a6d1d888a635a8c1e5fc4952d12983",
+        "merge_error": null,
+        "merge_status": "can_be_merged",
+        "merge_user": {
+          "avatar_url": "https://gitlab.example.com/uploads/avatar.png",
+          "id": 11809982,
+          "locked": false,
+          "name": "Test User 2",
+          "public_email": "",
+          "state": "active",
+          "username": "user-2",
+          "web_url": "https://gitlab.example.com/user-2"
+        },
+        "merge_when_pipeline_succeeds": true,
+        "merged_at": null,
+        "merged_by": {
+          "avatar_url": "https://gitlab.example.com/uploads/avatar.png",
+          "id": 11809982,
+          "locked": false,
+          "name": "Test User 2",
+          "public_email": "",
+          "state": "active",
+          "username": "user-2",
+          "web_url": "https://gitlab.example.com/user-2"
+        },
+        "milestone": null,
+        "pipeline": {
+          "created_at": "2026-11-06T05:10:19.511Z",
+          "id": 3035022716,
+          "iid": 16966,
+          "project_id": 34675721,
+          "ref": "refs/merge-requests/4002/train",
+          "sha": "72e1568150682191984acb9ac218f828c9112bdb",
+          "source": "merge_request_event",
+          "status": "success",
+          "updated_at": "2026-11-06T05:30:39.987Z",
+          "web_url": "https://gitlab.com/gitlab-org/cli/-/pipelines/3035022716"
+        },
+        "prepared_at": "2026-10-06T09:03:08.500Z",
+        "project_id": 34675721,
+        "reference": "!4002",
+        "references": {
+          "full": "my-group/my-project!12",
+          "relative": "!12",
+          "short": "!12"
+        },
+        "reviewers": [
+          {
+            "avatar_url": "https://gitlab.example.com/uploads/avatar.png",
+            "id": 11809982,
+            "locked": false,
+            "name": "Test User 2",
+            "public_email": "",
+            "state": "active",
+            "username": "user-2",
+            "web_url": "https://gitlab.example.com/user-2"
+          },
+          {
+            "avatar_url": "https://gitlab.example.com/uploads/avatar.png",
+            "id": 21826781,
+            "locked": false,
+            "name": "Test User 3",
+            "public_email": null,
+            "state": "active",
+            "username": "user-3",
+            "web_url": "https://gitlab.example.com/user-3"
+          }
+        ],
+        "sha": "fc1a118b066a56deac5b26a27e336932a0356c0f",
+        "should_remove_source_branch": true,
+        "source_branch": "feature",
+        "source_project_id": 45049979,
+        "squash": true,
+        "squash_commit_sha": "9f834e27f4f3f25fb8a8045351807aee9d2769d0",
+        "squash_on_merge": true,
+        "state": "opened",
+        "subscribed": false,
+        "target_branch": "main",
+        "target_project_id": 34675721,
+        "task_completion_status": {
+          "completed_count": 0,
+          "count": 0
+        },
+        "time_stats": {
+          "human_time_estimate": null,
+          "human_total_time_spent": null,
+          "time_estimate": 0,
+          "total_time_spent": 0
+        },
+        "title": "Add feature",
+        "updated_at": "2026-11-06T05:30:42.674Z",
+        "upvotes": 0,
+        "user": {
+          "can_merge": false
+        },
+        "user_notes_count": 15,
+        "web_url": "https://gitlab.example.com/my-group/my-project/-/merge_requests/12",
+        "work_in_progress": false
+      },
+      "status": 201
+    }
+  },
+  {
+    "meta": {
+      "sanitized": true,
+      "source": "gitlab.com public (gitlab-org/cli MR 4002 response shape), 2026-11-06, adapted"
+    },
+    "request": {
+      "body_contains": {
+        "labels": "",
+        "milestone_id": 0,
+        "reviewer_ids": [
+          0
+        ],
+        "title": "Better title"
+      },
+      "method": "PUT",
+      "path": "/api/v4/projects/my-group%2Fmy-project/merge_requests/12"
+    },
+    "response": {
+      "body": {
+        "allow_collaboration": true,
+        "allow_maintainer_to_push": true,
+        "approvals_before_merge": null,
+        "assignee": {
+          "avatar_url": "https://gitlab.example.com/uploads/avatar.png",
+          "id": 42048126,
+          "locked": false,
+          "name": "Test User 1",
+          "public_email": "user1@example.com",
+          "state": "active",
+          "username": "user-1",
+          "web_url": "https://gitlab.example.com/user-1"
+        },
+        "assignees": [
+          {
+            "avatar_url": "https://gitlab.example.com/uploads/avatar.png",
+            "id": 42048126,
+            "locked": false,
+            "name": "Test User 1",
+            "public_email": "user1@example.com",
+            "state": "active",
+            "username": "user-1",
+            "web_url": "https://gitlab.example.com/user-1"
+          }
+        ],
+        "author": {
+          "avatar_url": "https://gitlab.example.com/uploads/avatar.png",
+          "bot": false,
+          "id": 42048126,
+          "locked": false,
+          "name": "Test User 1",
+          "public_email": "user1@example.com",
+          "state": "active",
+          "username": "user-1",
+          "web_url": "https://gitlab.example.com/user-1"
+        },
+        "blocking_discussions_resolved": true,
+        "changes_count": "4",
+        "closed_at": null,
+        "closed_by": null,
+        "created_at": "2026-10-06T09:03:04.422Z",
+        "description": "## What does this MR do and why?\n\n`LocalConfigDir` resolved through `git rev-parse --git-dir`, which in a linked worktree is `.git/worktrees/<name>`. Local config set in the main checkout was therefore invisible in every worktree, and each new worktree started empty and silently fell back to global.\n\nThis resolves through `git rev-parse --git-common-dir` instead, so one repository has one local config. Git shares `.git/config` the same way and makes per-worktree config opt-in, and these keys describe the repository rather than the checkout. Stacks were moved to the common dir for the same reason in `0a119c022`.\n\n## References\n\nCloses https://gitlab.com/gitlab-org/cli/-/issues/8568\n\nPrior art in the same repository: https://gitlab.com/gitlab-org/cli/-/issues/8355 moved stacks to the common dir. The per-worktree location came from https://gitlab.com/gitlab-org/cli/-/issues/7872, which this keeps available as an existing-file override rather than the default.\n\n## Differences\n\n**Before:** in a linked worktree, `glab config get` read `.git/worktrees/<name>/glab-cli/config.yml` and saw none of the repository's config.\n\n**After:** it reads `.git/glab-cli/config.yml`, the same file the main checkout writes.\n\nA worktree that already carries its own file keeps using it, so a config written before this change still applies where it was written. A normal checkout is unaffected, because both flags resolve to the same directory, and a submodule keeps its own under `.git/modules/<name>`.\n\n## Two details worth a reviewer's eye\n\n`git` answers `--git-common-dir` with a relative, forward-slash path where it answers `--git-dir` with an absolute one, when run from a subdirectory:\n\n```\n$ cd a/b\n$ git rev-parse --git-dir\nC:/.../repo/.git\n$ git rev-parse --git-common-dir\n../../.git\n```\n\nThe old code always went through `filepath.Rel`, which normalised separators. The relative branch now cleans the result to the platform separator, otherwise `Test_LocalConfigDir` fails on Windows with `../../.git` against `..\\..\\.git`.\n\n`CheckPathExists` returns `info.IsDir()`, so it reports only directories. The backwards-compatible lookup uses `CheckFileExists` instead. My first attempt used the wrong one and the existing-file override silently never fired.\n\n## How to set up and validate locally\n\nEnd to end, which is the reproduction from the issue:\n\n```shell\ngo build -o /tmp/glab ./cmd/glab\nmkdir -p /tmp/repro/main && cd /tmp/repro/main\ngit init -q . && git commit -q --allow-empty -m init\n/tmp/glab config set editor main-only-editor\ngit worktree add -q --detach ../wt && cd ../wt\n/tmp/glab config get editor\n```\n\n```markdown\n## MR acceptance checklist\n\n- [x] Tests added, verified to fail without the fix\n- [x] Reproduced end to end against binaries built from this branch and from `main`\n- [x] Existing per-worktree files keep working\n- [x] Packages that share `GitDir` pass unchanged\n- [x] Conforms to the code review guidelines\n```",
+        "detailed_merge_status": "not_open",
+        "diff_refs": {
+          "base_sha": "1ab692e5cfc809947e1852c77e0692e09b2eacde",
+          "head_sha": "fc1a118b066a56deac5b26a27e336932a0356c0f",
+          "start_sha": "1ab692e5cfc809947e1852c77e0692e09b2eacde"
+        },
+        "discussion_locked": null,
+        "downvotes": 0,
+        "draft": false,
+        "first_contribution": false,
+        "first_deployed_to_production_at": null,
+        "force_remove_source_branch": true,
+        "has_conflicts": false,
+        "head_pipeline": {
+          "archived": false,
+          "before_sha": "72e1568150682191984acb9ac218f828c9112bdb",
+          "committed_at": null,
+          "coverage": "75.50",
+          "created_at": "2026-11-06T05:10:19.511Z",
+          "detailed_status": {
+            "details_path": "/gitlab-org/cli/-/pipelines/3035022716",
+            "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png",
+            "group": "success",
+            "has_details": true,
+            "icon": "status_success",
+            "illustration": null,
+            "label": "passed",
+            "text": "Passed",
+            "tooltip": "passed"
+          },
+          "duration": 1215,
+          "finished_at": "2026-11-06T05:30:39.975Z",
+          "id": 3035022716,
+          "iid": 16966,
+          "project_id": 34675721,
+          "queued_duration": 2,
+          "ref": "refs/merge-requests/4002/train",
+          "sha": "72e1568150682191984acb9ac218f828c9112bdb",
+          "source": "merge_request_event",
+          "started_at": "2026-11-06T05:10:22.393Z",
+          "status": "success",
+          "tag": false,
+          "updated_at": "2026-11-06T05:30:39.987Z",
+          "user": {
+            "avatar_url": "https://gitlab.example.com/uploads/avatar.png",
+            "id": 11809982,
+            "locked": false,
+            "name": "Test User 2",
+            "public_email": "",
+            "state": "active",
+            "username": "user-2",
+            "web_url": "https://gitlab.example.com/user-2"
+          },
+          "web_url": "https://gitlab.com/gitlab-org/cli/-/pipelines/3035022716",
+          "yaml_errors": null
+        },
+        "id": 543613929,
+        "iid": 12,
+        "imported": false,
+        "imported_from": "none",
+        "labels": [],
+        "latest_build_finished_at": "2026-11-06T05:30:39.975Z",
+        "latest_build_started_at": "2026-11-06T05:10:22.393Z",
+        "merge_after": null,
+        "merge_commit_sha": "c298159b72a6d1d888a635a8c1e5fc4952d12983",
+        "merge_error": null,
+        "merge_status": "can_be_merged",
+        "merge_user": {
+          "avatar_url": "https://gitlab.example.com/uploads/avatar.png",
+          "id": 11809982,
+          "locked": false,
+          "name": "Test User 2",
+          "public_email": "",
+          "state": "active",
+          "username": "user-2",
+          "web_url": "https://gitlab.example.com/user-2"
+        },
+        "merge_when_pipeline_succeeds": true,
+        "merged_at": "2026-11-06T05:30:42.889Z",
+        "merged_by": {
+          "avatar_url": "https://gitlab.example.com/uploads/avatar.png",
+          "id": 11809982,
+          "locked": false,
+          "name": "Test User 2",
+          "public_email": "",
+          "state": "active",
+          "username": "user-2",
+          "web_url": "https://gitlab.example.com/user-2"
+        },
+        "milestone": null,
+        "pipeline": {
+          "created_at": "2026-11-06T05:10:19.511Z",
+          "id": 3035022716,
+          "iid": 16966,
+          "project_id": 34675721,
+          "ref": "refs/merge-requests/4002/train",
+          "sha": "72e1568150682191984acb9ac218f828c9112bdb",
+          "source": "merge_request_event",
+          "status": "success",
+          "updated_at": "2026-11-06T05:30:39.987Z",
+          "web_url": "https://gitlab.com/gitlab-org/cli/-/pipelines/3035022716"
+        },
+        "prepared_at": "2026-10-06T09:03:08.500Z",
+        "project_id": 34675721,
+        "reference": "!4002",
+        "references": {
+          "full": "my-group/my-project!12",
+          "relative": "!12",
+          "short": "!12"
+        },
+        "reviewers": [],
+        "sha": "fc1a118b066a56deac5b26a27e336932a0356c0f",
+        "should_remove_source_branch": true,
+        "source_branch": "8568-share-local-config-across-worktrees",
+        "source_project_id": 45049979,
+        "squash": true,
+        "squash_commit_sha": "9f834e27f4f3f25fb8a8045351807aee9d2769d0",
+        "squash_on_merge": true,
+        "state": "opened",
+        "subscribed": false,
+        "target_branch": "main",
+        "target_project_id": 34675721,
+        "task_completion_status": {
+          "completed_count": 0,
+          "count": 0
+        },
+        "time_stats": {
+          "human_time_estimate": null,
+          "human_total_time_spent": null,
+          "time_estimate": 0,
+          "total_time_spent": 0
+        },
+        "title": "Better title",
+        "updated_at": "2026-11-06T05:30:42.674Z",
+        "upvotes": 0,
+        "user": {
+          "can_merge": false
+        },
+        "user_notes_count": 15,
+        "web_url": "https://gitlab.example.com/my-group/my-project/-/merge_requests/12",
+        "work_in_progress": false
+      },
+      "status": 200
+    }
+  },
+  {
+    "meta": {
+      "sanitized": true,
+      "source": "gitlab.com public (gitlab-org/cli MR 4002 response shape), 2026-11-06, adapted"
+    },
+    "request": {
+      "body_contains": {
+        "sha": "abc123",
+        "should_remove_source_branch": true,
+        "squash": true
+      },
+      "method": "PUT",
+      "path": "/api/v4/projects/my-group%2Fmy-project/merge_requests/12/merge"
+    },
+    "response": {
+      "body": {
+        "allow_collaboration": true,
+        "allow_maintainer_to_push": true,
+        "approvals_before_merge": null,
+        "assignee": {
+          "avatar_url": "https://gitlab.example.com/uploads/avatar.png",
+          "id": 42048126,
+          "locked": false,
+          "name": "Test User 1",
+          "public_email": "user1@example.com",
+          "state": "active",
+          "username": "user-1",
+          "web_url": "https://gitlab.example.com/user-1"
+        },
+        "assignees": [
+          {
+            "avatar_url": "https://gitlab.example.com/uploads/avatar.png",
+            "id": 42048126,
+            "locked": false,
+            "name": "Test User 1",
+            "public_email": "user1@example.com",
+            "state": "active",
+            "username": "user-1",
+            "web_url": "https://gitlab.example.com/user-1"
+          }
+        ],
+        "author": {
+          "avatar_url": "https://gitlab.example.com/uploads/avatar.png",
+          "bot": false,
+          "id": 42048126,
+          "locked": false,
+          "name": "Test User 1",
+          "public_email": "user1@example.com",
+          "state": "active",
+          "username": "user-1",
+          "web_url": "https://gitlab.example.com/user-1"
+        },
+        "blocking_discussions_resolved": true,
+        "changes_count": "4",
+        "closed_at": null,
+        "closed_by": null,
+        "created_at": "2026-10-06T09:03:04.422Z",
+        "description": "## What does this MR do and why?\n\n`LocalConfigDir` resolved through `git rev-parse --git-dir`, which in a linked worktree is `.git/worktrees/<name>`. Local config set in the main checkout was therefore invisible in every worktree, and each new worktree started empty and silently fell back to global.\n\nThis resolves through `git rev-parse --git-common-dir` instead, so one repository has one local config. Git shares `.git/config` the same way and makes per-worktree config opt-in, and these keys describe the repository rather than the checkout. Stacks were moved to the common dir for the same reason in `0a119c022`.\n\n## References\n\nCloses https://gitlab.com/gitlab-org/cli/-/issues/8568\n\nPrior art in the same repository: https://gitlab.com/gitlab-org/cli/-/issues/8355 moved stacks to the common dir. The per-worktree location came from https://gitlab.com/gitlab-org/cli/-/issues/7872, which this keeps available as an existing-file override rather than the default.\n\n## Differences\n\n**Before:** in a linked worktree, `glab config get` read `.git/worktrees/<name>/glab-cli/config.yml` and saw none of the repository's config.\n\n**After:** it reads `.git/glab-cli/config.yml`, the same file the main checkout writes.\n\nA worktree that already carries its own file keeps using it, so a config written before this change still applies where it was written. A normal checkout is unaffected, because both flags resolve to the same directory, and a submodule keeps its own under `.git/modules/<name>`.\n\n## Two details worth a reviewer's eye\n\n`git` answers `--git-common-dir` with a relative, forward-slash path where it answers `--git-dir` with an absolute one, when run from a subdirectory:\n\n```\n$ cd a/b\n$ git rev-parse --git-dir\nC:/.../repo/.git\n$ git rev-parse --git-common-dir\n../../.git\n```\n\nThe old code always went through `filepath.Rel`, which normalised separators. The relative branch now cleans the result to the platform separator, otherwise `Test_LocalConfigDir` fails on Windows with `../../.git` against `..\\..\\.git`.\n\n`CheckPathExists` returns `info.IsDir()`, so it reports only directories. The backwards-compatible lookup uses `CheckFileExists` instead. My first attempt used the wrong one and the existing-file override silently never fired.\n\n## How to set up and validate locally\n\nEnd to end, which is the reproduction from the issue:\n\n```shell\ngo build -o /tmp/glab ./cmd/glab\nmkdir -p /tmp/repro/main && cd /tmp/repro/main\ngit init -q . && git commit -q --allow-empty -m init\n/tmp/glab config set editor main-only-editor\ngit worktree add -q --detach ../wt && cd ../wt\n/tmp/glab config get editor\n```\n\n```markdown\n## MR acceptance checklist\n\n- [x] Tests added, verified to fail without the fix\n- [x] Reproduced end to end against binaries built from this branch and from `main`\n- [x] Existing per-worktree files keep working\n- [x] Packages that share `GitDir` pass unchanged\n- [x] Conforms to the code review guidelines\n```",
+        "detailed_merge_status": "not_open",
+        "diff_refs": {
+          "base_sha": "1ab692e5cfc809947e1852c77e0692e09b2eacde",
+          "head_sha": "fc1a118b066a56deac5b26a27e336932a0356c0f",
+          "start_sha": "1ab692e5cfc809947e1852c77e0692e09b2eacde"
+        },
+        "discussion_locked": null,
+        "downvotes": 0,
+        "draft": false,
+        "first_contribution": false,
+        "first_deployed_to_production_at": null,
+        "force_remove_source_branch": true,
+        "has_conflicts": false,
+        "head_pipeline": {
+          "archived": false,
+          "before_sha": "72e1568150682191984acb9ac218f828c9112bdb",
+          "committed_at": null,
+          "coverage": "75.50",
+          "created_at": "2026-11-06T05:10:19.511Z",
+          "detailed_status": {
+            "details_path": "/gitlab-org/cli/-/pipelines/3035022716",
+            "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png",
+            "group": "success",
+            "has_details": true,
+            "icon": "status_success",
+            "illustration": null,
+            "label": "passed",
+            "text": "Passed",
+            "tooltip": "passed"
+          },
+          "duration": 1215,
+          "finished_at": "2026-11-06T05:30:39.975Z",
+          "id": 3035022716,
+          "iid": 16966,
+          "project_id": 34675721,
+          "queued_duration": 2,
+          "ref": "refs/merge-requests/4002/train",
+          "sha": "72e1568150682191984acb9ac218f828c9112bdb",
+          "source": "merge_request_event",
+          "started_at": "2026-11-06T05:10:22.393Z",
+          "status": "success",
+          "tag": false,
+          "updated_at": "2026-11-06T05:30:39.987Z",
+          "user": {
+            "avatar_url": "https://gitlab.example.com/uploads/avatar.png",
+            "id": 11809982,
+            "locked": false,
+            "name": "Test User 2",
+            "public_email": "",
+            "state": "active",
+            "username": "user-2",
+            "web_url": "https://gitlab.example.com/user-2"
+          },
+          "web_url": "https://gitlab.com/gitlab-org/cli/-/pipelines/3035022716",
+          "yaml_errors": null
+        },
+        "id": 543613929,
+        "iid": 12,
+        "imported": false,
+        "imported_from": "none",
+        "labels": [
+          "Community contribution",
+          "Hackathon",
+          "devops::ai clients",
+          "group::developer clients",
+          "linked-issue",
+          "section::ai",
+          "type::bug",
+          "workflow::ready for review"
+        ],
+        "latest_build_finished_at": "2026-11-06T05:30:39.975Z",
+        "latest_build_started_at": "2026-11-06T05:10:22.393Z",
+        "merge_after": null,
+        "merge_commit_sha": "c298159b72a6d1d888a635a8c1e5fc4952d12983",
+        "merge_error": null,
+        "merge_status": "can_be_merged",
+        "merge_user": {
+          "avatar_url": "https://gitlab.example.com/uploads/avatar.png",
+          "id": 11809982,
+          "locked": false,
+          "name": "Test User 2",
+          "public_email": "",
+          "state": "active",
+          "username": "user-2",
+          "web_url": "https://gitlab.example.com/user-2"
+        },
+        "merge_when_pipeline_succeeds": true,
+        "merged_at": "2026-11-06T05:30:42.889Z",
+        "merged_by": {
+          "avatar_url": "https://gitlab.example.com/uploads/avatar.png",
+          "id": 11809982,
+          "locked": false,
+          "name": "Test User 2",
+          "public_email": "",
+          "state": "active",
+          "username": "user-2",
+          "web_url": "https://gitlab.example.com/user-2"
+        },
+        "milestone": null,
+        "pipeline": {
+          "created_at": "2026-11-06T05:10:19.511Z",
+          "id": 3035022716,
+          "iid": 16966,
+          "project_id": 34675721,
+          "ref": "refs/merge-requests/4002/train",
+          "sha": "72e1568150682191984acb9ac218f828c9112bdb",
+          "source": "merge_request_event",
+          "status": "success",
+          "updated_at": "2026-11-06T05:30:39.987Z",
+          "web_url": "https://gitlab.com/gitlab-org/cli/-/pipelines/3035022716"
+        },
+        "prepared_at": "2026-10-06T09:03:08.500Z",
+        "project_id": 34675721,
+        "reference": "!4002",
+        "references": {
+          "full": "my-group/my-project!12",
+          "relative": "!12",
+          "short": "!12"
+        },
+        "reviewers": [
+          {
+            "avatar_url": "https://gitlab.example.com/uploads/avatar.png",
+            "id": 11809982,
+            "locked": false,
+            "name": "Test User 2",
+            "public_email": "",
+            "state": "active",
+            "username": "user-2",
+            "web_url": "https://gitlab.example.com/user-2"
+          },
+          {
+            "avatar_url": "https://gitlab.example.com/uploads/avatar.png",
+            "id": 21826781,
+            "locked": false,
+            "name": "Test User 3",
+            "public_email": null,
+            "state": "active",
+            "username": "user-3",
+            "web_url": "https://gitlab.example.com/user-3"
+          }
+        ],
+        "sha": "fc1a118b066a56deac5b26a27e336932a0356c0f",
+        "should_remove_source_branch": true,
+        "source_branch": "8568-share-local-config-across-worktrees",
+        "source_project_id": 45049979,
+        "squash": true,
+        "squash_commit_sha": "9f834e27f4f3f25fb8a8045351807aee9d2769d0",
+        "squash_on_merge": true,
+        "state": "merged",
+        "subscribed": false,
+        "target_branch": "main",
+        "target_project_id": 34675721,
+        "task_completion_status": {
+          "completed_count": 0,
+          "count": 0
+        },
+        "time_stats": {
+          "human_time_estimate": null,
+          "human_total_time_spent": null,
+          "time_estimate": 0,
+          "total_time_spent": 0
+        },
+        "title": "fix(config): share local config across git worktrees",
+        "updated_at": "2026-11-06T05:30:42.674Z",
+        "upvotes": 0,
+        "user": {
+          "can_merge": false
+        },
+        "user_notes_count": 15,
+        "web_url": "https://gitlab.example.com/my-group/my-project/-/merge_requests/12",
+        "work_in_progress": false
+      },
+      "status": 200
+    }
+  },
+  {
+    "meta": {
+      "sanitized": true,
+      "source": "docs.gitlab.com (api/merge_requests: Merge a merge request) error responses"
+    },
+    "request": {
+      "method": "PUT",
+      "path": "/api/v4/projects/my-group%2Fmy-project/merge_requests/13/merge"
+    },
+    "response": {
+      "body": {
+        "message": "405 Method Not Allowed"
+      },
+      "status": 405
+    }
+  },
+  {
+    "meta": {
+      "sanitized": true,
+      "source": "docs.gitlab.com (api/merge_requests: Merge a merge request) error responses"
+    },
+    "request": {
+      "method": "PUT",
+      "path": "/api/v4/projects/my-group%2Fmy-project/merge_requests/14/merge"
+    },
+    "response": {
+      "body": {
+        "message": "SHA does not match HEAD of source branch: abc123"
+      },
+      "status": 409
+    }
+  },
+  {
+    "meta": {
+      "sanitized": true,
+      "source": "docs.gitlab.com (api/merge_requests: Merge a merge request) error responses"
+    },
+    "request": {
+      "method": "PUT",
+      "path": "/api/v4/projects/my-group%2Fmy-project/merge_requests/15/merge"
+    },
+    "response": {
+      "body": {
+        "message": "Branch cannot be merged"
+      },
+      "status": 422
+    }
+  },
+  {
+    "meta": {
+      "sanitized": true,
+      "source": "docs.gitlab.com example (api/rest: 404 response shape)"
+    },
+    "request": {
+      "method": "PUT",
+      "path": "/api/v4/projects/my-group%2Fmy-project/merge_requests/999"
+    },
+    "response": {
+      "body": {
+        "message": "404 Not found"
+      },
+      "status": 404
+    }
+  }
+]

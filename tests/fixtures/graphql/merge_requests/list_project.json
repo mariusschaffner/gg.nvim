@@ -1,0 +1,695 @@
+[
+  {
+    "meta": {
+      "sanitized": true,
+      "source": "gitlab.com public (gitlab-org/cli), 2026-11-06"
+    },
+    "request": {
+      "operation": "MergeRequestsListProject",
+      "variables": {
+        "first": 2,
+        "fullPath": "gitlab-org/cli",
+        "sort": "MERGED_AT_DESC",
+        "state": "merged"
+      }
+    },
+    "response": {
+      "body": {
+        "data": {
+          "project": {
+            "mergeRequests": {
+              "nodes": [
+                {
+                  "assignees": {
+                    "nodes": [
+                      {
+                        "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                        "id": "gid://gitlab/User/42048126",
+                        "name": "Test User 1",
+                        "state": "active",
+                        "username": "user-1",
+                        "webUrl": "https://gitlab.example.com/user-1"
+                      }
+                    ],
+                    "pageInfo": {
+                      "hasNextPage": false
+                    }
+                  },
+                  "author": {
+                    "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                    "id": "gid://gitlab/User/42048126",
+                    "name": "Test User 1",
+                    "state": "active",
+                    "username": "user-1",
+                    "webUrl": "https://gitlab.example.com/user-1"
+                  },
+                  "closedAt": null,
+                  "conflicts": false,
+                  "createdAt": "2026-10-06T09:03:04Z",
+                  "detailedMergeStatus": "NOT_OPEN",
+                  "diffHeadSha": "fc1a118b066a56deac5b26a27e336932a0356c0f",
+                  "diffRefs": {
+                    "baseSha": "1ab692e5cfc809947e1852c77e0692e09b2eacde",
+                    "headSha": "fc1a118b066a56deac5b26a27e336932a0356c0f",
+                    "startSha": "1ab692e5cfc809947e1852c77e0692e09b2eacde"
+                  },
+                  "draft": false,
+                  "forceRemoveSourceBranch": true,
+                  "id": "gid://gitlab/MergeRequest/543613929",
+                  "iid": "4002",
+                  "labels": {
+                    "nodes": [
+                      {
+                        "color": "#a8d695",
+                        "description": "Issues that have been scheduled for an upcoming release and are actively being worked on by our community",
+                        "id": "gid://gitlab/GroupLabel/2091545",
+                        "textColor": "#1F1E24",
+                        "title": "Community contribution"
+                      },
+                      {
+                        "color": "#428BCA",
+                        "description": "Community contribution during GitLab Hackathon events",
+                        "id": "gid://gitlab/GroupLabel/8674943",
+                        "textColor": "#FFFFFF",
+                        "title": "Hackathon"
+                      },
+                      {
+                        "color": "#e44d2a",
+                        "description": "Stage level label within AI section",
+                        "id": "gid://gitlab/GroupLabel/51686650",
+                        "textColor": "#FFFFFF",
+                        "title": "devops::ai clients"
+                      },
+                      {
+                        "color": "#a8d695",
+                        "description": "AI group within the AI Clients stage.",
+                        "id": "gid://gitlab/GroupLabel/51686741",
+                        "textColor": "#1F1E24",
+                        "title": "group::developer clients"
+                      },
+                      {
+                        "color": "#6699cc",
+                        "description": "Used to highlight merge requests linked to one or more issues. For easily determining hackathon point calculations. Automatically applied by https://gitlab.com/gitlab-org/community-relations/contributor-success/toolbox",
+                        "id": "gid://gitlab/GroupLabel/29978659",
+                        "textColor": "#FFFFFF",
+                        "title": "linked-issue"
+                      },
+                      {
+                        "color": "#f0ad4e",
+                        "description": "",
+                        "id": "gid://gitlab/GroupLabel/42263609",
+                        "textColor": "#1F1E24",
+                        "title": "section::ai"
+                      },
+                      {
+                        "color": "#cc0000",
+                        "description": "Issues that report undesirable or incorrect behavior. See https://gitlab.example.com/handbook/product/groups/product-analysis/engineering/metrics/#work-type-classification",
+                        "id": "gid://gitlab/GroupLabel/2278648",
+                        "textColor": "#FFFFFF",
+                        "title": "type::bug"
+                      },
+                      {
+                        "color": "#428BCA",
+                        "description": "Merge requests which are ready to be reviewed and can be reviewed by any team-member with sufficient knowledge in the given area. For reviewing the merge request just assign to yourself and remove this label.",
+                        "id": "gid://gitlab/GroupLabel/7442317",
+                        "textColor": "#FFFFFF",
+                        "title": "workflow::ready for review"
+                      }
+                    ],
+                    "pageInfo": {
+                      "hasNextPage": false
+                    }
+                  },
+                  "mergeStatusEnum": "CAN_BE_MERGED",
+                  "mergedAt": "2026-11-06T05:30:42Z",
+                  "milestone": null,
+                  "reference": "!4002",
+                  "referenceFull": "gitlab-org/cli!4002",
+                  "reviewers": {
+                    "nodes": [
+                      {
+                        "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                        "id": "gid://gitlab/User/11809982",
+                        "name": "Test User 2",
+                        "state": "active",
+                        "username": "user-2",
+                        "webUrl": "https://gitlab.example.com/user-2"
+                      },
+                      {
+                        "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                        "id": "gid://gitlab/User/21826781",
+                        "name": "Test User 3",
+                        "state": "active",
+                        "username": "user-3",
+                        "webUrl": "https://gitlab.example.com/user-3"
+                      }
+                    ],
+                    "pageInfo": {
+                      "hasNextPage": false
+                    }
+                  },
+                  "shouldRemoveSourceBranch": true,
+                  "sourceBranch": "8568-share-local-config-across-worktrees",
+                  "sourceProjectId": 45049979,
+                  "squash": true,
+                  "state": "merged",
+                  "targetBranch": "main",
+                  "targetProjectId": 34675721,
+                  "title": "fix(config): share local config across git worktrees",
+                  "updatedAt": "2026-11-06T05:30:42Z",
+                  "userNotesCount": 15,
+                  "webUrl": "https://gitlab.com/gitlab-org/cli/-/merge_requests/4002"
+                },
+                {
+                  "assignees": {
+                    "nodes": [
+                      {
+                        "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                        "id": "gid://gitlab/User/30770856",
+                        "name": "Test User 4",
+                        "state": "active",
+                        "username": "user-4",
+                        "webUrl": "https://gitlab.example.com/user-4"
+                      }
+                    ],
+                    "pageInfo": {
+                      "hasNextPage": false
+                    }
+                  },
+                  "author": {
+                    "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                    "id": "gid://gitlab/User/30770856",
+                    "name": "Test User 4",
+                    "state": "active",
+                    "username": "user-4",
+                    "webUrl": "https://gitlab.example.com/user-4"
+                  },
+                  "closedAt": null,
+                  "conflicts": false,
+                  "createdAt": "2026-11-02T20:03:18Z",
+                  "detailedMergeStatus": "NOT_OPEN",
+                  "diffHeadSha": "52e386f1c3dca033b46df8a0c8d6e082b10d6696",
+                  "diffRefs": {
+                    "baseSha": "9377b78998060f3d59b74b95cf7f624c55eccd1d",
+                    "headSha": "52e386f1c3dca033b46df8a0c8d6e082b10d6696",
+                    "startSha": "9377b78998060f3d59b74b95cf7f624c55eccd1d"
+                  },
+                  "draft": false,
+                  "forceRemoveSourceBranch": true,
+                  "id": "gid://gitlab/MergeRequest/560474490",
+                  "iid": "4293",
+                  "labels": {
+                    "nodes": [
+                      {
+                        "color": "#a8d695",
+                        "description": "Issues that have been scheduled for an upcoming release and are actively being worked on by our community",
+                        "id": "gid://gitlab/GroupLabel/2091545",
+                        "textColor": "#1F1E24",
+                        "title": "Community contribution"
+                      },
+                      {
+                        "color": "#6699cc",
+                        "description": "Issues related to the GitLab CLI category: https://gitlab.example.com/direction/create/gitlab_cli/",
+                        "id": "gid://gitlab/GroupLabel/15126283",
+                        "textColor": "#FFFFFF",
+                        "title": "category:gitlab cli"
+                      },
+                      {
+                        "color": "#e44d2a",
+                        "description": "Stage level label within AI section",
+                        "id": "gid://gitlab/GroupLabel/51686650",
+                        "textColor": "#FFFFFF",
+                        "title": "devops::ai clients"
+                      },
+                      {
+                        "color": "#D10069",
+                        "description": "Epics, issues, and merge requests related to product documentation.",
+                        "id": "gid://gitlab/GroupLabel/2278655",
+                        "textColor": "#FFFFFF",
+                        "title": "documentation"
+                      },
+                      {
+                        "color": "#a8d695",
+                        "description": "AI group within the AI Clients stage.",
+                        "id": "gid://gitlab/GroupLabel/51686741",
+                        "textColor": "#1F1E24",
+                        "title": "group::developer clients"
+                      },
+                      {
+                        "color": "#6699cc",
+                        "description": "Used to highlight merge requests linked to one or more issues. For easily determining hackathon point calculations. Automatically applied by https://gitlab.com/gitlab-org/community-relations/contributor-success/toolbox",
+                        "id": "gid://gitlab/GroupLabel/29978659",
+                        "textColor": "#FFFFFF",
+                        "title": "linked-issue"
+                      },
+                      {
+                        "color": "#7f8c8d",
+                        "description": "Issues related to things that need improvement and that have been left behind due to high velocity of development",
+                        "id": "gid://gitlab/GroupLabel/3011693",
+                        "textColor": "#FFFFFF",
+                        "title": "maintenance::refactor"
+                      },
+                      {
+                        "color": "#f0ad4e",
+                        "description": "",
+                        "id": "gid://gitlab/GroupLabel/42263609",
+                        "textColor": "#1F1E24",
+                        "title": "section::ai"
+                      },
+                      {
+                        "color": "#330066",
+                        "description": "Upkeeping efforts and catch-up corrective improvements that are not Feature nor Bugs. Read more at https://gitlab.example.com/handbook/product/groups/product-analysis/engineering/metrics/#work-type-classification",
+                        "id": "gid://gitlab/GroupLabel/15119514",
+                        "textColor": "#FFFFFF",
+                        "title": "type::maintenance"
+                      },
+                      {
+                        "color": "#428bca",
+                        "description": "Issues that are actively being worked on by a developer https://gitlab.example.com/handbook/product-development/how-we-work/product-development-flow/#build-phase-2-develop--test",
+                        "id": "gid://gitlab/GroupLabel/2526320",
+                        "textColor": "#FFFFFF",
+                        "title": "workflow::in dev"
+                      }
+                    ],
+                    "pageInfo": {
+                      "hasNextPage": false
+                    }
+                  },
+                  "mergeStatusEnum": "CAN_BE_MERGED",
+                  "mergedAt": "2026-11-06T04:26:32Z",
+                  "milestone": null,
+                  "reference": "!4293",
+                  "referenceFull": "gitlab-org/cli!4293",
+                  "reviewers": {
+                    "nodes": [
+                      {
+                        "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                        "id": "gid://gitlab/User/11809982",
+                        "name": "Test User 2",
+                        "state": "active",
+                        "username": "user-2",
+                        "webUrl": "https://gitlab.example.com/user-2"
+                      },
+                      {
+                        "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                        "id": "gid://gitlab/User/21826781",
+                        "name": "Test User 3",
+                        "state": "active",
+                        "username": "user-3",
+                        "webUrl": "https://gitlab.example.com/user-3"
+                      }
+                    ],
+                    "pageInfo": {
+                      "hasNextPage": false
+                    }
+                  },
+                  "shouldRemoveSourceBranch": true,
+                  "sourceBranch": "8616-docs-client-id-ignored-gitlab-com",
+                  "sourceProjectId": 45049979,
+                  "squash": true,
+                  "state": "merged",
+                  "targetBranch": "main",
+                  "targetProjectId": 34675721,
+                  "title": "docs(auth): say client_id is ignored on GitLab.com",
+                  "updatedAt": "2026-11-06T04:26:31Z",
+                  "userNotesCount": 5,
+                  "webUrl": "https://gitlab.com/gitlab-org/cli/-/merge_requests/4293"
+                }
+              ],
+              "pageInfo": {
+                "endCursor": "eyJtZXJnZV9yZXF1ZXN0X21ldHJpY3NfbWVyZ2VkX2F0IjoiMjAyNi0xMS0wNiAwNDoyNjozMi4xNzg3MzUwMDAgKzAwMDAiLCJtZXJnZV9yZXF1ZXN0X21ldHJpY3NfaWQiOiI4ODk2OTMwMjI0In0",
+                "hasNextPage": true
+              }
+            }
+          }
+        }
+      },
+      "headers": {},
+      "status": 200
+    }
+  },
+  {
+    "meta": {
+      "sanitized": true,
+      "source": "gitlab.com public (gitlab-org/cli), 2026-11-06"
+    },
+    "request": {
+      "operation": "MergeRequestsListProject",
+      "variables": {
+        "after": "eyJtZXJnZV9yZXF1ZXN0X21ldHJpY3NfbWVyZ2VkX2F0IjoiMjAyNi0xMS0wNiAwNDoyNjozMi4xNzg3MzUwMDAgKzAwMDAiLCJtZXJnZV9yZXF1ZXN0X21ldHJpY3NfaWQiOiI4ODk2OTMwMjI0In0",
+        "fullPath": "gitlab-org/cli"
+      }
+    },
+    "response": {
+      "body": {
+        "data": {
+          "project": {
+            "mergeRequests": {
+              "nodes": [
+                {
+                  "assignees": {
+                    "nodes": [
+                      {
+                        "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                        "id": "gid://gitlab/User/939514",
+                        "name": "Test User 1",
+                        "state": "active",
+                        "username": "user-1",
+                        "webUrl": "https://gitlab.example.com/user-1"
+                      }
+                    ],
+                    "pageInfo": {
+                      "hasNextPage": false
+                    }
+                  },
+                  "author": {
+                    "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                    "id": "gid://gitlab/User/939514",
+                    "name": "Test User 1",
+                    "state": "active",
+                    "username": "user-1",
+                    "webUrl": "https://gitlab.example.com/user-1"
+                  },
+                  "closedAt": null,
+                  "conflicts": false,
+                  "createdAt": "2026-11-02T16:29:53Z",
+                  "detailedMergeStatus": "NOT_OPEN",
+                  "diffHeadSha": "6052d0c36efd337071405752f4dcaf78ab478e04",
+                  "diffRefs": {
+                    "baseSha": "e960d4616189c64d764d8ec8bab108b15c668e14",
+                    "headSha": "6052d0c36efd337071405752f4dcaf78ab478e04",
+                    "startSha": "e960d4616189c64d764d8ec8bab108b15c668e14"
+                  },
+                  "draft": false,
+                  "forceRemoveSourceBranch": true,
+                  "id": "gid://gitlab/MergeRequest/560277293",
+                  "iid": "4292",
+                  "labels": {
+                    "nodes": [
+                      {
+                        "color": "#a8d695",
+                        "description": "Issues that have been scheduled for an upcoming release and are actively being worked on by our community",
+                        "id": "gid://gitlab/GroupLabel/2091545",
+                        "textColor": "#1F1E24",
+                        "title": "Community contribution"
+                      },
+                      {
+                        "color": "#D10069",
+                        "description": "Issues that require backend work",
+                        "id": "gid://gitlab/GroupLabel/2492649",
+                        "textColor": "#FFFFFF",
+                        "title": "backend"
+                      },
+                      {
+                        "color": "#6699cc",
+                        "description": "Issues related to the GitLab CLI category: https://gitlab.example.com/direction/create/gitlab_cli/",
+                        "id": "gid://gitlab/GroupLabel/15126283",
+                        "textColor": "#FFFFFF",
+                        "title": "category:gitlab cli"
+                      },
+                      {
+                        "color": "#e44d2a",
+                        "description": "Stage level label within AI section",
+                        "id": "gid://gitlab/GroupLabel/51686650",
+                        "textColor": "#FFFFFF",
+                        "title": "devops::ai clients"
+                      },
+                      {
+                        "color": "#D10069",
+                        "description": "Epics, issues, and merge requests related to product documentation.",
+                        "id": "gid://gitlab/GroupLabel/2278655",
+                        "textColor": "#FFFFFF",
+                        "title": "documentation"
+                      },
+                      {
+                        "color": "#f0ad4e",
+                        "description": "Issues or MRs related to the first MVC that gives users a foundation of new capabilities that were previously unavailable. Read more at https://gitlab.example.com/handbook/product/groups/product-analysis/engineering/metrics/#work-type-classification",
+                        "id": "gid://gitlab/GroupLabel/15119512",
+                        "textColor": "#1F1E24",
+                        "title": "feature::addition"
+                      },
+                      {
+                        "color": "#a8d695",
+                        "description": "AI group within the AI Clients stage.",
+                        "id": "gid://gitlab/GroupLabel/51686741",
+                        "textColor": "#1F1E24",
+                        "title": "group::developer clients"
+                      },
+                      {
+                        "color": "#6699cc",
+                        "description": "Used to highlight merge requests linked to one or more issues. For easily determining hackathon point calculations. Automatically applied by https://gitlab.com/gitlab-org/community-relations/contributor-success/toolbox",
+                        "id": "gid://gitlab/GroupLabel/29978659",
+                        "textColor": "#FFFFFF",
+                        "title": "linked-issue"
+                      },
+                      {
+                        "color": "#f0ad4e",
+                        "description": "",
+                        "id": "gid://gitlab/GroupLabel/42263609",
+                        "textColor": "#1F1E24",
+                        "title": "section::ai"
+                      },
+                      {
+                        "color": "#228B22",
+                        "description": "The Technical Writing effort for this has been identified, and no additional reminders are required from the bot.",
+                        "id": "gid://gitlab/GroupLabel/18798869",
+                        "textColor": "#FFFFFF",
+                        "title": "tw::triaged"
+                      },
+                      {
+                        "color": "#009966",
+                        "description": "Any issue/MR that contains work to support the implementation of a feature and/or results in an improvement in the user experience. Read more at https://gitlab.example.com/handbook/product/groups/product-analysis/engineering/metrics/#work-type-classification",
+                        "id": "gid://gitlab/GroupLabel/10230929",
+                        "textColor": "#FFFFFF",
+                        "title": "type::feature"
+                      },
+                      {
+                        "color": "#428BCA",
+                        "description": "Merge requests which are ready to be reviewed and can be reviewed by any team-member with sufficient knowledge in the given area. For reviewing the merge request just assign to yourself and remove this label.",
+                        "id": "gid://gitlab/GroupLabel/7442317",
+                        "textColor": "#FFFFFF",
+                        "title": "workflow::ready for review"
+                      }
+                    ],
+                    "pageInfo": {
+                      "hasNextPage": false
+                    }
+                  },
+                  "mergeStatusEnum": "CAN_BE_MERGED",
+                  "mergedAt": "2026-11-06T03:22:15Z",
+                  "milestone": null,
+                  "reference": "!4292",
+                  "referenceFull": "gitlab-org/cli!4292",
+                  "reviewers": {
+                    "nodes": [
+                      {
+                        "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                        "id": "gid://gitlab/User/3457201",
+                        "name": "Test User 2",
+                        "state": "active",
+                        "username": "user-2",
+                        "webUrl": "https://gitlab.example.com/user-2"
+                      },
+                      {
+                        "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                        "id": "gid://gitlab/User/3714742",
+                        "name": "Test User 3",
+                        "state": "active",
+                        "username": "user-3",
+                        "webUrl": "https://gitlab.example.com/user-3"
+                      },
+                      {
+                        "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                        "id": "gid://gitlab/User/11809982",
+                        "name": "Test User 4",
+                        "state": "active",
+                        "username": "user-4",
+                        "webUrl": "https://gitlab.example.com/user-4"
+                      },
+                      {
+                        "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                        "id": "gid://gitlab/User/21826781",
+                        "name": "Test User 5",
+                        "state": "active",
+                        "username": "user-5",
+                        "webUrl": "https://gitlab.example.com/user-5"
+                      }
+                    ],
+                    "pageInfo": {
+                      "hasNextPage": false
+                    }
+                  },
+                  "shouldRemoveSourceBranch": true,
+                  "sourceBranch": "8279-service-account-list-get",
+                  "sourceProjectId": 45049979,
+                  "squash": true,
+                  "state": "merged",
+                  "targetBranch": "main",
+                  "targetProjectId": 34675721,
+                  "title": "feat(service-account): Add the list and get commands",
+                  "updatedAt": "2026-11-06T03:22:15Z",
+                  "userNotesCount": 46,
+                  "webUrl": "https://gitlab.com/gitlab-org/cli/-/merge_requests/4292"
+                },
+                {
+                  "assignees": {
+                    "nodes": [
+                      {
+                        "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                        "id": "gid://gitlab/User/11809982",
+                        "name": "Test User 4",
+                        "state": "active",
+                        "username": "user-4",
+                        "webUrl": "https://gitlab.example.com/user-4"
+                      }
+                    ],
+                    "pageInfo": {
+                      "hasNextPage": false
+                    }
+                  },
+                  "author": {
+                    "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                    "id": "gid://gitlab/User/11809982",
+                    "name": "Test User 4",
+                    "state": "active",
+                    "username": "user-4",
+                    "webUrl": "https://gitlab.example.com/user-4"
+                  },
+                  "closedAt": null,
+                  "conflicts": false,
+                  "createdAt": "2026-11-06T01:59:09Z",
+                  "detailedMergeStatus": "NOT_OPEN",
+                  "diffHeadSha": "0b85b1ab3883569b446d642f29468d03ecb3ffc4",
+                  "diffRefs": {
+                    "baseSha": "2d76007714dfaeeec0ea7190bb3c3f5f4de3b6a2",
+                    "headSha": "0b85b1ab3883569b446d642f29468d03ecb3ffc4",
+                    "startSha": "2d76007714dfaeeec0ea7190bb3c3f5f4de3b6a2"
+                  },
+                  "draft": false,
+                  "forceRemoveSourceBranch": true,
+                  "id": "gid://gitlab/MergeRequest/562993976",
+                  "iid": "4335",
+                  "labels": {
+                    "nodes": [
+                      {
+                        "color": "#dc143c",
+                        "description": "Improves how AI coding agents and other non-interactive callers use glab: structured output, no interactive prompts, stable IDs, small outputs, and clear errors.",
+                        "id": "gid://gitlab/ProjectLabel/54300820",
+                        "textColor": "#FFFFFF",
+                        "title": "agent-experience"
+                      },
+                      {
+                        "color": "#ffecdb",
+                        "description": "Set when the AI quick-win judge has scored this issue, so it is not judged again",
+                        "id": "gid://gitlab/GroupLabel/52843142",
+                        "textColor": "#1F1E24",
+                        "title": "automation:quick-win-judged"
+                      },
+                      {
+                        "color": "#6699cc",
+                        "description": "Issues related to the GitLab CLI category: https://gitlab.example.com/direction/create/gitlab_cli/",
+                        "id": "gid://gitlab/GroupLabel/15126283",
+                        "textColor": "#FFFFFF",
+                        "title": "category:gitlab cli"
+                      },
+                      {
+                        "color": "#e44d2a",
+                        "description": "Stage level label within AI section",
+                        "id": "gid://gitlab/GroupLabel/51686650",
+                        "textColor": "#FFFFFF",
+                        "title": "devops::ai clients"
+                      },
+                      {
+                        "color": "#f0ad4e",
+                        "description": "User-facing improvements that refine the initial MVC to make it more useful and usable. Read more at https://gitlab.example.com/handbook/product/groups/product-analysis/engineering/metrics/#work-type-classification",
+                        "id": "gid://gitlab/GroupLabel/2975007",
+                        "textColor": "#1F1E24",
+                        "title": "feature::enhancement"
+                      },
+                      {
+                        "color": "#a8d695",
+                        "description": "AI group within the AI Clients stage.",
+                        "id": "gid://gitlab/GroupLabel/51686741",
+                        "textColor": "#1F1E24",
+                        "title": "group::developer clients"
+                      },
+                      {
+                        "color": "#f0ad4e",
+                        "description": "",
+                        "id": "gid://gitlab/GroupLabel/42263609",
+                        "textColor": "#1F1E24",
+                        "title": "section::ai"
+                      },
+                      {
+                        "color": "#009966",
+                        "description": "Any issue/MR that contains work to support the implementation of a feature and/or results in an improvement in the user experience. Read more at https://gitlab.example.com/handbook/product/groups/product-analysis/engineering/metrics/#work-type-classification",
+                        "id": "gid://gitlab/GroupLabel/10230929",
+                        "textColor": "#FFFFFF",
+                        "title": "type::feature"
+                      },
+                      {
+                        "color": "#428bca",
+                        "description": "Applied after all MRs have merged and the issue has been verified if necessary https://gitlab.example.com/handbook/product-development/how-we-work/product-development-flow/#build-phase-3-launch",
+                        "id": "gid://gitlab/GroupLabel/28669354",
+                        "textColor": "#FFFFFF",
+                        "title": "workflow::complete"
+                      }
+                    ],
+                    "pageInfo": {
+                      "hasNextPage": false
+                    }
+                  },
+                  "mergeStatusEnum": "CAN_BE_MERGED",
+                  "mergedAt": "2026-11-06T02:14:57Z",
+                  "milestone": null,
+                  "reference": "!4335",
+                  "referenceFull": "gitlab-org/cli!4335",
+                  "reviewers": {
+                    "nodes": [
+                      {
+                        "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                        "id": "gid://gitlab/User/1786152",
+                        "name": "Test User 6",
+                        "state": "active",
+                        "username": "user-6",
+                        "webUrl": "https://gitlab.example.com/user-6"
+                      },
+                      {
+                        "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                        "id": "gid://gitlab/User/21826781",
+                        "name": "Test User 5",
+                        "state": "active",
+                        "username": "user-5",
+                        "webUrl": "https://gitlab.example.com/user-5"
+                      }
+                    ],
+                    "pageInfo": {
+                      "hasNextPage": false
+                    }
+                  },
+                  "shouldRemoveSourceBranch": true,
+                  "sourceBranch": "jmc-stack-skill-reorder-infer-followup",
+                  "sourceProjectId": 34675721,
+                  "squash": true,
+                  "state": "merged",
+                  "targetBranch": "main",
+                  "targetProjectId": 34675721,
+                  "title": "docs(skills): expand glab-stack guidance for non-interactive reorder and infer",
+                  "updatedAt": "2026-11-06T02:14:57Z",
+                  "userNotesCount": 2,
+                  "webUrl": "https://gitlab.com/gitlab-org/cli/-/merge_requests/4335"
+                }
+              ],
+              "pageInfo": {
+                "endCursor": "eyJtZXJnZV9yZXF1ZXN0X21ldHJpY3NfbWVyZ2VkX2F0IjoiMjAyNi0xMS0wNiAwMjoxNDo1Ny40MzkzNjEwMDAgKzAwMDAiLCJtZXJnZV9yZXF1ZXN0X21ldHJpY3NfaWQiOiI4OTQ5NTQ4MDU0In0",
+                "hasNextPage": true
+              }
+            }
+          }
+        }
+      },
+      "headers": {},
+      "status": 200
+    }
+  }
+]

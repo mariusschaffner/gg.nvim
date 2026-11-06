@@ -1,0 +1,166 @@
+{
+  "meta": {
+    "sanitized": true,
+    "source": "gitlab.com public (gitlab-org/cli), 2026-11-06"
+  },
+  "request": {
+    "operation": "MergeRequestGet",
+    "variables": {
+      "fullPath": "gitlab-org/cli",
+      "iid": "4002"
+    }
+  },
+  "response": {
+    "body": {
+      "data": {
+        "project": {
+          "mergeRequest": {
+            "assignees": {
+              "nodes": [
+                {
+                  "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                  "id": "gid://gitlab/User/42048126",
+                  "name": "Test User 1",
+                  "state": "active",
+                  "username": "user-1",
+                  "webUrl": "https://gitlab.example.com/user-1"
+                }
+              ],
+              "pageInfo": {
+                "hasNextPage": false
+              }
+            },
+            "author": {
+              "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+              "id": "gid://gitlab/User/42048126",
+              "name": "Test User 1",
+              "state": "active",
+              "username": "user-1",
+              "webUrl": "https://gitlab.example.com/user-1"
+            },
+            "closedAt": null,
+            "conflicts": false,
+            "createdAt": "2026-10-06T09:03:04Z",
+            "description": "## What does this MR do and why?\n\n`LocalConfigDir` resolved through `git rev-parse --git-dir`, which in a linked worktree is `.git/worktrees/<name>`. Local config set in the main checkout was therefore invisible in every worktree, and each new worktree started empty and silently fell back to global.\n\nThis resolves through `git rev-parse --git-common-dir` instead, so one repository has one local config. Git shares `.git/config` the same way and makes per-worktree config opt-in, and these keys describe the repository rather than the checkout. Stacks were moved to the common dir for the same reason in `0a119c022`.\n\n## References\n\nCloses https://gitlab.com/gitlab-org/cli/-/issues/8568\n\nPrior art in the same repository: https://gitlab.com/gitlab-org/cli/-/issues/8355 moved stacks to the common dir. The per-worktree location came from https://gitlab.com/gitlab-org/cli/-/issues/7872, which this keeps available as an existing-file override rather than the default.\n\n## Differences\n\n**Before:** in a linked worktree, `glab config get` read `.git/worktrees/<name>/glab-cli/config.yml` and saw none of the repository's config.\n\n**After:** it reads `.git/glab-cli/config.yml`, the same file the main checkout writes.\n\nA worktree that already carries its own file keeps using it, so a config written before this change still applies where it was written. A normal checkout is unaffected, because both flags resolve to the same directory, and a submodule keeps its own under `.git/modules/<name>`.\n\n## Two details worth a reviewer's eye\n\n`git` answers `--git-common-dir` with a relative, forward-slash path where it answers `--git-dir` with an absolute one, when run from a subdirectory:\n\n```\n$ cd a/b\n$ git rev-parse --git-dir\nC:/.../repo/.git\n$ git rev-parse --git-common-dir\n../../.git\n```\n\nThe old code always went through `filepath.Rel`, which normalised separators. The relative branch now cleans the result to the platform separator, otherwise `Test_LocalConfigDir` fails on Windows with `../../.git` against `..\\..\\.git`.\n\n`CheckPathExists` returns `info.IsDir()`, so it reports only directories. The backwards-compatible lookup uses `CheckFileExists` instead. My first attempt used the wrong one and the existing-file override silently never fired.\n\n## How to set up and validate locally\n\nEnd to end, which is the reproduction from the issue:\n\n```shell\ngo build -o /tmp/glab ./cmd/glab\nmkdir -p /tmp/repro/main && cd /tmp/repro/main\ngit init -q . && git commit -q --allow-empty -m init\n/tmp/glab config set editor main-only-editor\ngit worktree add -q --detach ../wt && cd ../wt\n/tmp/glab config get editor\n```\n\n```markdown\n## MR acceptance checklist\n\n- [x] Tests added, verified to fail without the fix\n- [x] Reproduced end to end against binaries built from this branch and from `main`\n- [x] Existing per-worktree files keep working\n- [x] Packages that share `GitDir` pass unchanged\n- [x] Conforms to the code review guidelines\n```",
+            "detailedMergeStatus": "NOT_OPEN",
+            "diffHeadSha": "fc1a118b066a56deac5b26a27e336932a0356c0f",
+            "diffRefs": {
+              "baseSha": "1ab692e5cfc809947e1852c77e0692e09b2eacde",
+              "headSha": "fc1a118b066a56deac5b26a27e336932a0356c0f",
+              "startSha": "1ab692e5cfc809947e1852c77e0692e09b2eacde"
+            },
+            "draft": false,
+            "forceRemoveSourceBranch": true,
+            "id": "gid://gitlab/MergeRequest/543613929",
+            "iid": "4002",
+            "labels": {
+              "nodes": [
+                {
+                  "color": "#a8d695",
+                  "description": "Issues that have been scheduled for an upcoming release and are actively being worked on by our community",
+                  "id": "gid://gitlab/GroupLabel/2091545",
+                  "textColor": "#1F1E24",
+                  "title": "Community contribution"
+                },
+                {
+                  "color": "#428BCA",
+                  "description": "Community contribution during GitLab Hackathon events",
+                  "id": "gid://gitlab/GroupLabel/8674943",
+                  "textColor": "#FFFFFF",
+                  "title": "Hackathon"
+                },
+                {
+                  "color": "#e44d2a",
+                  "description": "Stage level label within AI section",
+                  "id": "gid://gitlab/GroupLabel/51686650",
+                  "textColor": "#FFFFFF",
+                  "title": "devops::ai clients"
+                },
+                {
+                  "color": "#a8d695",
+                  "description": "AI group within the AI Clients stage.",
+                  "id": "gid://gitlab/GroupLabel/51686741",
+                  "textColor": "#1F1E24",
+                  "title": "group::developer clients"
+                },
+                {
+                  "color": "#6699cc",
+                  "description": "Used to highlight merge requests linked to one or more issues. For easily determining hackathon point calculations. Automatically applied by https://gitlab.com/gitlab-org/community-relations/contributor-success/toolbox",
+                  "id": "gid://gitlab/GroupLabel/29978659",
+                  "textColor": "#FFFFFF",
+                  "title": "linked-issue"
+                },
+                {
+                  "color": "#f0ad4e",
+                  "description": "",
+                  "id": "gid://gitlab/GroupLabel/42263609",
+                  "textColor": "#1F1E24",
+                  "title": "section::ai"
+                },
+                {
+                  "color": "#cc0000",
+                  "description": "Issues that report undesirable or incorrect behavior. See https://gitlab.example.com/handbook/product/groups/product-analysis/engineering/metrics/#work-type-classification",
+                  "id": "gid://gitlab/GroupLabel/2278648",
+                  "textColor": "#FFFFFF",
+                  "title": "type::bug"
+                },
+                {
+                  "color": "#428BCA",
+                  "description": "Merge requests which are ready to be reviewed and can be reviewed by any team-member with sufficient knowledge in the given area. For reviewing the merge request just assign to yourself and remove this label.",
+                  "id": "gid://gitlab/GroupLabel/7442317",
+                  "textColor": "#FFFFFF",
+                  "title": "workflow::ready for review"
+                }
+              ],
+              "pageInfo": {
+                "hasNextPage": false
+              }
+            },
+            "mergeStatusEnum": "CAN_BE_MERGED",
+            "mergedAt": "2026-11-06T05:30:42Z",
+            "milestone": null,
+            "reference": "!4002",
+            "referenceFull": "gitlab-org/cli!4002",
+            "reviewers": {
+              "nodes": [
+                {
+                  "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                  "id": "gid://gitlab/User/21826781",
+                  "name": "Test User 2",
+                  "state": "active",
+                  "username": "user-2",
+                  "webUrl": "https://gitlab.example.com/user-2"
+                },
+                {
+                  "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                  "id": "gid://gitlab/User/11809982",
+                  "name": "Test User 3",
+                  "state": "active",
+                  "username": "user-3",
+                  "webUrl": "https://gitlab.example.com/user-3"
+                }
+              ],
+              "pageInfo": {
+                "hasNextPage": false
+              }
+            },
+            "shouldRemoveSourceBranch": true,
+            "sourceBranch": "8568-share-local-config-across-worktrees",
+            "sourceProjectId": 45049979,
+            "squash": true,
+            "state": "merged",
+            "subscribed": false,
+            "targetBranch": "main",
+            "targetProjectId": 34675721,
+            "title": "fix(config): share local config across git worktrees",
+            "updatedAt": "2026-11-06T05:30:42Z",
+            "userNotesCount": 15,
+            "webUrl": "https://gitlab.com/gitlab-org/cli/-/merge_requests/4002"
+          }
+        }
+      }
+    },
+    "headers": {},
+    "status": 200
+  }
+}

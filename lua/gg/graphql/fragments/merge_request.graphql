@@ -1,0 +1,65 @@
+#import "user"
+#import "label"
+#import "milestone_ref"
+# Nested connections request pageInfo so truncation is reported, never silent.
+fragment MergeRequestFields on MergeRequest {
+  id
+  iid
+  title
+  state
+  draft
+  sourceBranch
+  targetBranch
+  sourceProjectId
+  targetProjectId
+  diffHeadSha
+  diffRefs {
+    baseSha
+    headSha
+    startSha
+  }
+  mergeStatusEnum
+  detailedMergeStatus
+  conflicts
+  userNotesCount
+  shouldRemoveSourceBranch
+  forceRemoveSourceBranch
+  squash
+  webUrl
+  reference
+  referenceFull: reference(full: true)
+  createdAt
+  updatedAt
+  mergedAt
+  closedAt
+  author {
+    ...UserFields
+  }
+  assignees(first: 20) {
+    nodes {
+      ...UserFields
+    }
+    pageInfo {
+      hasNextPage
+    }
+  }
+  reviewers(first: 20) {
+    nodes {
+      ...UserFields
+    }
+    pageInfo {
+      hasNextPage
+    }
+  }
+  labels(first: 50) {
+    nodes {
+      ...LabelFields
+    }
+    pageInfo {
+      hasNextPage
+    }
+  }
+  milestone {
+    ...MilestoneRefFields
+  }
+}

@@ -1,0 +1,80 @@
+#import "merge_request"
+# Merge requests of the current user: exactly one of the three scopes is included.
+query MergeRequestsListMine(
+  $first: Int
+  $after: String
+  $authored: Boolean!
+  $assigned: Boolean!
+  $reviewRequested: Boolean!
+  $state: MergeRequestState
+  $labelName: [String]
+  $milestoneTitle: String
+  $search: String
+  $sourceBranches: [String!]
+  $targetBranches: [String!]
+  $draft: Boolean
+  $sort: MergeRequestSort
+) {
+  currentUser {
+    authored: authoredMergeRequests(
+      first: $first
+      after: $after
+      state: $state
+      labelName: $labelName
+      milestoneTitle: $milestoneTitle
+      search: $search
+      sourceBranches: $sourceBranches
+      targetBranches: $targetBranches
+      draft: $draft
+      sort: $sort
+    ) @include(if: $authored) {
+      nodes {
+        ...MergeRequestFields
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+    }
+    assigned: assignedMergeRequests(
+      first: $first
+      after: $after
+      state: $state
+      labelName: $labelName
+      milestoneTitle: $milestoneTitle
+      search: $search
+      sourceBranches: $sourceBranches
+      targetBranches: $targetBranches
+      draft: $draft
+      sort: $sort
+    ) @include(if: $assigned) {
+      nodes {
+        ...MergeRequestFields
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+    }
+    reviewRequested: reviewRequestedMergeRequests(
+      first: $first
+      after: $after
+      state: $state
+      labelName: $labelName
+      milestoneTitle: $milestoneTitle
+      search: $search
+      sourceBranches: $sourceBranches
+      targetBranches: $targetBranches
+      draft: $draft
+      sort: $sort
+    ) @include(if: $reviewRequested) {
+      nodes {
+        ...MergeRequestFields
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+    }
+  }
+}

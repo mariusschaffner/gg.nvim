@@ -52,7 +52,12 @@ if not ok then
 end
 
 local fixture
-if type(data) == "table" and (data.response ~= nil or data.request ~= nil) then
+-- a fixture array (page sequences) is sanitized element by element
+local input_list = nil
+if vim.islist(data) and type(data[1]) == "table" and (data[1].response ~= nil or data[1].request ~= nil) then
+  input_list = data
+  fixture = data[1]
+elseif type(data) == "table" and (data.response ~= nil or data.request ~= nil) then
   fixture = data
 else
   fixture = {
@@ -70,11 +75,13 @@ else
     fixture.response.headers = vim.json.decode(opts.headers)
   end
 end
-fixture.meta = fixture.meta or {}
-if opts.source then
-  fixture.meta.source = opts.source
+for _, fx in ipairs(input_list or { fixture }) do
+  fx.meta = fx.meta or {}
+  if opts.source then
+    fx.meta.source = opts.source
+  end
+  fx.meta.sanitized = true
 end
-fixture.meta.sanitized = true
 
 local users, emails, names = {}, {}, {}
 local n_users, n_emails = 0, 0
@@ -187,9 +194,13 @@ local function walk(v)
   return out
 end
 
-collect(fixture.response and fixture.response.body)
-if fixture.response and fixture.response.body ~= nil then
-  fixture.response.body = walk(fixture.response.body)
+for _, fx in ipairs(input_list or { fixture }) do
+  collect(fx.response and fx.response.body)
+end
+for _, fx in ipairs(input_list or { fixture }) do
+  if fx.response and fx.response.body ~= nil then
+    fx.response.body = walk(fx.response.body)
+  end
 end
 
 -- Stable, readable JSON: 2-space indent, sorted object keys.
@@ -225,8 +236,8 @@ local function pretty(v, indent)
   return "{\n" .. table.concat(parts, ",\n") .. "\n" .. indent .. "}"
 end
 
-local document = fixture
-if opts.append == "1" then
+local document = input_list or fixture
+if opts.append == "1" and not input_list then
   local ef = io.open(output, "rb")
   if ef then
     local existing = vim.json.decode(ef:read("*a"))

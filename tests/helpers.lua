@@ -51,4 +51,42 @@ function H.module_name(rel)
   return mod
 end
 
+--- Block (tests only) until `task` settles; returns its result and error.
+--- Raises when it does not settle within `ms`.
+---@param task gg.Task
+---@param ms? integer default 2000
+---@return any result
+---@return gg.Error|nil err
+function H.await(task, ms)
+  ms = ms or 2000
+  local done, res, err = false, nil, nil
+  task:on_done(function(r, e)
+    done, res, err = true, r, e
+  end)
+  if not vim.wait(ms, function()
+    return done
+  end, 2) then
+    error(("task did not settle within %d ms"):format(ms), 2)
+  end
+  return res, err
+end
+
+--- Let scheduled callbacks run for `ms` milliseconds (tests only).
+---@param ms? integer default 20
+function H.flush(ms)
+  vim.wait(ms or 20, function()
+    return false
+  end, 2)
+end
+
+--- Wait (tests only) until `cond()` is true; raises after `ms`.
+---@param cond fun(): boolean
+---@param ms? integer default 2000
+function H.wait_for(cond, ms)
+  ms = ms or 2000
+  if not vim.wait(ms, cond, 2) then
+    error(("condition not met within %d ms"):format(ms), 2)
+  end
+end
+
 return H

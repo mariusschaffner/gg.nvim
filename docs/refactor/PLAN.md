@@ -90,7 +90,7 @@ Each entry gives the problem in INVENTORY.md (or a conflict with CLAUDE.md), the
 
 ## 2. core
 
-- [ ] **2.1 core/task: async tasks with cancellation** — `feat(core)`
+- [x] **2.1 core/task: async tasks with cancellation** — `feat(core)`
   - Files: `lua/gg/core/task.lua`, `tests/helpers.lua` (`await(task, ms)` built on `vim.wait`, for tests only), `tests/unit/core/test_task.lua`.
   - API:
     - `task.new(producer(resolve, reject, on_cancel))`
@@ -106,6 +106,7 @@ Each entry gives the problem in INVENTORY.md (or a conflict with CLAUDE.md), the
     - `all` keeps result order, fails on the first error and cancels the rest.
     - The external-cancel case follows open question 5.
   - Test: `test_task.lua`, one case per criterion.
+  - Note (2026-11-06): task needs the error constructor, so this item also creates a minimal `core/errors.lua` (`new`, `is`, `cancelled`, `is_cancelled`, `wrap`). Item 2.2 completes it.
 - [ ] **2.2 core/errors and redaction** — `feat(core)`
   - Files: `lua/gg/core/errors.lua`, `lua/gg/core/redact.lua`, `tests/unit/core/test_errors.lua`, `test_redact.lua`.
   - Acceptance:

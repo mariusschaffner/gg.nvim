@@ -1,0 +1,80 @@
+[
+  {
+    "meta": { "source": "docs.gitlab.com example (api/graphql: currentUser.todos), sanitized" },
+    "request": { "operation": "TodosList", "variables": { "first": 2, "state": [ "pending" ] } },
+    "response": {
+      "body": {
+        "data": {
+          "currentUser": {
+            "todos": {
+              "nodes": [
+                {
+                  "id": "gid://gitlab/Todo/102",
+                  "action": "review_requested",
+                  "body": "Add pagination to the issue list",
+                  "state": "pending",
+                  "targetType": "MERGEREQUEST",
+                  "targetUrl": "https://gitlab.example.com/my-group/my-project/-/merge_requests/12",
+                  "createdAt": "2026-11-05T10:00:00Z",
+                  "author": { "id": "gid://gitlab/User/2", "username": "user-2", "name": "Test User 2", "avatarUrl": null, "webUrl": "https://gitlab.example.com/user-2", "state": "active" },
+                  "project": { "fullPath": "my-group/my-project" },
+                  "group": null,
+                  "target": { "name": "Add pagination to the issue list", "webUrl": "https://gitlab.example.com/my-group/my-project/-/merge_requests/12", "iid": "12", "title": "Add pagination to the issue list" }
+                },
+                {
+                  "id": "gid://gitlab/Todo/101",
+                  "action": "mentioned",
+                  "body": "@user-1 can you check this?",
+                  "state": "pending",
+                  "targetType": "ISSUE",
+                  "targetUrl": "https://gitlab.example.com/my-group/my-project/-/issues/14#note_99",
+                  "createdAt": "2026-11-04T10:00:00Z",
+                  "author": { "id": "gid://gitlab/User/3", "username": "user-3", "name": "Test User 3", "avatarUrl": null, "webUrl": "https://gitlab.example.com/user-3", "state": "active" },
+                  "project": { "fullPath": "my-group/my-project" },
+                  "group": null,
+                  "target": { "name": "Issues with auth", "webUrl": "https://gitlab.example.com/my-group/my-project/-/issues/14", "iid": "14", "title": "Issues with auth" }
+                }
+              ],
+              "pageInfo": { "hasNextPage": true, "endCursor": "Mg" }
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com example (api/graphql: currentUser.todos), sanitized" },
+    "request": { "operation": "TodosList", "variables": { "after": "Mg" } },
+    "response": {
+      "body": {
+        "data": {
+          "currentUser": {
+            "todos": {
+              "nodes": [
+                {
+                  "id": "gid://gitlab/Todo/100",
+                  "action": "build_failed",
+                  "body": "Pipeline failed",
+                  "state": "pending",
+                  "targetType": "COMMIT",
+                  "targetUrl": "https://gitlab.example.com/my-group/my-project/-/commit/33e2ee85",
+                  "createdAt": "2026-11-03T10:00:00Z",
+                  "author": { "id": "gid://gitlab/User/1", "username": "user-1", "name": "Test User 1", "avatarUrl": null, "webUrl": "https://gitlab.example.com/user-1", "state": "active" },
+                  "project": { "fullPath": "my-group/my-project" },
+                  "group": null,
+                  "target": { "name": "33e2ee85", "webUrl": "https://gitlab.example.com/my-group/my-project/-/commit/33e2ee85" }
+                }
+              ],
+              "pageInfo": { "hasNextPage": false, "endCursor": "Mw" }
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "meta": { "source": "gitlab.com public, 2026-11-06: currentUser without a token is null" },
+    "request": { "operation": "TodosList", "variables": { "state": [ "done" ] } },
+    "response": { "body": { "data": { "currentUser": null } } }
+  }
+]

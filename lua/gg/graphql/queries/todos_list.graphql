@@ -1,0 +1,48 @@
+#import "user"
+query TodosList(
+  $first: Int
+  $after: String
+  $state: [TodoStateEnum!]
+  $type: [TodoTargetEnum!]
+  $action: [TodoActionEnum!]
+  $sort: TodoSort
+) {
+  currentUser {
+    todos(first: $first, after: $after, state: $state, type: $type, action: $action, sort: $sort) {
+      nodes {
+        id
+        action
+        body
+        state
+        targetType
+        targetUrl
+        createdAt
+        author {
+          ...UserFields
+        }
+        project {
+          fullPath
+        }
+        group {
+          fullPath
+        }
+        target {
+          name
+          webUrl
+          ... on Issue {
+            iid
+            title
+          }
+          ... on MergeRequest {
+            iid
+            title
+          }
+        }
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+    }
+  }
+}

@@ -345,7 +345,7 @@ Every item follows the same pattern:
   - `drafts`/`_all`, `create_draft` (position, `in_reply_to_discussion_id`), `edit_draft`, `delete_draft` → `gg.DraftNote`.
   - `discard_drafts`: collect with a limit, then delete one by one. It stops at the first error, and `err.details.deleted` says how many were deleted.
   - `publish({note?, reviewer_state?})` (`bulk_publish`; the parameters are checked against the docs) and `approve({sha?})`.
-- [ ] **6.12 todos** — `feat(todos)`
+- [x] **6.12 todos** — `feat(todos)`
   - `list`/`_all` (GraphQL `currentUser.todos`, state pending by default) → `gg.Todo {id, action, target_type, target {iid?, title?, web_url?}, body, state, project?, author, created_at}`.
   - `mark_done({id})`.
 - [ ] **6.13 pipelines** — `feat(pipelines)`

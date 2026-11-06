@@ -1,0 +1,25 @@
+[
+  {
+    "meta": { "source": "docs.gitlab.com example (api/todos: Mark a to-do item as done), sanitized" },
+    "request": { "method": "POST", "path": "/api/v4/todos/102/mark_as_done" },
+    "response": {
+      "body": {
+        "id": 102,
+        "project": { "id": 1, "name": "My Project", "name_with_namespace": "My Group / My Project", "path": "my-project", "path_with_namespace": "my-group/my-project" },
+        "author": { "id": 2, "username": "user-2", "name": "Test User 2", "state": "active", "avatar_url": null, "web_url": "https://gitlab.example.com/user-2" },
+        "action_name": "review_requested",
+        "target_type": "MergeRequest",
+        "target": { "id": 34, "iid": 12, "project_id": 1, "title": "Add pagination to the issue list", "state": "opened", "web_url": "https://gitlab.example.com/my-group/my-project/-/merge_requests/12" },
+        "target_url": "https://gitlab.example.com/my-group/my-project/-/merge_requests/12",
+        "body": "Add pagination to the issue list",
+        "state": "done",
+        "created_at": "2026-11-05T10:00:00.000Z"
+      }
+    }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com example (api/rest: 404 response shape)" },
+    "request": { "method": "POST", "path": "/api/v4/todos/999/mark_as_done" },
+    "response": { "status": 404, "body": { "message": "404 Not Found" } }
+  }
+]

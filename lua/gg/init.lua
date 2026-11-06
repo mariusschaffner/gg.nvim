@@ -7,5 +7,6 @@ local M = {}
 M.issues = require("gg.resources.issues")
 M.labels = require("gg.resources.labels")
 M.users = require("gg.resources.users")
+M.work_items = require("gg.resources.work_items")
 
 return M

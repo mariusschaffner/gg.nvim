@@ -1,0 +1,16 @@
+mutation WorkItemUpdateDates($id: WorkItemID!, $startDate: Date, $dueDate: Date) {
+  workItemUpdate(input: { id: $id, startAndDueDateWidget: { startDate: $startDate, dueDate: $dueDate } }) {
+    errors
+    workItem {
+      id
+      iid
+      widgets(onlyTypes: [START_AND_DUE_DATE]) {
+        type
+        ... on WorkItemWidgetStartAndDueDate {
+          startDate
+          dueDate
+        }
+      }
+    }
+  }
+}

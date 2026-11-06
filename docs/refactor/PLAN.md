@@ -296,7 +296,7 @@ Every item follows the same pattern:
   - `current` (GraphQL `currentUser`).
   - `project_members`/`_all` (GraphQL `project.projectMembers(search)`, direct and inherited; default 100) → `gg.User`.
   - Replaces the two `/user` copies and the three members copies (§5.4 #3, #4).
-- [ ] **6.4 work_items (issue dates)** — `feat(work_items)`
+- [x] **6.4 work_items (issue dates)** — `feat(work_items)`
   - `dates({host, project, iid})` → `gg.WorkItemDates {work_item_id, start_date?, due_date?}` (GraphQL `namespace.workItem` widgets).
   - `update_dates({…, start_date?, due_date?})`: `false` clears a date; the work-item ID is looked up when it isn't passed; uses the `workItemUpdate` mutation.
   - Pagination: not applicable (stated in the spec).

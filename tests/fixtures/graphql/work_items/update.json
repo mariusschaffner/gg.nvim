@@ -1,0 +1,49 @@
+[
+  {
+    "meta": { "source": "docs.gitlab.com example (api/graphql: namespace.workItem with the START_AND_DUE_DATE widget)" },
+    "request": { "operation": "WorkItemDates", "variables": { "fullPath": "my-group/my-project", "iid": "14" } },
+    "response": {
+      "body": {
+        "data": {
+          "namespace": {
+            "workItem": {
+              "id": "gid://gitlab/WorkItem/85",
+              "iid": "14",
+              "widgets": [ { "type": "START_AND_DUE_DATE", "startDate": "2026-11-02", "dueDate": "2026-11-20" } ]
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com example (api/graphql: workItemUpdate payload)" },
+    "request": { "operation": "WorkItemUpdateDates", "variables": { "id": "gid://gitlab/WorkItem/85", "dueDate": "2026-12-01" } },
+    "response": {
+      "body": {
+        "data": {
+          "workItemUpdate": {
+            "errors": [],
+            "workItem": {
+              "id": "gid://gitlab/WorkItem/85",
+              "iid": "14",
+              "widgets": [ { "type": "START_AND_DUE_DATE", "startDate": null, "dueDate": "2026-12-01" } ]
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com example (api/graphql: mutation payload errors)" },
+    "request": { "operation": "WorkItemUpdateDates", "variables": { "id": "gid://gitlab/WorkItem/86" } },
+    "response": {
+      "body": { "data": { "workItemUpdate": { "errors": [ "Start date must be before the due date" ], "workItem": null } } }
+    }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com example (api/graphql: null for missing objects)" },
+    "request": { "operation": "WorkItemDates", "variables": { "fullPath": "my-group/my-project", "iid": "404" } },
+    "response": { "body": { "data": { "namespace": { "workItem": null } } } }
+  }
+]

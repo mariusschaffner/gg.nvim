@@ -1,0 +1,34 @@
+{
+  "meta": {
+    "sanitized": true,
+    "source": "gitlab.com public (gitlab-org/cli), 2026-11-06"
+  },
+  "request": {
+    "operation": "WorkItemDates",
+    "variables": {
+      "fullPath": "gitlab-org/cli",
+      "iid": "8279"
+    }
+  },
+  "response": {
+    "body": {
+      "data": {
+        "namespace": {
+          "workItem": {
+            "id": "gid://gitlab/WorkItem/188940826",
+            "iid": "8279",
+            "widgets": [
+              {
+                "dueDate": null,
+                "startDate": null,
+                "type": "START_AND_DUE_DATE"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "headers": {},
+    "status": 200
+  }
+}

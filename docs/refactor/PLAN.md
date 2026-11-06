@@ -138,7 +138,7 @@ Each entry gives the problem in INVENTORY.md (or a conflict with CLAUDE.md), the
     - `get()` returns a deep copy. `host(name)` returns the effective settings: global settings with the host's overlaid, host names lowercased, and a derived `https://<host>` for hosts that aren't listed.
     - Tokens never appear in validation messages.
   - Test: `test_config.lua`: defaults, merging, unknown keys and wrong types, deep-copy isolation, token absent from errors.
-- [ ] **3.2 transport/http and the curl backend** — `feat(transport)`
+- [x] **3.2 transport/http and the curl backend** — `feat(transport)`
   - Files: `lua/gg/transport/http.lua` (request pipeline: URL, headers, manual redirects, decoding), `lua/gg/transport/backends/curl.lua`, `tests/unit/transport/test_curl.lua`, `test_http.lua`.
   - Acceptance:
     - curl runs through `vim.system({curl, "--config", "-", …})`. Headers, the token and the URL go in the stdin config, escaped. The body is a temp file passed with `--data-binary @file`. Headers are captured with `--dump-header <tmp>`, and the status with `-w`.

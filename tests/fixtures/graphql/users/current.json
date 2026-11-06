@@ -1,0 +1,25 @@
+[
+  {
+    "meta": { "source": "docs.gitlab.com example (api/graphql: currentUser), sanitized" },
+    "request": { "operation": "UserCurrent" },
+    "response": {
+      "body": {
+        "data": {
+          "currentUser": {
+            "id": "gid://gitlab/User/1",
+            "username": "user-1",
+            "name": "Test User 1",
+            "avatarUrl": "/uploads/-/system/user/avatar/1/avatar.png",
+            "webUrl": "https://gitlab.example.com/user-1",
+            "state": "active"
+          }
+        }
+      }
+    }
+  },
+  {
+    "meta": { "source": "gitlab.com public, 2026-11-06: currentUser without a token is null" },
+    "request": { "operation": "UserCurrent" },
+    "response": { "body": { "data": { "currentUser": null } } }
+  }
+]

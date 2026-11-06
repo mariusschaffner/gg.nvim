@@ -1,4 +1,4 @@
-fragment UserFields on UserCore {
+fragment UserFields on User {
   id
   username
   name

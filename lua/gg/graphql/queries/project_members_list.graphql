@@ -1,0 +1,27 @@
+#import "user"
+query ProjectMembersList(
+  $fullPath: ID!
+  $first: Int
+  $after: String
+  $search: String
+  $relations: [ProjectMemberRelation!]
+) {
+  project(fullPath: $fullPath) {
+    projectMembers(first: $first, after: $after, search: $search, relations: $relations) {
+      nodes {
+        id
+        accessLevel {
+          integerValue
+          stringValue
+        }
+        user {
+          ...UserFields
+        }
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+    }
+  }
+}

@@ -1,0 +1,102 @@
+[
+  {
+    "meta": {
+      "sanitized": true,
+      "source": "gitlab.com public (gitlab-org/cli), 2026-11-06"
+    },
+    "request": {
+      "operation": "ProjectMembersList",
+      "variables": {
+        "first": 2,
+        "fullPath": "gitlab-org/cli"
+      }
+    },
+    "response": {
+      "body": {
+        "data": {
+          "project": {
+            "projectMembers": {
+              "nodes": [
+                {
+                  "accessLevel": {
+                    "integerValue": 30,
+                    "stringValue": "DEVELOPER"
+                  },
+                  "id": "gid://gitlab/GroupMember/177521496",
+                  "user": {
+                    "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                    "id": "gid://gitlab/User/38360217",
+                    "name": "Test User 1",
+                    "state": "active",
+                    "username": "user-1",
+                    "webUrl": "https://gitlab.example.com/user-1"
+                  }
+                }
+              ],
+              "pageInfo": {
+                "endCursor": "eyJpZCI6IjE3NzUyMTQ5NiJ9",
+                "hasNextPage": true
+              }
+            }
+          }
+        }
+      },
+      "headers": {},
+      "status": 200
+    }
+  },
+  {
+    "meta": {
+      "sanitized": true,
+      "source": "gitlab.com public (gitlab-org/cli), 2026-11-06"
+    },
+    "request": {
+      "operation": "ProjectMembersList",
+      "variables": {
+        "after": "eyJpZCI6IjE3NzUyMTQ5NiJ9",
+        "fullPath": "gitlab-org/cli"
+      }
+    },
+    "response": {
+      "body": {
+        "data": {
+          "project": {
+            "projectMembers": {
+              "nodes": [
+                {
+                  "accessLevel": {
+                    "integerValue": 30,
+                    "stringValue": "DEVELOPER"
+                  },
+                  "id": "gid://gitlab/GroupMember/177455449",
+                  "user": null
+                },
+                {
+                  "accessLevel": {
+                    "integerValue": 30,
+                    "stringValue": "DEVELOPER"
+                  },
+                  "id": "gid://gitlab/GroupMember/177455448",
+                  "user": {
+                    "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                    "id": "gid://gitlab/User/44184687",
+                    "name": "Test User 1",
+                    "state": "active",
+                    "username": "user-1",
+                    "webUrl": "https://gitlab.example.com/user-1"
+                  }
+                }
+              ],
+              "pageInfo": {
+                "endCursor": "eyJpZCI6IjE3NzQ1NTQ0OCJ9",
+                "hasNextPage": true
+              }
+            }
+          }
+        }
+      },
+      "headers": {},
+      "status": 200
+    }
+  }
+]

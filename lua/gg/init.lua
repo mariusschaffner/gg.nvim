@@ -6,5 +6,6 @@ local M = {}
 
 M.issues = require("gg.resources.issues")
 M.labels = require("gg.resources.labels")
+M.users = require("gg.resources.users")
 
 return M

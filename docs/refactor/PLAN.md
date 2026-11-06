@@ -213,7 +213,7 @@ Each entry gives the problem in INVENTORY.md (or a conflict with CLAUDE.md), the
 
 ## 4. Clients
 
-- [ ] **4.1 rest client** — `feat(rest)`
+- [x] **4.1 rest client** — `feat(rest)`
   - Files: `lua/gg/rest/client.lua`, `tests/unit/rest/test_client.lua`.
   - Acceptance:
     - `rest.request(host, method, path, {query, body, headers, output, on_chunk}) -> Task`.

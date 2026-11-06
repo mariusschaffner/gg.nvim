@@ -115,7 +115,7 @@ Each entry gives the problem in INVENTORY.md (or a conflict with CLAUDE.md), the
     - Messages and details are redacted deeply.
     - `redact.string/value(v, secrets?)` masks: `glpat-`/`gl*-` tokens, `PRIVATE-TOKEN:` and `Authorization:` values, the `private_token`/`job_token`/`access_token` query parameters, URL userinfo, sensitive keys (`token`, `private-token`, `authorization`, `password`), and any exact secret it is passed.
   - Test: table-driven cases in both files.
-- [ ] **2.3 core/log** — `feat(core)`
+- [x] **2.3 core/log** — `feat(core)`
   - Files: `lua/gg/core/log.lua`, `tests/unit/core/test_log.lua`.
   - Acceptance:
     - Levels: trace, debug, info, warn, error, off; the default is warn.

@@ -89,4 +89,34 @@ function H.wait_for(cond, ms)
   end
 end
 
+H.TEST_HOST = "gitlab.example.com"
+-- A fake token (not a GitLab token format) used to prove redaction.
+H.TEST_TOKEN = "test-token-not-real-0001"
+
+--- Configure gg with the fake backend and load fixture files (relative to
+--- tests/fixtures). Retries are off unless `opts.retry` is given.
+---@param files? string[]
+---@param opts? { retry?: table, hosts?: table, log?: table }
+---@return gg.FakeBackend
+function H.fake(files, opts)
+  opts = opts or {}
+  local fake = require("gg.transport.backends.fake").new({ root = H.path("tests/fixtures") })
+  for _, f in ipairs(files or {}) do
+    fake:load(f)
+  end
+  local ok, err = require("gg.config").setup({
+    hosts = opts.hosts or { [H.TEST_HOST] = { token = H.TEST_TOKEN } },
+    transport = { backend = fake },
+    retry = opts.retry or { max_attempts = 1 },
+    log = opts.log or { level = "off" },
+  })
+  assert(ok, err and tostring(err))
+  return fake
+end
+
+--- Reset gg's configuration to the defaults with logging off.
+function H.reset()
+  require("gg.config").setup({ log = { level = "off" } })
+end
+
 return H

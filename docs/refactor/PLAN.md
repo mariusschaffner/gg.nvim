@@ -156,7 +156,7 @@ Each entry gives the problem in INVENTORY.md (or a conflict with CLAUDE.md), the
     - A loopback `vim.uv` server: GET, JSON body, streaming to a file, cancel (no callback, no temp files left).
 
     `test_http.lua` drives an inline stub backend: same-origin redirect keeps the token, cross-origin drops it, more than 5 redirects → `network`.
-- [ ] **3.3 fake backend and fixture tooling** — `feat(transport)`
+- [x] **3.3 fake backend and fixture tooling** — `feat(transport)`
   - Files: `lua/gg/transport/backends/fake.lua`, `scripts/sanitize_fixture.lua`, `tests/fixtures/README.md` (format and sanitization rules), `tests/unit/transport/test_fake.lua`, `tests/unit/test_fixtures.lua`.
   - Fixture format: JSON `{ meta = {source, notes}, request = {method, path, query} | {operation, variables}, response = {status, headers, body | body_base64} }`. A fixture file may hold an array, for page sequences.
   - Acceptance:

@@ -1,0 +1,20 @@
+[
+  {
+    "meta": { "source": "hand-written transport fixture", "sanitized": true },
+    "request": { "method": "GET", "path": "/api/v4/projects/group%2Frepo/labels", "query": { "page": "1", "per_page": "2" } },
+    "response": {
+      "status": 200,
+      "headers": { "X-Next-Page": "2", "Content-Type": "application/json" },
+      "body": [ { "id": 1, "name": "bug" }, { "id": 2, "name": "feature" } ]
+    }
+  },
+  {
+    "meta": { "source": "hand-written transport fixture", "sanitized": true },
+    "request": { "method": "GET", "path": "/api/v4/projects/group%2Frepo/labels", "query": { "page": "2", "per_page": "2" } },
+    "response": {
+      "status": 200,
+      "headers": { "X-Next-Page": "", "Content-Type": "application/json" },
+      "body": [ { "id": 3, "name": "docs" } ]
+    }
+  }
+]

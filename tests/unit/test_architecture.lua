@@ -24,9 +24,20 @@ local function classify(mod)
   return { unknown = true }
 end
 
+-- Code without comment lines (doc comments may show usage like require("gg")).
+local function code_only(src)
+  local out = {}
+  for line in (src:gsub("\r", "") .. "\n"):gmatch("([^\n]*)\n") do
+    if not line:match("^%s*%-%-") then
+      table.insert(out, line)
+    end
+  end
+  return table.concat(out, "\n")
+end
+
 local function requires(src)
   local out = {}
-  for name in src:gmatch("require%s*%(?%s*[\"']([%w%._]+)[\"']") do
+  for name in code_only(src):gmatch("require%s*%(?%s*[\"']([%w%._]+)[\"']") do
     table.insert(out, name)
   end
   return out
@@ -79,7 +90,7 @@ T["no blocking calls, shell-outs or git"] = function()
   }
   local bad = {}
   for _, file in ipairs(sources()) do
-    local src = H.read(file)
+    local src = code_only(H.read(file))
     for _, b in ipairs(banned) do
       if src:find(b[1]) then
         table.insert(bad, file .. ": " .. b[2])

@@ -1,0 +1,37 @@
+[
+  {
+    "meta": { "source": "docs.gitlab.com (api/job_artifacts: Download the artifacts archive by job ID); binary body hand-made" },
+    "request": { "method": "GET", "path": "/api/v4/projects/my-group%2Fmy-project/jobs/42/artifacts" },
+    "response": { "status": 200, "headers": { "Content-Type": "application/zip" }, "body_base64": "UEsDBBQAAAAAAGZha2V6aXBjb250ZW50LWZvci10ZXN0cwABAgM=" }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com (api/job_artifacts): downloads may redirect through a CDN" },
+    "request": { "method": "GET", "path": "/api/v4/projects/my-group%2Fmy-project/jobs/43/artifacts" },
+    "response": { "status": 302, "headers": { "Location": "https://storage.example.net/artifacts/43/archive.zip?X-Signature=abc" }, "body": "" }
+  },
+  {
+    "meta": { "source": "hand-written: the object storage response after the redirect" },
+    "request": { "method": "GET", "path": "/artifacts/43/archive.zip", "query": { "X-Signature": "abc" } },
+    "response": { "status": 200, "body_base64": "UEsDBBQAAAAAAGZha2V6aXBjb250ZW50LWZvci10ZXN0cwABAgM=" }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com (api/job_artifacts: Download a single artifact file by job ID)" },
+    "request": { "method": "GET", "path": "/api/v4/projects/my-group%2Fmy-project/jobs/42/artifacts/coverage/report%20final.txt" },
+    "response": { "status": 200, "headers": { "Content-Type": "text/plain" }, "body": "coverage: 87.5%\n" }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com (api/job_artifacts: Download the artifacts archive by ref name)" },
+    "request": { "method": "GET", "path": "/api/v4/projects/my-group%2Fmy-project/jobs/artifacts/feature%2Flogin/download", "query": { "job": "build" } },
+    "response": { "status": 200, "body_base64": "UEsDBBQAAAAAAGZha2V6aXBjb250ZW50LWZvci10ZXN0cwABAgM=" }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com (api/job_artifacts: Download a single artifact file by ref name)" },
+    "request": { "method": "GET", "path": "/api/v4/projects/my-group%2Fmy-project/jobs/artifacts/main/raw/dist/app.js", "query": { "job": "build" } },
+    "response": { "status": 200, "body": "console.log(1)\n" }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com example (api/rest: 404 response shape)" },
+    "request": { "method": "GET", "path": "/api/v4/projects/my-group%2Fmy-project/jobs/44/artifacts" },
+    "response": { "status": 404, "body": { "message": "404 Not Found" } }
+  }
+]

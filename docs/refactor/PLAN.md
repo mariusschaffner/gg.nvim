@@ -365,7 +365,7 @@ Every item follows the same pattern:
 - [x] **6.15 projects** — `feat(projects)`
   - `search({query, membership?})`/`_all` (default 20, ordered by last activity) → `gg.Project {id, name, path, full_path, description?, default_branch?, visibility?, web_url, last_activity_at?, archived?}`.
   - `get({project})` (minimal; open question 6).
-- [ ] **6.16 artifacts** — `feat(artifacts)`
+- [x] **6.16 artifacts** — `feat(artifacts)`
   - `download({job_id, output})`, `download_file({job_id, artifact_path, output | on_chunk})`, `download_ref({ref, job, output})`, `download_ref_file(…)` → `gg.Download {path?, bytes}`.
   - Every call streams. Redirects to a CDN or object storage drop the token (checked with fake redirect fixtures). There is no total timeout, only the stall timeout. 404 → `not_found`. A partial file is removed on failure or cancel.
 - [ ] **6.17 registry (container)** — `feat(registry)`

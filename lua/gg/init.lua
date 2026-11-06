@@ -4,6 +4,7 @@
 ---@class gg
 local M = {}
 
+M.artifacts = require("gg.resources.artifacts")
 M.issues = require("gg.resources.issues")
 M.jobs = require("gg.resources.jobs")
 M.labels = require("gg.resources.labels")

@@ -7,6 +7,7 @@ local auth = require("gg.transport.auth")
 local config = require("gg.config")
 local errors = require("gg.core.errors")
 local log = require("gg.core.log")
+local ratelimit = require("gg.transport.ratelimit")
 local task = require("gg.core.task")
 
 local M = {}
@@ -369,6 +370,8 @@ end
 ---@class gg.AuthedRequest : gg.HttpRequest
 ---@field auth? boolean default true: attach the host's token
 ---@field decode? "json"|"none" default "none": decode a 2xx body as JSON into `res.data`
+---@field retry? gg.RetryConfig partial override of the host's retry policy
+---@field clock? gg.Clock injectable time source (tests)
 
 --- Send a request with the host's token attached. The token is passed as an
 --- exact secret to redaction for everything this request produces.
@@ -389,25 +392,59 @@ function M.request(opts)
   local secrets = result.token and { result.token } or {}
   local send_opts = {}
   for k, v in pairs(opts) do
-    if k ~= "auth" and k ~= "credentials" and k ~= "decode" then
+    if k ~= "auth" and k ~= "credentials" and k ~= "decode" and k ~= "clock" and k ~= "retry" then
       send_opts[k] = v
     end
   end
   send_opts.credentials = auth.headers(result)
   local method = (opts.method or "GET"):upper()
+  local clock = opts.clock or ratelimit.system_clock()
+  local retry = vim.tbl_extend("force", settings.retry, opts.retry or {})
+  local stream = opts.output ~= nil or opts.on_chunk ~= nil
   return task.run(function()
-    local res, err = M.send(send_opts, secrets):await()
-    if err then
-      return nil, errors.redact(err, secrets)
-    end
-    local serr = M.status_error(res, {
-      method = method,
-      host = settings.name,
-      secrets = secrets,
-      hint = res.status == 401 and auth.hint(settings, result) or nil,
-    })
-    if serr then
-      return nil, serr
+    local res, serr
+    local attempt = 0
+    while true do
+      attempt = attempt + 1
+      local err
+      res, err = M.send(send_opts, secrets):await()
+      local delay, why
+      if err then
+        delay, why = ratelimit.decide({ method = method, attempt = attempt, retry = retry, clock = clock, stream = stream }, nil, err)
+        if not delay then
+          if attempt > 1 then
+            err.details = vim.tbl_extend("force", err.details or {}, { attempts = attempt })
+          end
+          return nil, errors.redact(err, secrets)
+        end
+      else
+        res.rate_limit = ratelimit.parse(res.headers)
+        if res.rate_limit then
+          log.debug("rate limit", function()
+            return { host = settings.name, remaining = res.rate_limit.remaining, limit = res.rate_limit.limit }
+          end)
+        end
+        serr = M.status_error(res, {
+          method = method,
+          host = settings.name,
+          secrets = secrets,
+          hint = res.status == 401 and auth.hint(settings, result) or nil,
+        })
+        if not serr then
+          break
+        end
+        delay, why = ratelimit.decide({ method = method, attempt = attempt, retry = retry, clock = clock, stream = stream }, res, nil)
+        if not delay then
+          if attempt > 1 or serr.kind == "rate_limited" then
+            serr.details = vim.tbl_extend("force", serr.details or {}, { attempts = attempt, gave_up = why })
+          end
+          return nil, serr
+        end
+      end
+      log.debug("retrying request", function()
+        return { method = method, url = M.log_url(opts.url), attempt = attempt, delay_ms = delay }
+      end)
+      clock.sleep(delay):await()
     end
     if opts.decode == "json" and res.status >= 200 and res.status < 300 then
       local data, derr = M.decode_json(res.body)

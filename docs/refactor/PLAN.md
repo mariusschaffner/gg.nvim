@@ -187,7 +187,7 @@ Each entry gives the problem in INVENTORY.md (or a conflict with CLAUDE.md), the
     - A 2xx body with a `message` field is **not** an error (fix §5.6).
     - 204 or an empty 2xx → `nil` body. Invalid JSON → `unknown`.
   - Test: table-driven over 400/401/403/404/405/409/422/429/500/502/503, curl exits 6/7/28/35, bad JSON, and a 2xx with `message`.
-- [ ] **3.6 rate limit and backoff** — `feat(transport)`
+- [x] **3.6 rate limit and backoff** — `feat(transport)`
   - Files: `lua/gg/transport/ratelimit.lua`, `tests/unit/transport/test_ratelimit.lua`.
   - Acceptance:
     - 429 → wait `Retry-After`, or `RateLimit-Reset` minus now, capped at `max_retry_after_s`. This applies to every method, because a 429 means the request wasn't processed.

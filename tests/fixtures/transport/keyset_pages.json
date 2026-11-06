@@ -1,0 +1,27 @@
+[
+  {
+    "meta": { "source": "hand-written transport fixture (keyset pagination per docs.gitlab.com api/rest)" },
+    "request": { "path": "/api/v4/projects", "query": { "pagination": "keyset", "order_by": "id", "sort": "asc", "per_page": "2" } },
+    "response": {
+      "headers": {
+        "Link": "<https://gitlab.example.com/api/v4/projects?id_after=2&order_by=id&pagination=keyset&per_page=2&sort=asc>; rel=\"next\""
+      },
+      "body": [ { "id": 1 }, { "id": 2 } ]
+    }
+  },
+  {
+    "meta": { "source": "hand-written transport fixture (keyset pagination per docs.gitlab.com api/rest)" },
+    "request": { "path": "/api/v4/projects", "query": { "id_after": "2", "pagination": "keyset", "order_by": "id", "sort": "asc", "per_page": "2" } },
+    "response": {
+      "headers": {
+        "Link": "<https://gitlab.example.com/api/v4/projects?id_after=4&order_by=id&pagination=keyset&per_page=2&sort=asc>; rel=\"next\""
+      },
+      "body": [ { "id": 3 }, { "id": 4 } ]
+    }
+  },
+  {
+    "meta": { "source": "hand-written transport fixture (keyset pagination per docs.gitlab.com api/rest)" },
+    "request": { "path": "/api/v4/projects", "query": { "id_after": "4", "pagination": "keyset", "order_by": "id", "sort": "asc", "per_page": "2" } },
+    "response": { "headers": {}, "body": [ { "id": 5 } ] }
+  }
+]

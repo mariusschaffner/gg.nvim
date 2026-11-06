@@ -54,7 +54,9 @@ end
 T["error bodies are truncated and redacted"] = function()
   local body = { message = "boom", token = H.TEST_TOKEN, filler = string.rep("x", 5000) }
   local _, err = respond({ status = 500, body = body })
-  eq(#err.details.body, http.ERROR_BODY_LIMIT)
+  -- truncated to the limit before redaction, so redaction can only shorten it
+  eq(#err.details.body <= http.ERROR_BODY_LIMIT, true)
+  eq(#err.details.body > http.ERROR_BODY_LIMIT - 100, true)
   eq(err.details.body:find(H.TEST_TOKEN, 1, true), nil)
 end
 

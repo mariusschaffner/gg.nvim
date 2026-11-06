@@ -200,7 +200,7 @@ Each entry gives the problem in INVENTORY.md (or a conflict with CLAUDE.md), the
     - A POST and a 503 → no retry.
     - The attempts run out → `rate_limited`.
     - Cancel during backoff → no further request.
-- [ ] **3.7 pagination: offset, keyset, GraphQL cursors** — `feat(transport)`
+- [x] **3.7 pagination: offset, keyset, GraphQL cursors** — `feat(transport)`
   - Files: `lua/gg/transport/pagination.lua`, `tests/unit/transport/test_pagination.lua`.
   - Acceptance:
     - Link header parser.

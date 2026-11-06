@@ -1,0 +1,23 @@
+[
+  {
+    "meta": { "source": "hand-written transport fixture (GraphQL connection pageInfo per docs.gitlab.com api/graphql)" },
+    "request": { "operation": "Things", "variables": { "first": 2 } },
+    "response": {
+      "body": { "data": { "project": { "things": { "nodes": [ { "id": "1" }, { "id": "2" } ], "pageInfo": { "hasNextPage": true, "endCursor": "c2" } } } } }
+    }
+  },
+  {
+    "meta": { "source": "hand-written transport fixture (GraphQL connection pageInfo per docs.gitlab.com api/graphql)" },
+    "request": { "operation": "Things", "variables": { "first": 2, "after": "c2" } },
+    "response": {
+      "body": { "data": { "project": { "things": { "nodes": [ { "id": "3" }, { "id": "4" } ], "pageInfo": { "hasNextPage": true, "endCursor": "c4" } } } } }
+    }
+  },
+  {
+    "meta": { "source": "hand-written transport fixture (GraphQL connection pageInfo per docs.gitlab.com api/graphql)" },
+    "request": { "operation": "Things", "variables": { "first": 2, "after": "c4" } },
+    "response": {
+      "body": { "data": { "project": { "things": { "nodes": [ { "id": "5" } ], "pageInfo": { "hasNextPage": false, "endCursor": "c5" } } } } }
+    }
+  }
+]

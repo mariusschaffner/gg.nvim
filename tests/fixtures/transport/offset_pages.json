@@ -1,0 +1,26 @@
+[
+  {
+    "meta": { "source": "hand-written transport fixture (offset pagination headers per docs.gitlab.com api/rest)" },
+    "request": { "path": "/api/v4/projects/1/labels", "query": { "page": "1", "per_page": "2" } },
+    "response": {
+      "headers": { "X-Next-Page": "2", "X-Page": "1", "X-Per-Page": "2", "X-Total": "5", "X-Total-Pages": "3" },
+      "body": [ { "id": 1 }, { "id": 2 } ]
+    }
+  },
+  {
+    "meta": { "source": "hand-written transport fixture (offset pagination headers per docs.gitlab.com api/rest)" },
+    "request": { "path": "/api/v4/projects/1/labels", "query": { "page": "2", "per_page": "2" } },
+    "response": {
+      "headers": { "X-Next-Page": "3", "X-Page": "2", "X-Per-Page": "2", "X-Total": "5", "X-Total-Pages": "3" },
+      "body": [ { "id": 3 }, { "id": 4 } ]
+    }
+  },
+  {
+    "meta": { "source": "hand-written transport fixture (offset pagination headers per docs.gitlab.com api/rest)" },
+    "request": { "path": "/api/v4/projects/1/labels", "query": { "page": "3", "per_page": "2" } },
+    "response": {
+      "headers": { "X-Next-Page": "", "X-Page": "3", "X-Per-Page": "2", "X-Total": "5", "X-Total-Pages": "3" },
+      "body": [ { "id": 5 } ]
+    }
+  }
+]

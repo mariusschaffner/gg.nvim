@@ -107,7 +107,7 @@ Each entry gives the problem in INVENTORY.md (or a conflict with CLAUDE.md), the
     - The external-cancel case follows open question 5.
   - Test: `test_task.lua`, one case per criterion.
   - Note (2026-11-06): task needs the error constructor, so this item also creates a minimal `core/errors.lua` (`new`, `is`, `cancelled`, `is_cancelled`, `wrap`). Item 2.2 completes it.
-- [ ] **2.2 core/errors and redaction** — `feat(core)`
+- [x] **2.2 core/errors and redaction** — `feat(core)`
   - Files: `lua/gg/core/errors.lua`, `lua/gg/core/redact.lua`, `tests/unit/core/test_errors.lua`, `test_redact.lua`.
   - Acceptance:
     - `errors.new(kind, message, {status, details})` accepts only the CLAUDE.md kinds; an invalid kind becomes `unknown` with `details.invalid_kind`.

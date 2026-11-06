@@ -2,6 +2,8 @@
 ---
 --- Kinds (CLAUDE.md): auth, forbidden, not_found, validation, rate_limited,
 --- timeout, network, graphql, unknown.
+local redact = require("gg.core.redact")
+
 local M = {}
 
 ---@alias gg.ErrorKind "auth"|"forbidden"|"not_found"|"validation"|"rate_limited"|"timeout"|"network"|"graphql"|"unknown"
@@ -30,9 +32,11 @@ ErrorMT.__tostring = function(self)
 end
 
 --- Create an error. An unknown `kind` becomes "unknown" with `details.invalid_kind`.
+--- The message and details are redacted (token patterns, secret keys, and any
+--- exact value in `opts.secrets`).
 ---@param kind gg.ErrorKind
 ---@param message string
----@param opts? { status?: integer, details?: table }
+---@param opts? { status?: integer, details?: table, secrets?: string[] }
 ---@return gg.Error
 function M.new(kind, message, opts)
   opts = opts or {}
@@ -43,11 +47,20 @@ function M.new(kind, message, opts)
   end
   local err = {
     kind = kind,
-    status = opts.status,
-    message = tostring(message or kind),
-    details = details,
+    status = type(opts.status) == "number" and opts.status or nil,
+    message = redact.string(tostring(message or kind), opts.secrets),
+    details = details ~= nil and redact.value(details, opts.secrets) or nil,
   }
   return setmetatable(err, ErrorMT)
+end
+
+--- Copy of `err` with extra secrets redacted (used when a request knows the
+--- exact token it sent).
+---@param err gg.Error
+---@param secrets string[]
+---@return gg.Error
+function M.redact(err, secrets)
+  return M.new(err.kind, err.message, { status = err.status, details = err.details, secrets = secrets })
 end
 
 --- True when `v` looks like a gg error (kind + message), including plain

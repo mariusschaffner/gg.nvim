@@ -1,0 +1,112 @@
+{
+  "meta": {
+    "sanitized": true,
+    "source": "gitlab.com public (gitlab-org/cli !4338), 2026-11-06"
+  },
+  "request": {
+    "operation": "MrChecksFull",
+    "variables": {
+      "fullPath": "gitlab-org/cli",
+      "iid": "4338"
+    }
+  },
+  "response": {
+    "body": {
+      "data": {
+        "project": {
+          "mergeRequest": {
+            "approvalsLeft": 0,
+            "approvalsRequired": 2,
+            "approved": true,
+            "conflicts": false,
+            "detailedMergeStatus": "CI_MUST_PASS",
+            "draft": false,
+            "headPipeline": {
+              "status": "FAILED"
+            },
+            "mergeabilityChecks": [
+              {
+                "identifier": "NOT_OPEN",
+                "status": "SUCCESS"
+              },
+              {
+                "identifier": "DRAFT_STATUS",
+                "status": "SUCCESS"
+              },
+              {
+                "identifier": "STATUS_CHECKS_MUST_PASS",
+                "status": "INACTIVE"
+              },
+              {
+                "identifier": "JIRA_ASSOCIATION_MISSING",
+                "status": "INACTIVE"
+              },
+              {
+                "identifier": "MERGE_TIME",
+                "status": "INACTIVE"
+              },
+              {
+                "identifier": "MERGE_REQUEST_BLOCKED",
+                "status": "SUCCESS"
+              },
+              {
+                "identifier": "REQUESTED_CHANGES",
+                "status": "SUCCESS"
+              },
+              {
+                "identifier": "TITLE_REGEX",
+                "status": "SUCCESS"
+              },
+              {
+                "identifier": "SECURITY_POLICY_VIOLATIONS",
+                "status": "INACTIVE"
+              },
+              {
+                "identifier": "LOCKED_LFS_FILES",
+                "status": "INACTIVE"
+              },
+              {
+                "identifier": "DISCUSSIONS_NOT_RESOLVED",
+                "status": "SUCCESS"
+              },
+              {
+                "identifier": "CI_MUST_PASS",
+                "status": "FAILED"
+              },
+              {
+                "identifier": "COMMITS_STATUS",
+                "status": "SUCCESS"
+              },
+              {
+                "identifier": "LOCKED_PATHS",
+                "status": "SUCCESS"
+              },
+              {
+                "identifier": "NOT_APPROVED",
+                "status": "SUCCESS"
+              },
+              {
+                "identifier": "SECURITY_POLICY_PIPELINE_CHECK",
+                "status": "INACTIVE"
+              },
+              {
+                "identifier": "NEED_REBASE",
+                "status": "INACTIVE"
+              },
+              {
+                "identifier": "CONFLICT",
+                "status": "SUCCESS"
+              }
+            ],
+            "mergeable": false,
+            "mergeableDiscussionsState": true,
+            "resolvableDiscussionsCount": 6,
+            "resolvedDiscussionsCount": 6
+          }
+        }
+      }
+    },
+    "headers": {},
+    "status": 200
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "meta": {
+    "sanitized": true,
+    "source": "gitlab.com public (gitlab-org/cli !4338), 2026-11-06"
+  },
+  "request": {
+    "operation": "MrChecksBase",
+    "variables": {
+      "fullPath": "gitlab-org/cli",
+      "iid": "4338"
+    }
+  },
+  "response": {
+    "body": {
+      "data": {
+        "project": {
+          "mergeRequest": {
+            "conflicts": false,
+            "detailedMergeStatus": "CI_MUST_PASS",
+            "draft": false,
+            "headPipeline": {
+              "status": "FAILED"
+            },
+            "mergeableDiscussionsState": true
+          }
+        }
+      }
+    },
+    "headers": {},
+    "status": 200
+  }
+}

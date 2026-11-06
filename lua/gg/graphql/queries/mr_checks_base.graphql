@@ -1,0 +1,14 @@
+# Fallback for older GitLab versions that lack fields of MrChecksFull.
+query MrChecksBase($fullPath: ID!, $iid: String!) {
+  project(fullPath: $fullPath) {
+    mergeRequest(iid: $iid) {
+      draft
+      detailedMergeStatus
+      mergeableDiscussionsState
+      conflicts
+      headPipeline {
+        status
+      }
+    }
+  }
+}

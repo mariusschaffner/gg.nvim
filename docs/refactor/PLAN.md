@@ -325,7 +325,7 @@ Every item follows the same pattern:
   - `diffs`/`_all` (REST `/diffs`, with `unidiff`) → `gg.DiffFile`.
   - `diffstat({…, limit})` → `gg.DiffStat[]`, derived as in open question 22, with a pure helper in `models/diff.lua`.
   - `versions`/`latest_version` → `gg.MergeRequestVersion` (diff refs).
-- [ ] **6.9 mr_checks** — `feat(mr_checks)`
+- [x] **6.9 mr_checks** — `feat(mr_checks)`
   - `get` → `gg.MergeChecks`: draft, detailed_merge_status, discussions_resolved, has_conflicts, head_pipeline_status?, approved?, resolvable/resolved discussions?, checks? (`mergeabilityChecks` if the docs confirm it).
   - The full query falls back to the base query **only** on a schema error. An auth or network error doesn't fall back (fix §5.6, §6.8 #12).
   - Pagination: not applicable.

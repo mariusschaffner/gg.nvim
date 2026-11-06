@@ -1,0 +1,24 @@
+# Merge readiness, with approvals and the per-check list (newer GitLab).
+query MrChecksFull($fullPath: ID!, $iid: String!) {
+  project(fullPath: $fullPath) {
+    mergeRequest(iid: $iid) {
+      draft
+      mergeable
+      detailedMergeStatus
+      mergeableDiscussionsState
+      conflicts
+      headPipeline {
+        status
+      }
+      approved
+      approvalsRequired
+      approvalsLeft
+      resolvableDiscussionsCount
+      resolvedDiscussionsCount
+      mergeabilityChecks {
+        identifier
+        status
+      }
+    }
+  }
+}

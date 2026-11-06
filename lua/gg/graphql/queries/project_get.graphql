@@ -1,0 +1,6 @@
+#import "project"
+query ProjectGet($fullPath: ID!) {
+  project(fullPath: $fullPath) {
+    ...ProjectFields
+  }
+}

@@ -1,0 +1,12 @@
+#import "project"
+query ProjectsSearch($search: String, $membership: Boolean, $sort: String, $first: Int, $after: String) {
+  projects(search: $search, membership: $membership, sort: $sort, first: $first, after: $after) {
+    nodes {
+      ...ProjectFields
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}

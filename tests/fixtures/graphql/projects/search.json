@@ -1,0 +1,116 @@
+[
+  {
+    "meta": {
+      "sanitized": true,
+      "source": "gitlab.com public, 2026-11-06"
+    },
+    "request": {
+      "operation": "ProjectsSearch",
+      "variables": {
+        "first": 2,
+        "search": "gitlab-org/cli",
+        "sort": "latest_activity_desc"
+      }
+    },
+    "response": {
+      "body": {
+        "data": {
+          "projects": {
+            "nodes": [
+              {
+                "archived": false,
+                "description": "(Deprecated, use the GitLab CLI instead, https://gitlab.com/gitlab-org/cli) Release CLI ",
+                "fullPath": "user-1/ecoscan-16573099-deletion_scheduled-88611480",
+                "id": "gid://gitlab/Project/88611480",
+                "lastActivityAt": "2026-11-06T18:45:13Z",
+                "name": "temp scan ecoscan-16573099-deletion_scheduled-88611480",
+                "path": "ecoscan-16573099-deletion_scheduled-88611480",
+                "repository": {
+                  "rootRef": "master"
+                },
+                "visibility": "public",
+                "webUrl": "https://gitlab.com/user-1/ecoscan-16573099-deletion_scheduled-88611480"
+              },
+              {
+                "archived": false,
+                "description": "(Deprecated, use the GitLab CLI instead, https://gitlab.com/gitlab-org/cli) Release CLI ",
+                "fullPath": "user-2/ecoscan-16573099-deletion_scheduled-88596855",
+                "id": "gid://gitlab/Project/88596855",
+                "lastActivityAt": "2026-11-06T12:39:22Z",
+                "name": "temp scan ecoscan-16573099-deletion_scheduled-88596855",
+                "path": "ecoscan-16573099-deletion_scheduled-88596855",
+                "repository": {
+                  "rootRef": "master"
+                },
+                "visibility": "public",
+                "webUrl": "https://gitlab.com/user-2/ecoscan-16573099-deletion_scheduled-88596855"
+              }
+            ],
+            "pageInfo": {
+              "endCursor": "eyJsYXN0X2FjdGl2aXR5X2F0IjoiMjAyNi0xMS0wNiAxMjozOToyMi41NDU1NjMwMDAgKzAwMDAiLCJpZCI6Ijg4NTk2ODU1In0",
+              "hasNextPage": true
+            }
+          }
+        }
+      },
+      "headers": {},
+      "status": 200
+    }
+  },
+  {
+    "meta": {
+      "sanitized": true,
+      "source": "gitlab.com public, 2026-11-06"
+    },
+    "request": {
+      "operation": "ProjectsSearch",
+      "variables": {
+        "after": "eyJsYXN0X2FjdGl2aXR5X2F0IjoiMjAyNi0xMS0wNiAxMjozOToyMi41NDU1NjMwMDAgKzAwMDAiLCJpZCI6Ijg4NTk2ODU1In0"
+      }
+    },
+    "response": {
+      "body": {
+        "data": {
+          "projects": {
+            "nodes": [
+              {
+                "archived": false,
+                "description": "(Deprecated, use the GitLab CLI instead, https://gitlab.com/gitlab-org/cli) Release CLI ",
+                "fullPath": "user-2/ecoscan-16573099-deletion_scheduled-88583584",
+                "id": "gid://gitlab/Project/88583584",
+                "lastActivityAt": "2026-11-06T06:43:50Z",
+                "name": "temp scan ecoscan-16573099-deletion_scheduled-88583584",
+                "path": "ecoscan-16573099-deletion_scheduled-88583584",
+                "repository": {
+                  "rootRef": "master"
+                },
+                "visibility": "public",
+                "webUrl": "https://gitlab.com/user-2/ecoscan-16573099-deletion_scheduled-88583584"
+              },
+              {
+                "archived": false,
+                "description": "(Deprecated, use the GitLab CLI instead, https://gitlab.com/gitlab-org/cli) Release CLI ",
+                "fullPath": "user-1/ecoscan-16573099-deletion_scheduled-88575389",
+                "id": "gid://gitlab/Project/88575389",
+                "lastActivityAt": "2026-11-06T01:01:35Z",
+                "name": "temp scan ecoscan-16573099-deletion_scheduled-88575389",
+                "path": "ecoscan-16573099-deletion_scheduled-88575389",
+                "repository": {
+                  "rootRef": "master"
+                },
+                "visibility": "public",
+                "webUrl": "https://gitlab.com/user-1/ecoscan-16573099-deletion_scheduled-88575389"
+              }
+            ],
+            "pageInfo": {
+              "endCursor": "eyJsYXN0X2FjdGl2aXR5X2F0IjoiMjAyNi0xMS0wNiAwMTowMTozNS41OTI2MTIwMDAgKzAwMDAiLCJpZCI6Ijg4NTc1Mzg5In0",
+              "hasNextPage": true
+            }
+          }
+        }
+      },
+      "headers": {},
+      "status": 200
+    }
+  }
+]

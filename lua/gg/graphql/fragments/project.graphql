@@ -1,0 +1,14 @@
+fragment ProjectFields on Project {
+  id
+  name
+  path
+  fullPath
+  description
+  webUrl
+  visibility
+  archived
+  lastActivityAt
+  repository {
+    rootRef
+  }
+}

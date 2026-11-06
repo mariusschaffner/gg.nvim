@@ -1,0 +1,34 @@
+{
+  "meta": {
+    "sanitized": true,
+    "source": "gitlab.com public, 2026-11-06"
+  },
+  "request": {
+    "operation": "ProjectGet",
+    "variables": {
+      "fullPath": "gitlab-org/cli"
+    }
+  },
+  "response": {
+    "body": {
+      "data": {
+        "project": {
+          "archived": false,
+          "description": "A GitLab CLI tool bringing GitLab to your command line",
+          "fullPath": "gitlab-org/cli",
+          "id": "gid://gitlab/Project/34675721",
+          "lastActivityAt": "2026-11-06T18:44:21Z",
+          "name": "cli",
+          "path": "cli",
+          "repository": {
+            "rootRef": "main"
+          },
+          "visibility": "public",
+          "webUrl": "https://gitlab.com/gitlab-org/cli"
+        }
+      }
+    },
+    "headers": {},
+    "status": 200
+  }
+}

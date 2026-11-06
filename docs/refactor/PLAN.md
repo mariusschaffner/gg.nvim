@@ -362,7 +362,7 @@ Every item follows the same pattern:
     - `offset` sends `Range: bytes=N-`. A 206 appends. A 200 means the server ignored the range, and the result says `range_ignored = true`. A 416 means no new bytes.
     - It returns `{bytes, range_ignored?}`.
   - `retry`, `cancel`, `play`.
-- [ ] **6.15 projects** — `feat(projects)`
+- [x] **6.15 projects** — `feat(projects)`
   - `search({query, membership?})`/`_all` (default 20, ordered by last activity) → `gg.Project {id, name, path, full_path, description?, default_branch?, visibility?, web_url, last_activity_at?, archived?}`.
   - `get({project})` (minimal; open question 6).
 - [ ] **6.16 artifacts** — `feat(artifacts)`

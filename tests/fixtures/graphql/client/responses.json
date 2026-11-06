@@ -1,0 +1,54 @@
+[
+  {
+    "meta": { "source": "docs.gitlab.com example (api/graphql: projects query shape)" },
+    "request": { "operation": "ProjectPath", "variables": { "ids": [ "gid://gitlab/Project/42" ] } },
+    "response": { "body": { "data": { "projects": { "nodes": [ { "id": "gid://gitlab/Project/42", "fullPath": "group/sub/repo" } ] } } } }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com example (api/graphql: projects query shape)" },
+    "request": { "operation": "ProjectPath", "variables": { "ids": [ "gid://gitlab/Project/404" ] } },
+    "response": { "body": { "data": { "projects": { "nodes": [] } } } }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com example (api/graphql: errors with data)" },
+    "request": { "operation": "Partial" },
+    "response": {
+      "body": {
+        "data": { "project": { "name": "repo", "secretThing": null } },
+        "errors": [
+          { "message": "You don't have permission", "path": [ "project", "secretThing" ], "locations": [ { "line": 1, "column": 30 } ] },
+          { "message": "Second problem" }
+        ]
+      }
+    }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com example (api/graphql: errors without data)" },
+    "request": { "operation": "Broken" },
+    "response": {
+      "body": {
+        "errors": [
+          {
+            "message": "Field 'mergeRequest' doesn't exist on type 'Pipeline'",
+            "extensions": { "code": "undefinedField", "typeName": "Pipeline", "fieldName": "mergeRequest" }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com example (api/graphql: null for inaccessible objects)" },
+    "request": { "operation": "Missing" },
+    "response": { "body": { "data": { "project": null } } }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com example (api/graphql: mutation payload errors)" },
+    "request": { "operation": "Mutate" },
+    "response": { "body": { "data": { "thingUpdate": { "errors": [ "Title can't be blank" ], "thing": null } } } }
+  },
+  {
+    "meta": { "source": "hand-written: HTTP 401 on the GraphQL endpoint" },
+    "request": { "operation": "Unauth" },
+    "response": { "status": 401, "body": { "message": "401 Unauthorized" } }
+  }
+]

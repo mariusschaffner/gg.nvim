@@ -1,0 +1,9 @@
+# Resolve numeric project IDs to full paths (GraphQL needs fullPath).
+query ProjectPath($ids: [ID!]) {
+  projects(ids: $ids, first: 1) {
+    nodes {
+      id
+      fullPath
+    }
+  }
+}

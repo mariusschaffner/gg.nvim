@@ -223,7 +223,7 @@ Each entry gives the problem in INVENTORY.md (or a conflict with CLAUDE.md), the
     - `rest.query(t)`: keys and values encoded, keys sorted, arrays as `key[]=`.
     - Decoding uses `luanil`, so JSON `null` becomes `nil`.
   - Test: `test_client.lua`: encoding of `group/sub/repo`, spaces and unicode; numeric IDs; query keys sorted and encoded; relative root `https://h/gitlab`; a body sets `Content-Type`; 204 → `nil`.
-- [ ] **4.2 graphql client and query files** — `feat(graphql)`
+- [x] **4.2 graphql client and query files** — `feat(graphql)`
   - Files: `lua/gg/graphql/client.lua`, `lua/gg/graphql/queries/` (`project_path.graphql`), `tests/unit/graphql/test_client.lua`.
   - Acceptance:
     - `graphql.query(host, name, variables)` loads `queries/<name>.graphql`; the operation name equals the PascalCase file name. It POSTs `{query, variables, operationName}` to `<base>/api/graphql`.
@@ -235,6 +235,7 @@ Each entry gives the problem in INVENTORY.md (or a conflict with CLAUDE.md), the
     - `graphql.project_path(host, id_or_path)` follows open question 11.
     - A missing query file → `validation`, not a throw.
   - Test: `test_client.lua`: success; errors only; partial data plus errors (`details.partial` present); payload errors; 401 → `auth`; `null` project → `not_found`; three-page cursor pagination; schema-error detection; operation-name check for every file in `queries/`.
+  - Note (2026-11-06): `query`/`page` also accept an inline `{ operation, text }`, so the generic client tests don't ship test-only `.graphql` files. Resources always use query files.
 
 ## 5. context
 

@@ -204,8 +204,171 @@ function M.send(opts, secrets)
   end)
 end
 
+-- HTTP status -> error kind (open question 4 in docs/refactor/PLAN.md).
+M.STATUS_KINDS = {
+  [400] = "validation",
+  [401] = "auth",
+  [403] = "forbidden",
+  [404] = "not_found",
+  [405] = "validation",
+  [406] = "validation",
+  [409] = "validation",
+  [410] = "not_found",
+  [412] = "validation",
+  [413] = "validation",
+  [415] = "validation",
+  [422] = "validation",
+  [429] = "rate_limited",
+}
+
+local REASONS = {
+  [400] = "Bad Request",
+  [401] = "Unauthorized",
+  [403] = "Forbidden",
+  [404] = "Not Found",
+  [405] = "Method Not Allowed",
+  [406] = "Not Acceptable",
+  [409] = "Conflict",
+  [410] = "Gone",
+  [412] = "Precondition Failed",
+  [413] = "Payload Too Large",
+  [415] = "Unsupported Media Type",
+  [422] = "Unprocessable Entity",
+  [429] = "Too Many Requests",
+  [500] = "Internal Server Error",
+  [502] = "Bad Gateway",
+  [503] = "Service Unavailable",
+  [504] = "Gateway Timeout",
+}
+
+M.ERROR_BODY_LIMIT = 2048
+
+--- Decode a JSON body. Empty bodies decode to nil. JSON `null` becomes nil.
+---@param body string|nil
+---@return any value
+---@return gg.Error|nil err kind "unknown" when the body is not JSON
+function M.decode_json(body)
+  if body == nil or body:match("^%s*$") then
+    return nil, nil
+  end
+  local ok, value = pcall(vim.json.decode, body, { luanil = { object = true, array = true } })
+  if not ok then
+    return nil, errors.new("unknown", "invalid JSON in response", { details = { body = body:sub(1, M.ERROR_BODY_LIMIT) } })
+  end
+  return value, nil
+end
+
+-- "title" = { "can't be blank" } -> "title can't be blank"
+local function field_messages(t)
+  local keys = vim.tbl_keys(t)
+  table.sort(keys, function(a, b)
+    return tostring(a) < tostring(b)
+  end)
+  local parts = {}
+  for _, k in ipairs(keys) do
+    local v = t[k]
+    if type(v) == "table" then
+      local msgs = {}
+      for _, m in ipairs(v) do
+        table.insert(msgs, tostring(m))
+      end
+      if #msgs == 0 then
+        table.insert(parts, tostring(k) .. " " .. vim.inspect(v, { newline = " ", indent = "" }))
+      else
+        table.insert(parts, tostring(k) .. " " .. table.concat(msgs, ", "))
+      end
+    else
+      table.insert(parts, tostring(k) .. " " .. tostring(v))
+    end
+  end
+  return table.concat(parts, "; ")
+end
+
+--- The human-readable message GitLab put in an error body.
+---@param decoded any decoded JSON body
+---@param raw string|nil raw body
+---@return string|nil
+function M.body_message(decoded, raw)
+  if type(decoded) == "table" then
+    local m = decoded.message
+    if type(m) == "string" and m ~= "" then
+      return m
+    elseif type(m) == "table" then
+      if vim.islist(m) then
+        local parts = {}
+        for _, x in ipairs(m) do
+          table.insert(parts, tostring(x))
+        end
+        return table.concat(parts, "; ")
+      end
+      return field_messages(m)
+    end
+    if type(decoded.error) == "string" then
+      if type(decoded.error_description) == "string" then
+        return decoded.error .. ": " .. decoded.error_description
+      end
+      return decoded.error
+    end
+    if type(decoded.errors) == "table" then
+      local parts = {}
+      for _, e in ipairs(decoded.errors) do
+        table.insert(parts, type(e) == "table" and tostring(e.message or vim.inspect(e)) or tostring(e))
+      end
+      if #parts > 0 then
+        return table.concat(parts, "; ")
+      end
+    end
+  end
+  if type(raw) == "string" and raw ~= "" and not raw:match("^%s*[<{%[]") then
+    local line = raw:gsub("%s+", " "):sub(1, 200)
+    return line
+  end
+  return nil
+end
+
+--- Build the error for a non-success response, or nil for 1xx/2xx/3xx.
+---@param res gg.Response
+---@param ctx { method: string, host: string, secrets?: string[], hint?: string }
+---@return gg.Error|nil
+function M.status_error(res, ctx)
+  local status = res.status or 0
+  if status >= 100 and status < 400 then
+    return nil
+  end
+  local kind = M.STATUS_KINDS[status] or "unknown"
+  local decoded = M.decode_json(res.body)
+  local reason = ("%d %s"):format(status, REASONS[status] or "Error")
+  local msg = M.body_message(decoded, res.body)
+  local message
+  if not msg then
+    message = reason
+  elseif msg:match("^" .. status) then
+    message = msg
+  else
+    message = reason .. ": " .. msg
+  end
+  if ctx.hint then
+    message = message .. " (" .. ctx.hint .. ")"
+  end
+  local headers = res.headers or {}
+  local details = {
+    method = ctx.method,
+    url = M.log_url(res.url or ""),
+    host = ctx.host,
+    request_id = headers["x-request-id"],
+  }
+  if res.body and res.body ~= "" then
+    details.body = res.body:sub(1, M.ERROR_BODY_LIMIT)
+  end
+  if status == 429 then
+    details.retry_after = tonumber(headers["retry-after"])
+  end
+  return errors.new(kind, message, { status = status, details = details, secrets = ctx.secrets })
+end
+
 ---@class gg.AuthedRequest : gg.HttpRequest
 ---@field auth? boolean default true: attach the host's token
+---@field decode? "json"|"none" default "none": decode a 2xx body as JSON into `res.data`
 
 --- Send a request with the host's token attached. The token is passed as an
 --- exact secret to redaction for everything this request produces.
@@ -226,22 +389,32 @@ function M.request(opts)
   local secrets = result.token and { result.token } or {}
   local send_opts = {}
   for k, v in pairs(opts) do
-    if k ~= "auth" and k ~= "credentials" then
+    if k ~= "auth" and k ~= "credentials" and k ~= "decode" then
       send_opts[k] = v
     end
   end
   send_opts.credentials = auth.headers(result)
+  local method = (opts.method or "GET"):upper()
   return task.run(function()
     local res, err = M.send(send_opts, secrets):await()
     if err then
       return nil, errors.redact(err, secrets)
     end
-    if res.status == 401 then
-      return nil, errors.new("auth", "401 Unauthorized: " .. auth.hint(settings, result), {
-        status = 401,
-        details = { method = (opts.method or "GET"):upper(), url = M.log_url(res.url), host = settings.name, body = res.body },
-        secrets = secrets,
-      })
+    local serr = M.status_error(res, {
+      method = method,
+      host = settings.name,
+      secrets = secrets,
+      hint = res.status == 401 and auth.hint(settings, result) or nil,
+    })
+    if serr then
+      return nil, serr
+    end
+    if opts.decode == "json" and res.status >= 200 and res.status < 300 then
+      local data, derr = M.decode_json(res.body)
+      if derr then
+        return nil, errors.redact(derr, secrets)
+      end
+      res.data = data
     end
     return res
   end)

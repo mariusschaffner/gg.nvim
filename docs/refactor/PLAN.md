@@ -178,7 +178,7 @@ Each entry gives the problem in INVENTORY.md (or a conflict with CLAUDE.md), the
     - Each source in turn.
     - A host that isn't listed gets no env token.
     - A failure whose body echoes the token leaves the token out of the error, out of `vim.inspect(err)` and out of the captured log.
-- [ ] **3.5 HTTP error mapping** — `feat(transport)`
+- [x] **3.5 HTTP error mapping** — `feat(transport)`
   - Files: `lua/gg/transport/http.lua`, `tests/unit/transport/test_error_mapping.lua`.
   - Acceptance:
     - Statuses map as in open question 4.

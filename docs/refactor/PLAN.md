@@ -167,7 +167,7 @@ Each entry gives the problem in INVENTORY.md (or a conflict with CLAUDE.md), the
     - Streaming is supported: the fake writes to the output path, or calls `on_chunk` in chunks.
     - The fake can be used by consumers' tests.
   - Test: `test_fake.lua`. `test_fixtures.lua` scans every fixture and fails on token patterns, emails outside `example.com`, hosts other than `gitlab.example.com` and `gitlab.com`, and `name`/`username` values outside the sanitized patterns.
-- [ ] **3.4 transport/auth** — `feat(transport)`
+- [x] **3.4 transport/auth** — `feat(transport)`
   - Files: `lua/gg/transport/auth.lua`, `tests/unit/transport/test_auth.lua`.
   - Acceptance:
     - Token order: the host's config `token` (a string, or a function called per request) → `GITLAB_TOKEN` (listed hosts only) → none. It is sent as `PRIVATE-TOKEN`.

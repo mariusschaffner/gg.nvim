@@ -3,6 +3,7 @@
 --- Backend-agnostic: the curl backend in production, the fake backend in
 --- tests (or any table with `send`). Redirects are followed here, manually, so
 --- credentials are only ever sent to the configured instance's origin.
+local auth = require("gg.transport.auth")
 local config = require("gg.config")
 local errors = require("gg.core.errors")
 local log = require("gg.core.log")
@@ -200,6 +201,49 @@ function M.send(opts, secrets)
     end
 
     attempt(opts.url, (opts.method or "GET"):upper(), opts.body, 0)
+  end)
+end
+
+---@class gg.AuthedRequest : gg.HttpRequest
+---@field auth? boolean default true: attach the host's token
+
+--- Send a request with the host's token attached. The token is passed as an
+--- exact secret to redaction for everything this request produces.
+---@param opts gg.AuthedRequest
+---@return gg.Task resolves with gg.Response
+function M.request(opts)
+  if type(opts) ~= "table" then
+    return task.failed(errors.new("validation", "request options must be a table"))
+  end
+  local settings, herr = config.host(opts.host)
+  if not settings then
+    return task.failed(herr)
+  end
+  local result = opts.auth == false and { source = "none" } or auth.resolve(settings)
+  if result.err then
+    return task.failed(result.err)
+  end
+  local secrets = result.token and { result.token } or {}
+  local send_opts = {}
+  for k, v in pairs(opts) do
+    if k ~= "auth" and k ~= "credentials" then
+      send_opts[k] = v
+    end
+  end
+  send_opts.credentials = auth.headers(result)
+  return task.run(function()
+    local res, err = M.send(send_opts, secrets):await()
+    if err then
+      return nil, errors.redact(err, secrets)
+    end
+    if res.status == 401 then
+      return nil, errors.new("auth", "401 Unauthorized: " .. auth.hint(settings, result), {
+        status = 401,
+        details = { method = (opts.method or "GET"):upper(), url = M.log_url(res.url), host = settings.name, body = res.body },
+        secrets = secrets,
+      })
+    end
+    return res
   end)
 end
 

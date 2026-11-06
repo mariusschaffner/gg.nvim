@@ -1,0 +1,72 @@
+[
+  {
+    "meta": { "source": "docs.gitlab.com (api/jobs: Get a log file): plain-text log, content hand-written" },
+    "request": { "method": "GET", "path": "/api/v4/projects/my-group%2Fmy-project/jobs/7/trace", "query_contains": {} },
+    "response": {
+      "status": 200,
+      "headers": { "Content-Type": "text/plain" },
+      "body": "\u001b[0KRunning with gitlab-runner 18.5.0\n\u001b[0Ksection_start:1762400000:prepare_script\r\u001b[0KPreparing environment\nRunning on runner-abc\nsection_end:1762400001:prepare_script\r\u001b[0K\n$ make test\nok 1 - everything\n\u001b[32;1mJob succeeded\u001b[0;m\n"
+    }
+  },
+  {
+    "meta": { "source": "hand-written: a 206 tail for a Range request (Range is not described in the docs)" },
+    "request": { "method": "GET", "path": "/api/v4/projects/my-group%2Fmy-project/jobs/8/trace" },
+    "response": { "status": 206, "headers": { "Content-Range": "bytes 100-119/120" }, "body": "new line of output\n\n" }
+  },
+  {
+    "meta": { "source": "hand-written: the server ignored the Range header and sent the whole log" },
+    "request": { "method": "GET", "path": "/api/v4/projects/my-group%2Fmy-project/jobs/9/trace" },
+    "response": { "status": 200, "body": "the whole log\n" }
+  },
+  {
+    "meta": { "source": "hand-written: 416 when the offset is at the end of the log" },
+    "request": { "method": "GET", "path": "/api/v4/projects/my-group%2Fmy-project/jobs/10/trace" },
+    "response": { "status": 416, "body": "" }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com example (api/rest: 404 response shape)" },
+    "request": { "method": "GET", "path": "/api/v4/projects/my-group%2Fmy-project/jobs/11/trace" },
+    "response": { "status": 404, "body": { "message": "404 Not Found" } }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com example (api/jobs: Retry a job), sanitized" },
+    "request": { "method": "POST", "path": "/api/v4/projects/my-group%2Fmy-project/jobs/7/retry" },
+    "response": {
+      "status": 201,
+      "body": {
+        "id": 12,
+        "name": "test",
+        "stage": "test",
+        "status": "pending",
+        "allow_failure": false,
+        "when": "on_success",
+        "ref": "main",
+        "created_at": "2026-11-06T10:00:00.000Z",
+        "started_at": null,
+        "finished_at": null,
+        "duration": null,
+        "queued_duration": null,
+        "web_url": "https://gitlab.example.com/my-group/my-project/-/jobs/12",
+        "commit": { "id": "a91957a858320c0e17f3a0eca7cfacbff50ea29a", "short_id": "a91957a8", "title": "x" },
+        "pipeline": { "id": 46, "ref": "main", "sha": "a91957a858320c0e17f3a0eca7cfacbff50ea29a", "status": "pending" },
+        "user": { "id": 1, "username": "user-1", "name": "Test User 1", "state": "active", "avatar_url": null, "web_url": "https://gitlab.example.com/user-1" },
+        "artifacts": []
+      }
+    }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com example (api/jobs: Cancel a job), sanitized" },
+    "request": { "method": "POST", "path": "/api/v4/projects/my-group%2Fmy-project/jobs/7/cancel" },
+    "response": { "status": 201, "body": { "id": 7, "name": "test", "stage": "test", "status": "canceled", "allow_failure": false, "web_url": "https://gitlab.example.com/my-group/my-project/-/jobs/7" } }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com example (api/jobs: Run a job), sanitized" },
+    "request": { "method": "POST", "path": "/api/v4/projects/my-group%2Fmy-project/jobs/13/play", "body_contains": { "job_variables_attributes": [ { "key": "ENV", "value": "staging" }, { "key": "VERSION", "value": "2" } ] } },
+    "response": { "status": 200, "body": { "id": 13, "name": "deploy", "stage": "deploy", "status": "pending", "when": "manual", "allow_failure": false, "web_url": "https://gitlab.example.com/my-group/my-project/-/jobs/13" } }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com (api/jobs: Run a job): a job that is not manual cannot be played" },
+    "request": { "method": "POST", "path": "/api/v4/projects/my-group%2Fmy-project/jobs/14/play" },
+    "response": { "status": 400, "body": { "message": "400 Bad request - Unplayable Job" } }
+  }
+]

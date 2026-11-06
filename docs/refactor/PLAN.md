@@ -354,7 +354,7 @@ Every item follows the same pattern:
   - `get` (GraphQL by ID, so no REST lookup first).
   - `graph` → `gg.Pipeline`, with stages → groups → `gg.Job`. Stage order and job flags are kept. The `mergeRequest` field is dropped on a schema error (open question 19). The query is checked against the complexity limit of 250.
   - `retry` and `cancel` (REST).
-- [ ] **6.14 jobs** — `feat(jobs)`
+- [x] **6.14 jobs** — `feat(jobs)`
   - Model `gg.Job`: id, name, stage, status, allow_failure, manual, playable?, retryable?, cancelable?, duration?, queued_duration?, timestamps, web_url, ref?, pipeline_id?, user?, artifacts?
   - `list`/`_all` for a pipeline (GraphQL `pipeline.jobs` if it covers the fields, else REST; default 100), and `get`.
   - `trace({id, output | on_chunk, offset?})`:

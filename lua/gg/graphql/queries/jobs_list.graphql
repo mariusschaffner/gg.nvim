@@ -1,0 +1,16 @@
+#import "job"
+query JobsList($fullPath: ID!, $id: CiPipelineID!, $first: Int, $after: String, $statuses: [CiJobStatus!], $retried: Boolean) {
+  project(fullPath: $fullPath) {
+    pipeline(id: $id) {
+      jobs(first: $first, after: $after, statuses: $statuses, retried: $retried) {
+        nodes {
+          ...JobFields
+        }
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
+      }
+    }
+  }
+}

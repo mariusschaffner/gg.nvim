@@ -1,0 +1,44 @@
+{
+  "meta": {
+    "sanitized": true,
+    "source": "gitlab.com public (gitlab-org/cli), 2026-11-06"
+  },
+  "request": {
+    "operation": "JobGet",
+    "variables": {
+      "fullPath": "gitlab-org/cli",
+      "id": "gid://gitlab/Ci::Build/17795132454"
+    }
+  },
+  "response": {
+    "body": {
+      "data": {
+        "project": {
+          "job": {
+            "allowFailure": true,
+            "cancelable": false,
+            "createdAt": "2026-11-06T05:30:45Z",
+            "duration": 17,
+            "finishedAt": "2026-11-06T05:31:03Z",
+            "id": "gid://gitlab/Ci::Build/17795132454",
+            "manualJob": false,
+            "name": "dependency-scanning-profile-0",
+            "playable": false,
+            "queuedDuration": 0.154294,
+            "refName": "main",
+            "retryable": true,
+            "shortSha": "c298159b",
+            "stage": {
+              "name": "application-security-testing"
+            },
+            "startedAt": "2026-11-06T05:30:46Z",
+            "status": "SUCCESS",
+            "webPath": "/gitlab-org/cli/-/jobs/17795132454"
+          }
+        }
+      }
+    },
+    "headers": {},
+    "status": 200
+  }
+}

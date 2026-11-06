@@ -5,6 +5,7 @@
 local M = {}
 
 M.issues = require("gg.resources.issues")
+M.jobs = require("gg.resources.jobs")
 M.labels = require("gg.resources.labels")
 M.merge_requests = require("gg.resources.merge_requests")
 M.milestones = require("gg.resources.milestones")

@@ -1,0 +1,8 @@
+#import "job"
+query JobGet($fullPath: ID!, $id: JobID!) {
+  project(fullPath: $fullPath) {
+    job(id: $id) {
+      ...JobFields
+    }
+  }
+}

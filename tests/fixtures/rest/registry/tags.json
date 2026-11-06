@@ -1,0 +1,39 @@
+[
+  {
+    "meta": { "source": "docs.gitlab.com example (api/container_registry: List registry repository tags, keyset per api/rest)" },
+    "request": { "method": "GET", "path": "/api/v4/projects/gitlab-org%2Fcli/registry/repositories/3659784/tags", "query": { "pagination": "keyset", "order_by": "name", "sort": "asc", "per_page": "2" } },
+    "response": {
+      "headers": { "Link": "<https://gitlab.example.com/api/v4/projects/gitlab-org%2Fcli/registry/repositories/3659784/tags?last=v1.1.0&order_by=name&pagination=keyset&per_page=2&sort=asc>; rel=\"next\"" },
+      "body": [
+        { "name": "v1.0.0", "path": "gitlab-org/cli:v1.0.0", "location": "registry.example.com/gitlab-org/cli:v1.0.0" },
+        { "name": "v1.1.0", "path": "gitlab-org/cli:v1.1.0", "location": "registry.example.com/gitlab-org/cli:v1.1.0" }
+      ]
+    }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com example (api/container_registry), keyset second page" },
+    "request": { "method": "GET", "path": "/api/v4/projects/gitlab-org%2Fcli/registry/repositories/3659784/tags", "query": { "last": "v1.1.0", "pagination": "keyset", "order_by": "name", "sort": "asc", "per_page": "2" } },
+    "response": { "headers": {}, "body": [ { "name": "v2.0.0", "path": "gitlab-org/cli:v2.0.0", "location": "registry.example.com/gitlab-org/cli:v2.0.0" } ] }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com example (api/container_registry: Get details of a registry repository tag)" },
+    "request": { "method": "GET", "path": "/api/v4/projects/gitlab-org%2Fcli/registry/repositories/3659784/tags/v1.0.0" },
+    "response": {
+      "body": {
+        "name": "v1.0.0",
+        "path": "gitlab-org/cli:v1.0.0",
+        "location": "registry.example.com/gitlab-org/cli:v1.0.0",
+        "revision": "d7a3cfda9f3b3e7a4b3d3e7b6c1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c",
+        "short_revision": "d7a3cfda9",
+        "digest": "sha256:c3490dcf10ffb6530c1303522a1405dfaf7daecd8f38d3d1d4b4d6fb6e5f5c4d",
+        "created_at": "2026-01-30T16:47:44.624Z",
+        "total_size": 102400
+      }
+    }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com example (api/rest: 404 response shape)" },
+    "request": { "method": "GET", "path": "/api/v4/projects/gitlab-org%2Fcli/registry/repositories/3659784/tags/nope" },
+    "response": { "status": 404, "body": { "message": "404 Tag Not Found" } }
+  }
+]

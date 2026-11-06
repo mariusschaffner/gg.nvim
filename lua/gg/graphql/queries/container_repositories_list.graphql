@@ -1,0 +1,18 @@
+query ContainerRepositoriesList($fullPath: ID!, $first: Int, $after: String, $name: String) {
+  project(fullPath: $fullPath) {
+    containerRepositories(first: $first, after: $after, name: $name) {
+      nodes {
+        id
+        name
+        path
+        location
+        createdAt
+        tagsCount
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+    }
+  }
+}

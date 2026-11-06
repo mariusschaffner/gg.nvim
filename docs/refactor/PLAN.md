@@ -368,7 +368,7 @@ Every item follows the same pattern:
 - [x] **6.16 artifacts** — `feat(artifacts)`
   - `download({job_id, output})`, `download_file({job_id, artifact_path, output | on_chunk})`, `download_ref({ref, job, output})`, `download_ref_file(…)` → `gg.Download {path?, bytes}`.
   - Every call streams. Redirects to a CDN or object storage drop the token (checked with fake redirect fixtures). There is no total timeout, only the stall timeout. 404 → `not_found`. A partial file is removed on failure or cancel.
-- [ ] **6.17 registry (container)** — `feat(registry)`
+- [x] **6.17 registry (container)** — `feat(registry)`
   - `repositories`/`_all` → `gg.ContainerRepository {id, name, path, location, tags_count?, created_at}`.
   - `tags`/`_all` → `gg.ContainerTag {name, path, location, digest?, revision?, total_size?, created_at?}`, using REST keyset (a documented keyset endpoint), so it exercises keyset end to end.
   - `tag({repository_id, name})`.

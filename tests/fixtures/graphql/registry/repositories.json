@@ -1,0 +1,39 @@
+{
+  "meta": {
+    "sanitized": true,
+    "source": "gitlab.com public (gitlab-org/cli), 2026-11-06"
+  },
+  "request": {
+    "operation": "ContainerRepositoriesList",
+    "variables": {
+      "first": 2,
+      "fullPath": "gitlab-org/cli"
+    }
+  },
+  "response": {
+    "body": {
+      "data": {
+        "project": {
+          "containerRepositories": {
+            "nodes": [
+              {
+                "createdAt": "2022-11-24T08:48:32Z",
+                "id": "gid://gitlab/ContainerRepository/3659784",
+                "location": "registry.gitlab.com/gitlab-org/cli",
+                "name": "",
+                "path": "gitlab-org/cli",
+                "tagsCount": 413
+              }
+            ],
+            "pageInfo": {
+              "endCursor": "eyJjcmVhdGVkX2F0IjoiMjAyMi0xMS0yNCAwODo0ODozMi4xNjY3OTYwMDAgKzAwMDAiLCJpZCI6IjM2NTk3ODQifQ",
+              "hasNextPage": false
+            }
+          }
+        }
+      }
+    },
+    "headers": {},
+    "status": 200
+  }
+}

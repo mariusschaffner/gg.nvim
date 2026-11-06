@@ -1,0 +1,8 @@
+#import "pipeline"
+query PipelineGet($fullPath: ID!, $id: CiPipelineID!) {
+  project(fullPath: $fullPath) {
+    pipeline(id: $id) {
+      ...PipelineFields
+    }
+  }
+}

@@ -1,0 +1,21 @@
+fragment JobFields on CiJob {
+  id
+  name
+  status
+  allowFailure
+  manualJob
+  playable
+  retryable
+  cancelable
+  duration
+  queuedDuration
+  startedAt
+  finishedAt
+  createdAt
+  webPath
+  refName
+  shortSha
+  stage {
+    name
+  }
+}

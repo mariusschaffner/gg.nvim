@@ -348,7 +348,7 @@ Every item follows the same pattern:
 - [x] **6.12 todos** — `feat(todos)`
   - `list`/`_all` (GraphQL `currentUser.todos`, state pending by default) → `gg.Todo {id, action, target_type, target {iid?, title?, web_url?}, body, state, project?, author, created_at}`.
   - `mark_done({id})`.
-- [ ] **6.13 pipelines** — `feat(pipelines)`
+- [x] **6.13 pipelines** — `feat(pipelines)`
   - Model `gg.Pipeline`: id, iid, project, status (lowercase GitLab status), ref, sha, short_sha, source?, user?, merge_request?, timestamps, duration?, queued_duration?, web_url, commit_title?, total_jobs?, stages?
   - `list`/`_all` for a project (ref, status, source, username, sha) or an MR (`mr_iid`), GraphQL; default 50; nested stages carry truncated flags.
   - `get` (GraphQL by ID, so no REST lookup first).

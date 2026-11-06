@@ -1,0 +1,142 @@
+{
+  "meta": {
+    "sanitized": true,
+    "source": "gitlab.com public (gitlab-org/cli), 2026-11-06"
+  },
+  "request": {
+    "operation": "PipelinesListMr",
+    "variables": {
+      "first": 2,
+      "fullPath": "gitlab-org/cli",
+      "iid": "4338"
+    }
+  },
+  "response": {
+    "body": {
+      "data": {
+        "project": {
+          "mergeRequest": {
+            "pipelines": {
+              "nodes": [
+                {
+                  "cancelable": false,
+                  "commit": {
+                    "title": "Merge branch '8279-service-account-create-update-delete' into 'main'"
+                  },
+                  "createdAt": "2026-11-06T16:32:42Z",
+                  "duration": 632,
+                  "finishedAt": "2026-11-06T16:43:17Z",
+                  "id": "gid://gitlab/Ci::Pipeline/3037601527",
+                  "iid": "17012",
+                  "path": "/gitlab-org/cli/-/pipelines/3037601527",
+                  "queuedDuration": 2,
+                  "ref": "refs/merge-requests/4338/train",
+                  "retryable": false,
+                  "sha": "86f1db1086c59abd351c2db8ba22bf8f81ba84bc",
+                  "shortSha": "86f1db10",
+                  "source": "merge_request_event",
+                  "stages": {
+                    "nodes": [
+                      {
+                        "name": "application-security-testing",
+                        "status": "success"
+                      },
+                      {
+                        "name": "checks",
+                        "status": "success"
+                      },
+                      {
+                        "name": "documentation",
+                        "status": "success"
+                      },
+                      {
+                        "name": "test",
+                        "status": "failed"
+                      },
+                      {
+                        "name": "build",
+                        "status": "success"
+                      }
+                    ],
+                    "pageInfo": {
+                      "hasNextPage": false
+                    }
+                  },
+                  "startedAt": "2026-11-06T16:32:45Z",
+                  "status": "FAILED",
+                  "totalJobs": 22,
+                  "user": {
+                    "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                    "id": "gid://gitlab/User/3457201",
+                    "name": "Test User 1",
+                    "state": "active",
+                    "username": "user-1",
+                    "webUrl": "https://gitlab.example.com/user-1"
+                  }
+                },
+                {
+                  "cancelable": false,
+                  "commit": {
+                    "title": "Merge branch '8279-service-account-create-update-delete' into 'main'"
+                  },
+                  "createdAt": "2026-11-06T16:19:02Z",
+                  "duration": 804,
+                  "finishedAt": "2026-11-06T16:32:31Z",
+                  "id": "gid://gitlab/Ci::Pipeline/3037518193",
+                  "iid": "17009",
+                  "path": "/gitlab-org/cli/-/pipelines/3037518193",
+                  "queuedDuration": 1,
+                  "ref": "refs/merge-requests/4338/merge",
+                  "retryable": false,
+                  "sha": "bb91549631a789ae9c7d2f59d855d02b12b3a7cc",
+                  "shortSha": "bb915496",
+                  "source": "merge_request_event",
+                  "stages": {
+                    "nodes": [
+                      {
+                        "name": "application-security-testing",
+                        "status": "success"
+                      },
+                      {
+                        "name": "checks",
+                        "status": "success"
+                      },
+                      {
+                        "name": "documentation",
+                        "status": "success"
+                      },
+                      {
+                        "name": "test",
+                        "status": "success"
+                      }
+                    ],
+                    "pageInfo": {
+                      "hasNextPage": false
+                    }
+                  },
+                  "startedAt": "2026-11-06T16:19:04Z",
+                  "status": "SUCCESS",
+                  "totalJobs": 16,
+                  "user": {
+                    "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                    "id": "gid://gitlab/User/3457201",
+                    "name": "Test User 1",
+                    "state": "active",
+                    "username": "user-1",
+                    "webUrl": "https://gitlab.example.com/user-1"
+                  }
+                }
+              ],
+              "pageInfo": {
+                "endCursor": "Mg",
+                "hasNextPage": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "headers": {},
+    "status": 200
+  }
+}

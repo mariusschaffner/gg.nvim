@@ -1,0 +1,33 @@
+#import "pipeline"
+query PipelinesListProject(
+  $fullPath: ID!
+  $first: Int
+  $after: String
+  $status: PipelineStatusEnum
+  $scope: PipelineScopeEnum
+  $ref: String
+  $sha: String
+  $source: String
+  $username: String
+) {
+  project(fullPath: $fullPath) {
+    pipelines(
+      first: $first
+      after: $after
+      status: $status
+      scope: $scope
+      ref: $ref
+      sha: $sha
+      source: $source
+      username: $username
+    ) {
+      nodes {
+        ...PipelineFields
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+    }
+  }
+}

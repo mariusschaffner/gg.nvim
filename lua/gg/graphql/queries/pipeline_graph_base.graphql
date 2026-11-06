@@ -1,0 +1,36 @@
+#import "pipeline"
+#import "job"
+# PipelineGraph without `mergeRequest`, for GitLab versions that lack the field.
+query PipelineGraphBase($fullPath: ID!, $id: CiPipelineID!) {
+  project(fullPath: $fullPath) {
+    pipeline(id: $id) {
+      ...PipelineFields
+      graph: stages(first: 50) {
+        nodes {
+          name
+          status
+          groups(first: 100) {
+            nodes {
+              name
+              size
+              jobs(first: 100) {
+                nodes {
+                  ...JobFields
+                }
+                pageInfo {
+                  hasNextPage
+                }
+              }
+            }
+            pageInfo {
+              hasNextPage
+            }
+          }
+        }
+        pageInfo {
+          hasNextPage
+        }
+      }
+    }
+  }
+}

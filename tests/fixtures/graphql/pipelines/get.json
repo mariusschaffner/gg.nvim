@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "sanitized": true,
+    "source": "gitlab.com public (gitlab-org/cli), 2026-11-06"
+  },
+  "request": {
+    "operation": "PipelineGet",
+    "variables": {
+      "fullPath": "gitlab-org/cli",
+      "id": "gid://gitlab/Ci::Pipeline/3035060733"
+    }
+  },
+  "response": {
+    "body": {
+      "data": {
+        "project": {
+          "pipeline": {
+            "cancelable": false,
+            "commit": {
+              "title": "Merge branch '8568-share-local-config-across-worktrees' into 'main'"
+            },
+            "createdAt": "2026-11-06T05:30:45Z",
+            "duration": 1304,
+            "finishedAt": "2026-11-06T05:52:33Z",
+            "id": "gid://gitlab/Ci::Pipeline/3035060733",
+            "iid": "16967",
+            "path": "/gitlab-org/cli/-/pipelines/3035060733",
+            "queuedDuration": 1,
+            "ref": "main",
+            "retryable": false,
+            "sha": "c298159b72a6d1d888a635a8c1e5fc4952d12983",
+            "shortSha": "c298159b",
+            "source": "push",
+            "stages": {
+              "nodes": [
+                {
+                  "name": "application-security-testing",
+                  "status": "success"
+                },
+                {
+                  "name": "checks",
+                  "status": "success"
+                },
+                {
+                  "name": "test",
+                  "status": "success"
+                },
+                {
+                  "name": "build",
+                  "status": "success"
+                },
+                {
+                  "name": "release",
+                  "status": "success"
+                }
+              ],
+              "pageInfo": {
+                "hasNextPage": false
+              }
+            },
+            "startedAt": "2026-11-06T05:30:46Z",
+            "status": "SUCCESS",
+            "totalJobs": 19,
+            "user": {
+              "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+              "id": "gid://gitlab/User/11809982",
+              "name": "Test User 1",
+              "state": "active",
+              "username": "user-1",
+              "webUrl": "https://gitlab.example.com/user-1"
+            }
+          }
+        }
+      }
+    },
+    "headers": {},
+    "status": 200
+  }
+}

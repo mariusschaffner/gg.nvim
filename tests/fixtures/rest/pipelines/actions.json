@@ -1,0 +1,57 @@
+[
+  {
+    "meta": { "source": "docs.gitlab.com example (api/pipelines: Retry jobs in a pipeline), sanitized" },
+    "request": { "method": "POST", "path": "/api/v4/projects/my-group%2Fmy-project/pipelines/46/retry" },
+    "response": {
+      "status": 201,
+      "body": {
+        "id": 46,
+        "iid": 11,
+        "project_id": 1,
+        "status": "pending",
+        "ref": "main",
+        "sha": "a91957a858320c0e17f3a0eca7cfacbff50ea29a",
+        "before_sha": "a91957a858320c0e17f3a0eca7cfacbff50ea29a",
+        "tag": false,
+        "yaml_errors": null,
+        "user": { "name": "Test User 1", "username": "user-1", "id": 1, "state": "active", "avatar_url": null, "web_url": "https://gitlab.example.com/user-1" },
+        "created_at": "2016-08-11T11:28:34.085Z",
+        "updated_at": "2016-08-11T11:32:35.169Z",
+        "started_at": null,
+        "finished_at": "2016-08-11T11:32:35.145Z",
+        "committed_at": null,
+        "duration": null,
+        "queued_duration": 0.010,
+        "coverage": null,
+        "web_url": "https://gitlab.example.com/my-group/my-project/-/pipelines/46",
+        "source": "push"
+      }
+    }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com example (api/pipelines: Cancel a pipeline's jobs), sanitized" },
+    "request": { "method": "POST", "path": "/api/v4/projects/my-group%2Fmy-project/pipelines/46/cancel" },
+    "response": {
+      "body": {
+        "id": 46,
+        "iid": 11,
+        "project_id": 1,
+        "status": "canceled",
+        "ref": "main",
+        "sha": "a91957a858320c0e17f3a0eca7cfacbff50ea29a",
+        "user": { "name": "Test User 1", "username": "user-1", "id": 1, "state": "active", "avatar_url": null, "web_url": "https://gitlab.example.com/user-1" },
+        "created_at": "2016-08-11T11:28:34.085Z",
+        "started_at": null,
+        "finished_at": "2016-08-11T11:32:35.145Z",
+        "duration": null,
+        "web_url": "https://gitlab.example.com/my-group/my-project/-/pipelines/46",
+        "source": "push"
+      }
+    }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com example (api/rest: 403 response shape)" },
+    "request": { "method": "POST", "path": "/api/v4/projects/my-group%2Fmy-project/pipelines/47/retry" },
+    "response": { "status": 403, "body": { "message": "403 Forbidden" } }
+  }
+]

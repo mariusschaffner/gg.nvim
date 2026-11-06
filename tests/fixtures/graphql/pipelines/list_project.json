@@ -1,0 +1,281 @@
+[
+  {
+    "meta": {
+      "sanitized": true,
+      "source": "gitlab.com public (gitlab-org/cli), 2026-11-06"
+    },
+    "request": {
+      "operation": "PipelinesListProject",
+      "variables": {
+        "first": 2,
+        "fullPath": "gitlab-org/cli",
+        "ref": "main"
+      }
+    },
+    "response": {
+      "body": {
+        "data": {
+          "project": {
+            "pipelines": {
+              "nodes": [
+                {
+                  "cancelable": false,
+                  "commit": {
+                    "title": "Merge branch '8568-share-local-config-across-worktrees' into 'main'"
+                  },
+                  "createdAt": "2026-11-06T05:30:45Z",
+                  "duration": 1304,
+                  "finishedAt": "2026-11-06T05:52:33Z",
+                  "id": "gid://gitlab/Ci::Pipeline/3035060733",
+                  "iid": "16967",
+                  "path": "/gitlab-org/cli/-/pipelines/3035060733",
+                  "queuedDuration": 1,
+                  "ref": "main",
+                  "retryable": false,
+                  "sha": "c298159b72a6d1d888a635a8c1e5fc4952d12983",
+                  "shortSha": "c298159b",
+                  "source": "push",
+                  "stages": {
+                    "nodes": [
+                      {
+                        "name": "application-security-testing",
+                        "status": "success"
+                      },
+                      {
+                        "name": "checks",
+                        "status": "success"
+                      },
+                      {
+                        "name": "test",
+                        "status": "success"
+                      },
+                      {
+                        "name": "build",
+                        "status": "success"
+                      },
+                      {
+                        "name": "release",
+                        "status": "success"
+                      }
+                    ],
+                    "pageInfo": {
+                      "hasNextPage": false
+                    }
+                  },
+                  "startedAt": "2026-11-06T05:30:46Z",
+                  "status": "SUCCESS",
+                  "totalJobs": 19,
+                  "user": {
+                    "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                    "id": "gid://gitlab/User/11809982",
+                    "name": "Test User 1",
+                    "state": "active",
+                    "username": "user-1",
+                    "webUrl": "https://gitlab.example.com/user-1"
+                  }
+                },
+                {
+                  "cancelable": false,
+                  "commit": {
+                    "title": "Merge branch '8616-docs-client-id-ignored-gitlab-com' into 'main'"
+                  },
+                  "createdAt": "2026-11-06T04:26:33Z",
+                  "duration": 597,
+                  "finishedAt": "2026-11-06T04:36:36Z",
+                  "id": "gid://gitlab/Ci::Pipeline/3034935008",
+                  "iid": "16962",
+                  "path": "/gitlab-org/cli/-/pipelines/3034935008",
+                  "queuedDuration": 1,
+                  "ref": "main",
+                  "retryable": false,
+                  "sha": "1ab692e5cfc809947e1852c77e0692e09b2eacde",
+                  "shortSha": "1ab692e5",
+                  "source": "push",
+                  "stages": {
+                    "nodes": [
+                      {
+                        "name": "application-security-testing",
+                        "status": "success"
+                      },
+                      {
+                        "name": "checks",
+                        "status": "success"
+                      },
+                      {
+                        "name": "build",
+                        "status": "success"
+                      },
+                      {
+                        "name": "release",
+                        "status": "success"
+                      }
+                    ],
+                    "pageInfo": {
+                      "hasNextPage": false
+                    }
+                  },
+                  "startedAt": "2026-11-06T04:26:35Z",
+                  "status": "SUCCESS",
+                  "totalJobs": 13,
+                  "user": {
+                    "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                    "id": "gid://gitlab/User/11809982",
+                    "name": "Test User 1",
+                    "state": "active",
+                    "username": "user-1",
+                    "webUrl": "https://gitlab.example.com/user-1"
+                  }
+                }
+              ],
+              "pageInfo": {
+                "endCursor": "eyJpZCI6IjMwMzQ5MzUwMDgifQ",
+                "hasNextPage": true
+              }
+            }
+          }
+        }
+      },
+      "headers": {},
+      "status": 200
+    }
+  },
+  {
+    "meta": {
+      "sanitized": true,
+      "source": "gitlab.com public (gitlab-org/cli), 2026-11-06"
+    },
+    "request": {
+      "operation": "PipelinesListProject",
+      "variables": {
+        "after": "eyJpZCI6IjMwMzQ5MzUwMDgifQ",
+        "fullPath": "gitlab-org/cli"
+      }
+    },
+    "response": {
+      "body": {
+        "data": {
+          "project": {
+            "pipelines": {
+              "nodes": [
+                {
+                  "cancelable": false,
+                  "commit": {
+                    "title": "Merge branch '8279-service-account-list-get' into 'main'"
+                  },
+                  "createdAt": "2026-11-06T03:22:17Z",
+                  "duration": 1107,
+                  "finishedAt": "2026-11-06T03:40:49Z",
+                  "id": "gid://gitlab/Ci::Pipeline/3034808887",
+                  "iid": "16959",
+                  "path": "/gitlab-org/cli/-/pipelines/3034808887",
+                  "queuedDuration": 1,
+                  "ref": "main",
+                  "retryable": false,
+                  "sha": "9c5e1db0359e228b52322a64816d5e3f0781b4fa",
+                  "shortSha": "9c5e1db0",
+                  "source": "push",
+                  "stages": {
+                    "nodes": [
+                      {
+                        "name": "application-security-testing",
+                        "status": "success"
+                      },
+                      {
+                        "name": "checks",
+                        "status": "success"
+                      },
+                      {
+                        "name": "test",
+                        "status": "success"
+                      },
+                      {
+                        "name": "build",
+                        "status": "success"
+                      },
+                      {
+                        "name": "release",
+                        "status": "success"
+                      }
+                    ],
+                    "pageInfo": {
+                      "hasNextPage": false
+                    }
+                  },
+                  "startedAt": "2026-11-06T03:22:19Z",
+                  "status": "SUCCESS",
+                  "totalJobs": 19,
+                  "user": {
+                    "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                    "id": "gid://gitlab/User/11809982",
+                    "name": "Test User 1",
+                    "state": "active",
+                    "username": "user-1",
+                    "webUrl": "https://gitlab.example.com/user-1"
+                  }
+                },
+                {
+                  "cancelable": false,
+                  "commit": {
+                    "title": "Merge branch 'jmc-stack-skill-reorder-infer-followup' into 'main'"
+                  },
+                  "createdAt": "2026-11-06T02:14:59Z",
+                  "duration": 588,
+                  "finishedAt": "2026-11-06T02:24:53Z",
+                  "id": "gid://gitlab/Ci::Pipeline/3034673976",
+                  "iid": "16953",
+                  "path": "/gitlab-org/cli/-/pipelines/3034673976",
+                  "queuedDuration": 1,
+                  "ref": "main",
+                  "retryable": false,
+                  "sha": "e960d4616189c64d764d8ec8bab108b15c668e14",
+                  "shortSha": "e960d461",
+                  "source": "push",
+                  "stages": {
+                    "nodes": [
+                      {
+                        "name": "application-security-testing",
+                        "status": "success"
+                      },
+                      {
+                        "name": "checks",
+                        "status": "success"
+                      },
+                      {
+                        "name": "build",
+                        "status": "success"
+                      },
+                      {
+                        "name": "release",
+                        "status": "success"
+                      }
+                    ],
+                    "pageInfo": {
+                      "hasNextPage": false
+                    }
+                  },
+                  "startedAt": "2026-11-06T02:15:00Z",
+                  "status": "SUCCESS",
+                  "totalJobs": 13,
+                  "user": {
+                    "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                    "id": "gid://gitlab/User/11809982",
+                    "name": "Test User 1",
+                    "state": "active",
+                    "username": "user-1",
+                    "webUrl": "https://gitlab.example.com/user-1"
+                  }
+                }
+              ],
+              "pageInfo": {
+                "endCursor": "eyJpZCI6IjMwMzQ2NzM5NzYifQ",
+                "hasNextPage": true
+              }
+            }
+          }
+        }
+      },
+      "headers": {},
+      "status": 200
+    }
+  }
+]

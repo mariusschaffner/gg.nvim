@@ -1,0 +1,728 @@
+{
+  "meta": {
+    "sanitized": true,
+    "source": "gitlab.com public (gitlab-org/cli), 2026-11-06"
+  },
+  "request": {
+    "operation": "PipelineGraph",
+    "variables": {
+      "fullPath": "gitlab-org/cli",
+      "id": "gid://gitlab/Ci::Pipeline/3035060733"
+    }
+  },
+  "response": {
+    "body": {
+      "data": {
+        "project": {
+          "pipeline": {
+            "cancelable": false,
+            "commit": {
+              "title": "Merge branch '8568-share-local-config-across-worktrees' into 'main'"
+            },
+            "createdAt": "2026-11-06T05:30:45Z",
+            "duration": 1304,
+            "finishedAt": "2026-11-06T05:52:33Z",
+            "graph": {
+              "nodes": [
+                {
+                  "groups": {
+                    "nodes": [
+                      {
+                        "jobs": {
+                          "nodes": [
+                            {
+                              "allowFailure": true,
+                              "cancelable": false,
+                              "createdAt": "2026-11-06T05:30:45Z",
+                              "duration": 17,
+                              "finishedAt": "2026-11-06T05:31:03Z",
+                              "id": "gid://gitlab/Ci::Build/17795132454",
+                              "manualJob": false,
+                              "name": "dependency-scanning-profile-0",
+                              "playable": false,
+                              "queuedDuration": 0.154294,
+                              "refName": "main",
+                              "retryable": true,
+                              "shortSha": "c298159b",
+                              "stage": {
+                                "name": "application-security-testing"
+                              },
+                              "startedAt": "2026-11-06T05:30:46Z",
+                              "status": "SUCCESS",
+                              "webPath": "/gitlab-org/cli/-/jobs/17795132454"
+                            }
+                          ],
+                          "pageInfo": {
+                            "hasNextPage": false
+                          }
+                        },
+                        "name": "dependency-scanning-profile-0",
+                        "size": 1
+                      },
+                      {
+                        "jobs": {
+                          "nodes": [
+                            {
+                              "allowFailure": true,
+                              "cancelable": false,
+                              "createdAt": "2026-11-06T05:30:45Z",
+                              "duration": 158,
+                              "finishedAt": "2026-11-06T05:33:24Z",
+                              "id": "gid://gitlab/Ci::Build/17795132451",
+                              "manualJob": false,
+                              "name": "gitlab-advanced-sast",
+                              "playable": false,
+                              "queuedDuration": 0.28369,
+                              "refName": "main",
+                              "retryable": true,
+                              "shortSha": "c298159b",
+                              "stage": {
+                                "name": "application-security-testing"
+                              },
+                              "startedAt": "2026-11-06T05:30:46Z",
+                              "status": "SUCCESS",
+                              "webPath": "/gitlab-org/cli/-/jobs/17795132451"
+                            }
+                          ],
+                          "pageInfo": {
+                            "hasNextPage": false
+                          }
+                        },
+                        "name": "gitlab-advanced-sast",
+                        "size": 1
+                      },
+                      {
+                        "jobs": {
+                          "nodes": [
+                            {
+                              "allowFailure": false,
+                              "cancelable": false,
+                              "createdAt": "2026-11-06T05:30:45Z",
+                              "duration": 71,
+                              "finishedAt": "2026-11-06T05:31:57Z",
+                              "id": "gid://gitlab/Ci::Build/17795132453",
+                              "manualJob": false,
+                              "name": "govulncheck",
+                              "playable": false,
+                              "queuedDuration": 0.194196,
+                              "refName": "main",
+                              "retryable": true,
+                              "shortSha": "c298159b",
+                              "stage": {
+                                "name": "application-security-testing"
+                              },
+                              "startedAt": "2026-11-06T05:30:46Z",
+                              "status": "SUCCESS",
+                              "webPath": "/gitlab-org/cli/-/jobs/17795132453"
+                            }
+                          ],
+                          "pageInfo": {
+                            "hasNextPage": false
+                          }
+                        },
+                        "name": "govulncheck",
+                        "size": 1
+                      },
+                      {
+                        "jobs": {
+                          "nodes": [
+                            {
+                              "allowFailure": true,
+                              "cancelable": false,
+                              "createdAt": "2026-11-06T05:30:45Z",
+                              "duration": 12,
+                              "finishedAt": "2026-11-06T05:30:58Z",
+                              "id": "gid://gitlab/Ci::Build/17795132452",
+                              "manualJob": false,
+                              "name": "secret_detection",
+                              "playable": false,
+                              "queuedDuration": 0.222819,
+                              "refName": "main",
+                              "retryable": true,
+                              "shortSha": "c298159b",
+                              "stage": {
+                                "name": "application-security-testing"
+                              },
+                              "startedAt": "2026-11-06T05:30:46Z",
+                              "status": "SUCCESS",
+                              "webPath": "/gitlab-org/cli/-/jobs/17795132452"
+                            }
+                          ],
+                          "pageInfo": {
+                            "hasNextPage": false
+                          }
+                        },
+                        "name": "secret_detection",
+                        "size": 1
+                      }
+                    ],
+                    "pageInfo": {
+                      "hasNextPage": false
+                    }
+                  },
+                  "name": "application-security-testing",
+                  "status": "success"
+                },
+                {
+                  "groups": {
+                    "nodes": [
+                      {
+                        "jobs": {
+                          "nodes": [
+                            {
+                              "allowFailure": false,
+                              "cancelable": false,
+                              "createdAt": "2026-11-06T05:30:45Z",
+                              "duration": 10,
+                              "finishedAt": "2026-11-06T05:30:56Z",
+                              "id": "gid://gitlab/Ci::Build/17795132457",
+                              "manualJob": false,
+                              "name": "check_args",
+                              "playable": false,
+                              "queuedDuration": 0.233068,
+                              "refName": "main",
+                              "retryable": true,
+                              "shortSha": "c298159b",
+                              "stage": {
+                                "name": "checks"
+                              },
+                              "startedAt": "2026-11-06T05:30:46Z",
+                              "status": "SUCCESS",
+                              "webPath": "/gitlab-org/cli/-/jobs/17795132457"
+                            }
+                          ],
+                          "pageInfo": {
+                            "hasNextPage": false
+                          }
+                        },
+                        "name": "check_args",
+                        "size": 1
+                      },
+                      {
+                        "jobs": {
+                          "nodes": [
+                            {
+                              "allowFailure": false,
+                              "cancelable": false,
+                              "createdAt": "2026-11-06T05:30:45Z",
+                              "duration": 9,
+                              "finishedAt": "2026-11-06T05:30:55Z",
+                              "id": "gid://gitlab/Ci::Build/17795132456",
+                              "manualJob": false,
+                              "name": "check_embed",
+                              "playable": false,
+                              "queuedDuration": 0.222381,
+                              "refName": "main",
+                              "retryable": true,
+                              "shortSha": "c298159b",
+                              "stage": {
+                                "name": "checks"
+                              },
+                              "startedAt": "2026-11-06T05:30:46Z",
+                              "status": "SUCCESS",
+                              "webPath": "/gitlab-org/cli/-/jobs/17795132456"
+                            }
+                          ],
+                          "pageInfo": {
+                            "hasNextPage": false
+                          }
+                        },
+                        "name": "check_embed",
+                        "size": 1
+                      },
+                      {
+                        "jobs": {
+                          "nodes": [
+                            {
+                              "allowFailure": false,
+                              "cancelable": false,
+                              "createdAt": "2026-11-06T05:30:45Z",
+                              "duration": 75,
+                              "finishedAt": "2026-11-06T05:32:02Z",
+                              "id": "gid://gitlab/Ci::Build/17795132455",
+                              "manualJob": false,
+                              "name": "check_go_generated_code",
+                              "playable": false,
+                              "queuedDuration": 0.142887,
+                              "refName": "main",
+                              "retryable": true,
+                              "shortSha": "c298159b",
+                              "stage": {
+                                "name": "checks"
+                              },
+                              "startedAt": "2026-11-06T05:30:46Z",
+                              "status": "SUCCESS",
+                              "webPath": "/gitlab-org/cli/-/jobs/17795132455"
+                            }
+                          ],
+                          "pageInfo": {
+                            "hasNextPage": false
+                          }
+                        },
+                        "name": "check_go_generated_code",
+                        "size": 1
+                      }
+                    ],
+                    "pageInfo": {
+                      "hasNextPage": false
+                    }
+                  },
+                  "name": "checks",
+                  "status": "success"
+                },
+                {
+                  "groups": {
+                    "nodes": [
+                      {
+                        "jobs": {
+                          "nodes": [
+                            {
+                              "allowFailure": false,
+                              "cancelable": false,
+                              "createdAt": "2026-11-06T05:30:45Z",
+                              "duration": 625,
+                              "finishedAt": "2026-11-06T05:41:11Z",
+                              "id": "gid://gitlab/Ci::Build/17795132459",
+                              "manualJob": false,
+                              "name": "lint",
+                              "playable": false,
+                              "queuedDuration": 0.267489,
+                              "refName": "main",
+                              "retryable": true,
+                              "shortSha": "c298159b",
+                              "stage": {
+                                "name": "test"
+                              },
+                              "startedAt": "2026-11-06T05:30:46Z",
+                              "status": "SUCCESS",
+                              "webPath": "/gitlab-org/cli/-/jobs/17795132459"
+                            }
+                          ],
+                          "pageInfo": {
+                            "hasNextPage": false
+                          }
+                        },
+                        "name": "lint",
+                        "size": 1
+                      },
+                      {
+                        "jobs": {
+                          "nodes": [
+                            {
+                              "allowFailure": false,
+                              "cancelable": false,
+                              "createdAt": "2026-11-06T05:30:45Z",
+                              "duration": 31,
+                              "finishedAt": "2026-11-06T05:31:18Z",
+                              "id": "gid://gitlab/Ci::Build/17795132458",
+                              "manualJob": false,
+                              "name": "lint:comments",
+                              "playable": false,
+                              "queuedDuration": 0.191322,
+                              "refName": "main",
+                              "retryable": true,
+                              "shortSha": "c298159b",
+                              "stage": {
+                                "name": "test"
+                              },
+                              "startedAt": "2026-11-06T05:30:46Z",
+                              "status": "SUCCESS",
+                              "webPath": "/gitlab-org/cli/-/jobs/17795132458"
+                            }
+                          ],
+                          "pageInfo": {
+                            "hasNextPage": false
+                          }
+                        },
+                        "name": "lint:comments",
+                        "size": 1
+                      },
+                      {
+                        "jobs": {
+                          "nodes": [
+                            {
+                              "allowFailure": false,
+                              "cancelable": false,
+                              "createdAt": "2026-11-06T05:30:45Z",
+                              "duration": 76,
+                              "finishedAt": "2026-11-06T05:48:45Z",
+                              "id": "gid://gitlab/Ci::Build/17795132462",
+                              "manualJob": false,
+                              "name": "tests:coverage",
+                              "playable": false,
+                              "queuedDuration": 0.188983,
+                              "refName": "main",
+                              "retryable": true,
+                              "shortSha": "c298159b",
+                              "stage": {
+                                "name": "test"
+                              },
+                              "startedAt": "2026-11-06T05:47:29Z",
+                              "status": "SUCCESS",
+                              "webPath": "/gitlab-org/cli/-/jobs/17795132462"
+                            }
+                          ],
+                          "pageInfo": {
+                            "hasNextPage": false
+                          }
+                        },
+                        "name": "tests:coverage",
+                        "size": 1
+                      },
+                      {
+                        "jobs": {
+                          "nodes": [
+                            {
+                              "allowFailure": false,
+                              "cancelable": false,
+                              "createdAt": "2026-11-06T05:30:45Z",
+                              "duration": 464,
+                              "finishedAt": "2026-11-06T05:38:31Z",
+                              "id": "gid://gitlab/Ci::Build/17795132461",
+                              "manualJob": false,
+                              "name": "tests:integration",
+                              "playable": false,
+                              "queuedDuration": 0.30467,
+                              "refName": "main",
+                              "retryable": true,
+                              "shortSha": "c298159b",
+                              "stage": {
+                                "name": "test"
+                              },
+                              "startedAt": "2026-11-06T05:30:46Z",
+                              "status": "SUCCESS",
+                              "webPath": "/gitlab-org/cli/-/jobs/17795132461"
+                            }
+                          ],
+                          "pageInfo": {
+                            "hasNextPage": false
+                          }
+                        },
+                        "name": "tests:integration",
+                        "size": 1
+                      },
+                      {
+                        "jobs": {
+                          "nodes": [
+                            {
+                              "allowFailure": false,
+                              "cancelable": false,
+                              "createdAt": "2026-11-06T05:30:45Z",
+                              "duration": 1000,
+                              "finishedAt": "2026-11-06T05:47:27Z",
+                              "id": "gid://gitlab/Ci::Build/17795132460",
+                              "manualJob": false,
+                              "name": "tests:unit",
+                              "playable": false,
+                              "queuedDuration": 0.36678,
+                              "refName": "main",
+                              "retryable": true,
+                              "shortSha": "c298159b",
+                              "stage": {
+                                "name": "test"
+                              },
+                              "startedAt": "2026-11-06T05:30:46Z",
+                              "status": "SUCCESS",
+                              "webPath": "/gitlab-org/cli/-/jobs/17795132460"
+                            }
+                          ],
+                          "pageInfo": {
+                            "hasNextPage": false
+                          }
+                        },
+                        "name": "tests:unit",
+                        "size": 1
+                      }
+                    ],
+                    "pageInfo": {
+                      "hasNextPage": false
+                    }
+                  },
+                  "name": "test",
+                  "status": "success"
+                },
+                {
+                  "groups": {
+                    "nodes": [
+                      {
+                        "jobs": {
+                          "nodes": [
+                            {
+                              "allowFailure": false,
+                              "cancelable": false,
+                              "createdAt": "2026-11-06T05:30:45Z",
+                              "duration": 302,
+                              "finishedAt": "2026-11-06T05:52:31Z",
+                              "id": "gid://gitlab/Ci::Build/17795132463",
+                              "manualJob": false,
+                              "name": "build_test",
+                              "playable": false,
+                              "queuedDuration": 0.372893,
+                              "refName": "main",
+                              "retryable": true,
+                              "shortSha": "c298159b",
+                              "stage": {
+                                "name": "build"
+                              },
+                              "startedAt": "2026-11-06T05:47:29Z",
+                              "status": "SUCCESS",
+                              "webPath": "/gitlab-org/cli/-/jobs/17795132463"
+                            }
+                          ],
+                          "pageInfo": {
+                            "hasNextPage": false
+                          }
+                        },
+                        "name": "build_test",
+                        "size": 1
+                      },
+                      {
+                        "jobs": {
+                          "nodes": [
+                            {
+                              "allowFailure": false,
+                              "cancelable": false,
+                              "createdAt": "2026-11-06T05:30:45Z",
+                              "duration": 259,
+                              "finishedAt": "2026-11-06T05:35:05Z",
+                              "id": "gid://gitlab/Ci::Build/17795132466",
+                              "manualJob": false,
+                              "name": "build_windows: [amd64]",
+                              "playable": false,
+                              "queuedDuration": 0.231197,
+                              "refName": "main",
+                              "retryable": true,
+                              "shortSha": "c298159b",
+                              "stage": {
+                                "name": "build"
+                              },
+                              "startedAt": "2026-11-06T05:30:46Z",
+                              "status": "SUCCESS",
+                              "webPath": "/gitlab-org/cli/-/jobs/17795132466"
+                            },
+                            {
+                              "allowFailure": false,
+                              "cancelable": false,
+                              "createdAt": "2026-11-06T05:30:45Z",
+                              "duration": 257,
+                              "finishedAt": "2026-11-06T05:35:04Z",
+                              "id": "gid://gitlab/Ci::Build/17795132467",
+                              "manualJob": false,
+                              "name": "build_windows: [arm64]",
+                              "playable": false,
+                              "queuedDuration": 0.245853,
+                              "refName": "main",
+                              "retryable": true,
+                              "shortSha": "c298159b",
+                              "stage": {
+                                "name": "build"
+                              },
+                              "startedAt": "2026-11-06T05:30:46Z",
+                              "status": "SUCCESS",
+                              "webPath": "/gitlab-org/cli/-/jobs/17795132467"
+                            }
+                          ],
+                          "pageInfo": {
+                            "hasNextPage": false
+                          }
+                        },
+                        "name": "build_windows",
+                        "size": 2
+                      },
+                      {
+                        "jobs": {
+                          "nodes": [
+                            {
+                              "allowFailure": false,
+                              "cancelable": false,
+                              "createdAt": "2026-11-06T05:30:45Z",
+                              "duration": 169,
+                              "finishedAt": "2026-11-06T05:50:18Z",
+                              "id": "gid://gitlab/Ci::Build/17795132468",
+                              "manualJob": false,
+                              "name": "snapcraft_build_edge",
+                              "playable": false,
+                              "queuedDuration": 0.185507,
+                              "refName": "main",
+                              "retryable": true,
+                              "shortSha": "c298159b",
+                              "stage": {
+                                "name": "build"
+                              },
+                              "startedAt": "2026-11-06T05:47:29Z",
+                              "status": "SUCCESS",
+                              "webPath": "/gitlab-org/cli/-/jobs/17795132468"
+                            }
+                          ],
+                          "pageInfo": {
+                            "hasNextPage": false
+                          }
+                        },
+                        "name": "snapcraft_build_edge",
+                        "size": 1
+                      },
+                      {
+                        "jobs": {
+                          "nodes": [
+                            {
+                              "allowFailure": false,
+                              "cancelable": false,
+                              "createdAt": "2026-11-06T05:30:45Z",
+                              "duration": 35,
+                              "finishedAt": "2026-11-06T05:35:43Z",
+                              "id": "gid://gitlab/Ci::Build/17795132464",
+                              "manualJob": false,
+                              "name": "windows_installer: [amd64, x86_64]",
+                              "playable": false,
+                              "queuedDuration": 0.370467,
+                              "refName": "main",
+                              "retryable": true,
+                              "shortSha": "c298159b",
+                              "stage": {
+                                "name": "build"
+                              },
+                              "startedAt": "2026-11-06T05:35:07Z",
+                              "status": "SUCCESS",
+                              "webPath": "/gitlab-org/cli/-/jobs/17795132464"
+                            },
+                            {
+                              "allowFailure": false,
+                              "cancelable": false,
+                              "createdAt": "2026-11-06T05:30:45Z",
+                              "duration": 30,
+                              "finishedAt": "2026-11-06T05:35:37Z",
+                              "id": "gid://gitlab/Ci::Build/17795132465",
+                              "manualJob": false,
+                              "name": "windows_installer: [arm64, arm64]",
+                              "playable": false,
+                              "queuedDuration": 0.323752,
+                              "refName": "main",
+                              "retryable": true,
+                              "shortSha": "c298159b",
+                              "stage": {
+                                "name": "build"
+                              },
+                              "startedAt": "2026-11-06T05:35:07Z",
+                              "status": "SUCCESS",
+                              "webPath": "/gitlab-org/cli/-/jobs/17795132465"
+                            }
+                          ],
+                          "pageInfo": {
+                            "hasNextPage": false
+                          }
+                        },
+                        "name": "windows_installer",
+                        "size": 2
+                      }
+                    ],
+                    "pageInfo": {
+                      "hasNextPage": false
+                    }
+                  },
+                  "name": "build",
+                  "status": "success"
+                },
+                {
+                  "groups": {
+                    "nodes": [
+                      {
+                        "jobs": {
+                          "nodes": [
+                            {
+                              "allowFailure": false,
+                              "cancelable": false,
+                              "createdAt": "2026-11-06T05:30:45Z",
+                              "duration": 65,
+                              "finishedAt": "2026-11-06T05:51:26Z",
+                              "id": "gid://gitlab/Ci::Build/17795132469",
+                              "manualJob": false,
+                              "name": "snapcraft_release_edge",
+                              "playable": false,
+                              "queuedDuration": 0.463797,
+                              "refName": "main",
+                              "retryable": true,
+                              "shortSha": "c298159b",
+                              "stage": {
+                                "name": "release"
+                              },
+                              "startedAt": "2026-11-06T05:50:20Z",
+                              "status": "SUCCESS",
+                              "webPath": "/gitlab-org/cli/-/jobs/17795132469"
+                            }
+                          ],
+                          "pageInfo": {
+                            "hasNextPage": false
+                          }
+                        },
+                        "name": "snapcraft_release_edge",
+                        "size": 1
+                      }
+                    ],
+                    "pageInfo": {
+                      "hasNextPage": false
+                    }
+                  },
+                  "name": "release",
+                  "status": "success"
+                }
+              ],
+              "pageInfo": {
+                "hasNextPage": false
+              }
+            },
+            "id": "gid://gitlab/Ci::Pipeline/3035060733",
+            "iid": "16967",
+            "mergeRequest": null,
+            "path": "/gitlab-org/cli/-/pipelines/3035060733",
+            "queuedDuration": 1,
+            "ref": "main",
+            "retryable": false,
+            "sha": "c298159b72a6d1d888a635a8c1e5fc4952d12983",
+            "shortSha": "c298159b",
+            "source": "push",
+            "stages": {
+              "nodes": [
+                {
+                  "name": "application-security-testing",
+                  "status": "success"
+                },
+                {
+                  "name": "checks",
+                  "status": "success"
+                },
+                {
+                  "name": "test",
+                  "status": "success"
+                },
+                {
+                  "name": "build",
+                  "status": "success"
+                },
+                {
+                  "name": "release",
+                  "status": "success"
+                }
+              ],
+              "pageInfo": {
+                "hasNextPage": false
+              }
+            },
+            "startedAt": "2026-11-06T05:30:46Z",
+            "status": "SUCCESS",
+            "totalJobs": 19,
+            "user": {
+              "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+              "id": "gid://gitlab/User/11809982",
+              "name": "Test User 1",
+              "state": "active",
+              "username": "user-1",
+              "webUrl": "https://gitlab.example.com/user-1"
+            }
+          }
+        }
+      }
+    },
+    "headers": {},
+    "status": 200
+  }
+}

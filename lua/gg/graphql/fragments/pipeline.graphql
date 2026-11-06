@@ -1,0 +1,35 @@
+#import "user"
+# Nested stages request pageInfo so truncation is reported, never silent.
+fragment PipelineFields on Pipeline {
+  id
+  iid
+  status
+  ref
+  sha
+  shortSha: sha(format: SHORT)
+  source
+  createdAt
+  startedAt
+  finishedAt
+  duration
+  queuedDuration
+  path
+  totalJobs
+  retryable
+  cancelable
+  user {
+    ...UserFields
+  }
+  commit {
+    title
+  }
+  stages(first: 50) {
+    nodes {
+      name
+      status
+    }
+    pageInfo {
+      hasNextPage
+    }
+  }
+}

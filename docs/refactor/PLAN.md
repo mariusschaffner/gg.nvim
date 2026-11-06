@@ -300,7 +300,7 @@ Every item follows the same pattern:
   - `dates({host, project, iid})` → `gg.WorkItemDates {work_item_id, start_date?, due_date?}` (GraphQL `namespace.workItem` widgets).
   - `update_dates({…, start_date?, due_date?})`: `false` clears a date; the work-item ID is looked up when it isn't passed; uses the `workItemUpdate` mutation.
   - Pagination: not applicable (stated in the spec).
-- [ ] **6.5 branches** — `feat(branches)`
+- [x] **6.5 branches** — `feat(branches)`
   - `list`/`list_all` (REST `/repository/branches` with `search`; GraphQL only exposes names, with offset paging; default 100) → `gg.Branch {name, commit_sha?, default, protected, merged, web_url?}`.
   - `create({branch, ref})`.
   - `related_to_issue({iid})` = `list({search = "^<iid>-"})`. This fixes the "misses past 100" bug (§5.2).

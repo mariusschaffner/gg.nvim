@@ -96,6 +96,15 @@ local function person(name)
 end
 
 local function sanitize_string(s)
+  -- "Some Name <mail@host>" (commit trailers, Merged-by:, Co-authored-by:) -> a sanitized name
+  s = s:gsub("([^\n:<>\"]-)(%s*<)([%w%._%%+%-]+@[%w%.%-]+%.%a+>)", function(name, sep, rest)
+    local trimmed = vim.trim(name)
+    if trimmed == "" or trimmed:match("^Test User %d+$") then
+      return name .. sep .. rest
+    end
+    local lead = name:match("^(%s*)") or ""
+    return lead .. person(trimmed) .. sep .. rest
+  end)
   s = s:gsub("[%w%._%%+%-]+@[%w%.%-]+%.%a+", function(email)
     if email:match("@example%.com$") then
       return email

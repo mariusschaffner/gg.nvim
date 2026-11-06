@@ -47,6 +47,10 @@ T["fixtures exist and decode"] = function()
         if type(fx.meta) ~= "table" or type(fx.meta.source) ~= "string" then
           table.insert(bad, ("%s[%d]: needs meta.source"):format(file, i))
         end
+        local p = type(fx.request) == "table" and fx.request.path
+        if p ~= nil and (type(p) ~= "string" or p:sub(1, 1) ~= "/" or p:find(":", 1, true)) then
+          table.insert(bad, ("%s[%d]: request.path must be a raw URL path starting with /"):format(file, i))
+        end
       end
     end
   end

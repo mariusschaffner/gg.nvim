@@ -1,0 +1,168 @@
+[
+  {
+    "meta": {
+      "sanitized": true,
+      "source": "gitlab.com public (gitlab-org/cli), 2026-11-06"
+    },
+    "request": {
+      "method": "GET",
+      "path": "/api/v4/projects/gitlab-org%2Fcli/repository/branches",
+      "query": {
+        "page": "1",
+        "per_page": "2",
+        "search": "fix"
+      }
+    },
+    "response": {
+      "body": [
+        {
+          "can_push": false,
+          "commit": {
+            "author_email": "user1@example.com",
+            "author_name": "Test User 1",
+            "authored_date": "2026-11-04T14:34:45.000+00:00",
+            "committed_date": "2026-11-04T14:34:45.000+00:00",
+            "committer_email": "user1@example.com",
+            "committer_name": "Test User 1",
+            "created_at": "2026-11-04T14:34:45.000+00:00",
+            "extended_trailers": {},
+            "id": "187f01228430e27d67fb6ee5fe46974093683f60",
+            "message": "Merge branch 'main' into 637331-maven-mirror-prefix-coordinates\n",
+            "parent_ids": [
+              "8977e4c49a5bd3d7fba381b9678797a02f7e3ef6",
+              "6dd083934fd3c69a2ad6e9085a45f74906cc4053"
+            ],
+            "short_id": "187f0122",
+            "title": "Merge branch 'main' into 637331-maven-mirror-prefix-coordinates",
+            "trailers": {},
+            "web_url": "https://gitlab.com/gitlab-org/cli/-/commit/187f01228430e27d67fb6ee5fe46974093683f60"
+          },
+          "default": false,
+          "developers_can_merge": false,
+          "developers_can_push": false,
+          "merged": false,
+          "name": "637331-maven-mirror-prefix-coordinates",
+          "protected": false,
+          "web_url": "https://gitlab.com/gitlab-org/cli/-/tree/637331-maven-mirror-prefix-coordinates"
+        },
+        {
+          "can_push": false,
+          "commit": {
+            "author_email": "user1@example.com",
+            "author_name": "Test User 1",
+            "authored_date": "2026-11-03T14:45:42.000+00:00",
+            "committed_date": "2026-11-03T14:45:42.000+00:00",
+            "committer_email": "user2@example.com",
+            "committer_name": "Test User 2",
+            "created_at": "2026-11-03T14:45:42.000+00:00",
+            "extended_trailers": {},
+            "id": "0a957e78688ad1ba2984bfd4a8d5319499f9f1dc",
+            "message": "Drop Canada Life attribution from the complex-settings test fixture\n\nRenamed canadaLifeNexusSettingsXML to complexSettingsXML and reworded the\ntest name and comments to describe it by what it tests (a complex,\nrealistic settings.xml shape) rather than whose it is. The fixture already\nused a placeholder hostname; this removes the attribution entirely rather\nthan just the identifying value.",
+            "parent_ids": [
+              "61a1e0baaa406da329fbb36f6a413b324a2da789"
+            ],
+            "short_id": "0a957e78",
+            "title": "Drop Canada Life attribution from the complex-settings test fixture",
+            "trailers": {},
+            "web_url": "https://gitlab.com/gitlab-org/cli/-/commit/0a957e78688ad1ba2984bfd4a8d5319499f9f1dc"
+          },
+          "default": false,
+          "developers_can_merge": false,
+          "developers_can_push": false,
+          "merged": false,
+          "name": "637331-poc-full-fix",
+          "protected": false,
+          "web_url": "https://gitlab.com/gitlab-org/cli/-/tree/637331-poc-full-fix"
+        }
+      ],
+      "headers": {
+        "x-next-page": "2",
+        "x-page": "1"
+      },
+      "status": 200
+    }
+  },
+  {
+    "meta": {
+      "sanitized": true,
+      "source": "gitlab.com public (gitlab-org/cli), 2026-11-06"
+    },
+    "request": {
+      "method": "GET",
+      "path": "/api/v4/projects/gitlab-org%2Fcli/repository/branches",
+      "query": {
+        "page": "2",
+        "per_page": "2",
+        "search": "fix"
+      }
+    },
+    "response": {
+      "body": [
+        {
+          "can_push": false,
+          "commit": {
+            "author_email": "user1@example.com",
+            "author_name": "Test User 1",
+            "authored_date": "2024-09-09T14:24:37.000+00:00",
+            "committed_date": "2024-09-09T14:24:37.000+00:00",
+            "committer_email": "user1@example.com",
+            "committer_name": "Test User 1",
+            "created_at": "2024-09-09T14:24:37.000+00:00",
+            "extended_trailers": {},
+            "id": "a553dab01fef6b6c6474d5dbd12438fb59e89657",
+            "message": "Merge branch 'fix-token-url' into 'main'\n\nfix(typo): update token generation URL\n\nSee merge request https://gitlab.com/gitlab-org/cli/-/merge_requests/1657\n\nMerged-by: Test User 1 <user1@example.com>\nApproved-by: Test User 2 <user2@example.com>\nApproved-by: Test User 1 <user1@example.com>\nCo-authored-by: Test User 3 <user3@example.com>",
+            "parent_ids": [
+              "93012804ee42bf78bb142873e77300bbff526e6d",
+              "e3df0db7f382cd587a1529942edff9f725838f3e"
+            ],
+            "short_id": "a553dab0",
+            "title": "Merge branch 'fix-token-url' into 'main'",
+            "trailers": {},
+            "web_url": "https://gitlab.com/gitlab-org/cli/-/commit/a553dab01fef6b6c6474d5dbd12438fb59e89657"
+          },
+          "default": false,
+          "developers_can_merge": false,
+          "developers_can_push": false,
+          "merged": true,
+          "name": "7574-test-and-fix-stacked-diffs-in-forks",
+          "protected": false,
+          "web_url": "https://gitlab.com/gitlab-org/cli/-/tree/7574-test-and-fix-stacked-diffs-in-forks"
+        },
+        {
+          "can_push": false,
+          "commit": {
+            "author_email": "user4@example.com",
+            "author_name": "Test User 4",
+            "authored_date": "2025-10-20T10:45:20.000+01:00",
+            "committed_date": "2025-10-20T10:45:20.000+01:00",
+            "committer_email": "user4@example.com",
+            "committer_name": "Test User 4",
+            "created_at": "2025-10-20T10:45:20.000+01:00",
+            "extended_trailers": {},
+            "id": "9067893000a88f7082bfb562d18e0eae38310e27",
+            "message": "fix: .Hostname() may strip port, use .Host\n\nCalling u.Hostname() strips port number, resulting in default port\n  i.e. 443 being used. The u.Host member provides host and (if\n  specified) port. ",
+            "parent_ids": [
+              "1660bec8834ec782aaff83c9602cf629235e07f4"
+            ],
+            "short_id": "90678930",
+            "title": "fix: .Hostname() may strip port, use .Host",
+            "trailers": {},
+            "web_url": "https://gitlab.com/gitlab-org/cli/-/commit/9067893000a88f7082bfb562d18e0eae38310e27"
+          },
+          "default": false,
+          "developers_can_merge": false,
+          "developers_can_push": false,
+          "merged": false,
+          "name": "user-9/fix-hostname-port-stripping",
+          "protected": false,
+          "web_url": "https://gitlab.com/gitlab-org/cli/-/tree/user-9/fix-hostname-port-stripping"
+        }
+      ],
+      "headers": {
+        "x-next-page": "3",
+        "x-page": "2"
+      },
+      "status": 200
+    }
+  }
+]

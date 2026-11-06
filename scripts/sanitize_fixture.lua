@@ -151,6 +151,13 @@ local function walk(v)
     for uname, idx in pairs(users) do
       s = s:gsub("@" .. vim.pesc(uname) .. "%f[^%w_%-%.]", "@user-" .. idx)
     end
+    -- any other @mention (not part of an e-mail address) -> @user-N
+    s = s:gsub("%f[%w@]@([%w][%w_%.%-]*[%w])", function(name)
+      if name:match("^user%-%d+$") then
+        return "@" .. name
+      end
+      return "@user-" .. user_index(name)
+    end)
     return s
   end
   if type(v) ~= "table" then

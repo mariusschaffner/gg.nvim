@@ -1,0 +1,16 @@
+#import "note"
+query MrNotes($fullPath: ID!, $iid: String!, $filter: NotesFilterType, $first: Int, $after: String) {
+  project(fullPath: $fullPath) {
+    mergeRequest(iid: $iid) {
+      notes(filter: $filter, first: $first, after: $after) {
+        nodes {
+          ...NoteFields
+        }
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
+      }
+    }
+  }
+}

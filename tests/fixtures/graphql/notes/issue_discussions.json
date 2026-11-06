@@ -1,0 +1,359 @@
+[
+  {
+    "meta": {
+      "sanitized": true,
+      "source": "gitlab.com public (gitlab-org/cli), 2026-11-06"
+    },
+    "request": {
+      "operation": "IssueDiscussions",
+      "variables": {
+        "first": 3,
+        "fullPath": "gitlab-org/cli",
+        "iid": "8666"
+      }
+    },
+    "response": {
+      "body": {
+        "data": {
+          "project": {
+            "issue": {
+              "discussions": {
+                "nodes": [
+                  {
+                    "id": "gid://gitlab/Discussion/6c88735a92790e08302fbf86390a4cf5e428d93c",
+                    "notes": {
+                      "nodes": [
+                        {
+                          "author": {
+                            "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                            "id": "gid://gitlab/User/6861791",
+                            "name": "Test User 1",
+                            "state": "active",
+                            "username": "user-1",
+                            "webUrl": "https://gitlab.example.com/user-1"
+                          },
+                          "awardEmoji": {
+                            "nodes": [],
+                            "pageInfo": {
+                              "hasNextPage": false
+                            }
+                          },
+                          "body": "set status to **New**",
+                          "createdAt": "2026-10-22T16:15:47Z",
+                          "discussion": {
+                            "id": "gid://gitlab/Discussion/6c88735a92790e08302fbf86390a4cf5e428d93c"
+                          },
+                          "id": "gid://gitlab/Note/4069607215",
+                          "internal": false,
+                          "position": null,
+                          "resolvable": false,
+                          "resolved": false,
+                          "system": true,
+                          "systemNoteIconName": null,
+                          "systemNoteMetadata": {
+                            "action": "work_item_status"
+                          },
+                          "updatedAt": "2026-10-22T16:15:47Z",
+                          "url": "https://gitlab.com/gitlab-org/cli/-/work_items/8666#note_4069607215"
+                        }
+                      ],
+                      "pageInfo": {
+                        "hasNextPage": false
+                      }
+                    },
+                    "resolvable": false,
+                    "resolved": false,
+                    "resolvedAt": null,
+                    "resolvedBy": null
+                  },
+                  {
+                    "id": "gid://gitlab/Discussion/6dbab5a2ebbab1fb6afa785188cf7e1f66b78891",
+                    "notes": {
+                      "nodes": [
+                        {
+                          "author": {
+                            "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                            "id": "gid://gitlab/User/6861791",
+                            "name": "Test User 1",
+                            "state": "active",
+                            "username": "user-1",
+                            "webUrl": "https://gitlab.example.com/user-1"
+                          },
+                          "awardEmoji": {
+                            "nodes": [],
+                            "pageInfo": {
+                              "hasNextPage": false
+                            }
+                          },
+                          "body": "Related: #8382 reports the same head project resolution from local remotes, triggered by a fork remote in the clone. Here the trigger is a clone of an unrelated project. In both cases `--repo` does not set the source project, and passing `--head` explicitly avoids it.",
+                          "createdAt": "2026-10-22T16:18:53Z",
+                          "discussion": {
+                            "id": "gid://gitlab/Discussion/6dbab5a2ebbab1fb6afa785188cf7e1f66b78891"
+                          },
+                          "id": "gid://gitlab/Note/4069633327",
+                          "internal": false,
+                          "position": null,
+                          "resolvable": false,
+                          "resolved": false,
+                          "system": false,
+                          "systemNoteIconName": null,
+                          "systemNoteMetadata": null,
+                          "updatedAt": "2026-10-22T16:18:53Z",
+                          "url": "https://gitlab.com/gitlab-org/cli/-/work_items/8666#note_4069633327"
+                        }
+                      ],
+                      "pageInfo": {
+                        "hasNextPage": false
+                      }
+                    },
+                    "resolvable": false,
+                    "resolved": false,
+                    "resolvedAt": null,
+                    "resolvedBy": null
+                  },
+                  {
+                    "id": "gid://gitlab/Discussion/dfe5943a0ded5d6db864241473390a0e3667a7e6",
+                    "notes": {
+                      "nodes": [
+                        {
+                          "author": {
+                            "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                            "id": "gid://gitlab/User/1786152",
+                            "name": "Test User 2",
+                            "state": "active",
+                            "username": "user-2",
+                            "webUrl": "https://gitlab.example.com/user-2"
+                          },
+                          "awardEmoji": {
+                            "nodes": [],
+                            "pageInfo": {
+                              "hasNextPage": false
+                            }
+                          },
+                          "body": "We've attempted to automatically add labels to help route this issue to the right team.\nFurther tweak labels using our [community issue management UI](https://gitlab.example.com/manage-issue?projectId=34675721&issueIid=8666&action=label).\n\nHere's what our AI has to say:\n\n> No existing labels to check for inconsistencies. The group assignment is uncertain - this issue is about the glab CLI tool (gitlab-cli), which could fall under group::developer clients (category:gitlab cli). However, it could also relate to group::code review given it's about MR creation. The bug is clearly functional in nature.\n\nWe believe everyone can contribute and welcome you to work on this proposed change, feature or bug fix.\nIf you are a new community contributor, start your [onboarding journey](https://gitlab.example.com) and get to know our community.\n\nTeam members, please indicate any mistakes by adding the `automation:ml wrong` label.\n\n<details><summary>View AI response JSON</summary>\n\n```json\n{\n  \"group\": {\n    \"existing\": null,\n    \"deduced\": \"group::developer clients\",\n    \"confidence\": 35\n  },\n  \"category\": {\n    \"existing\": null,\n    \"deduced\": \"category:gitlab cli\",\n    \"confidence\": 35\n  },\n  \"type\": {\n    \"existing\": null,\n    \"deduced\": \"type::bug\",\n    \"confidence\": 92\n  },\n  \"subtype\": {\n    \"existing\": null,\n    \"deduced\": \"bug::functional\",\n    \"confidence\": 85\n  },\n  \"areas\": {\n    \"existing\": [],\n    \"deduced\": [\n      \"backend\"\n    ],\n    \"confidence\": 75\n  },\n  \"note\": \"No existing labels to check for inconsistencies. The group assignment is uncertain - this issue is about the glab CLI tool (gitlab-cli), which could fall under group::developer clients (category:gitlab cli). However, it could also relate to group::code review given it's about MR creation. The bug is clearly functional in nature.\"\n}\n```\n</details>\n\n---\n\n[This message was generated automatically using AI](https://gitlab.com/gitlab-community/gitlab-org/quality/triage-ops/-/blob/master/policies/stages/report/untriaged-issues.yml).",
+                          "createdAt": "2026-10-22T17:09:50Z",
+                          "discussion": {
+                            "id": "gid://gitlab/Discussion/dfe5943a0ded5d6db864241473390a0e3667a7e6"
+                          },
+                          "id": "gid://gitlab/Note/4069974901",
+                          "internal": false,
+                          "position": null,
+                          "resolvable": false,
+                          "resolved": false,
+                          "system": false,
+                          "systemNoteIconName": null,
+                          "systemNoteMetadata": null,
+                          "updatedAt": "2026-10-22T17:09:50Z",
+                          "url": "https://gitlab.com/gitlab-org/cli/-/work_items/8666#note_4069974901"
+                        }
+                      ],
+                      "pageInfo": {
+                        "hasNextPage": false
+                      }
+                    },
+                    "resolvable": false,
+                    "resolved": false,
+                    "resolvedAt": null,
+                    "resolvedBy": null
+                  }
+                ],
+                "pageInfo": {
+                  "endCursor": "Mw",
+                  "hasNextPage": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "headers": {},
+      "status": 200
+    }
+  },
+  {
+    "meta": {
+      "sanitized": true,
+      "source": "gitlab.com public (gitlab-org/cli), 2026-11-06"
+    },
+    "request": {
+      "operation": "IssueDiscussions",
+      "variables": {
+        "after": "Mw",
+        "fullPath": "gitlab-org/cli",
+        "iid": "8666"
+      }
+    },
+    "response": {
+      "body": {
+        "data": {
+          "project": {
+            "issue": {
+              "discussions": {
+                "nodes": [
+                  {
+                    "id": "gid://gitlab/Discussion/90e0df7bdd6ffc6acbe4c64850e7862f09028ef3",
+                    "notes": {
+                      "nodes": [
+                        {
+                          "author": {
+                            "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                            "id": "gid://gitlab/User/11809982",
+                            "name": "Test User 1",
+                            "state": "active",
+                            "username": "user-1",
+                            "webUrl": "https://gitlab.example.com/user-1"
+                          },
+                          "awardEmoji": {
+                            "nodes": [],
+                            "pageInfo": {
+                              "hasNextPage": false
+                            }
+                          },
+                          "body": "Confirmed on current `main`.\n\n**Repro:** a unit test with `--repo group/project-b` (base repo) and a single local remote pointing to the unrelated `group/project-a` shows `glab mr create` posting the merge request to `group/project-a`, which GitLab rejects with `422 Source project is not a fork of the target project`. The plain CLI and `glab mcp serve` share this code path.\n\n**Root cause:** without `--head` or `GITLAB_HEAD_REPO`, the source project is resolved from local remotes only ([`mr_create.go#L162-185`](https://gitlab.com/gitlab-org/cli/-/blob/main/internal/commands/mr/create/mr_create.go#L162-185), [`resolver.go#L219-264`](https://gitlab.com/gitlab-org/cli/-/blob/main/internal/glrepo/resolver.go#L219-264)). `--repo` sets only the target. Nothing checks that the source project is the target or a fork of it before the request ([`mr_create.go#L419-445`](https://gitlab.com/gitlab-org/cli/-/blob/main/internal/commands/mr/create/mr_create.go#L419-445)). [!3623](https://gitlab.com/gitlab-org/cli/-/merge_requests/3623) falls back to `--repo` only when there is no git repository or no remotes.\n\n**Proposed fix:** after fetching the source and target projects, if the head was not set explicitly and the source is neither the target nor a fork of it, use the `--repo` project as the source. Add a test in `internal/commands/mr/create/mr_create_test.go` covering an unrelated local remote with `--repo`.\n\n**Workaround:** pass `--head` with the same project as `--repo`, or set `GITLAB_HEAD_REPO`.\n\nRelated: #8382 has the same root (`--repo` does not set the source project) but is triggered by an actual fork remote, which this check would not catch.\n\n<!-- triage-desk: bug 6bac3b9cd306 -->",
+                          "createdAt": "2026-10-27T03:22:42Z",
+                          "discussion": {
+                            "id": "gid://gitlab/Discussion/90e0df7bdd6ffc6acbe4c64850e7862f09028ef3"
+                          },
+                          "id": "gid://gitlab/Note/4095653650",
+                          "internal": false,
+                          "position": null,
+                          "resolvable": false,
+                          "resolved": false,
+                          "system": false,
+                          "systemNoteIconName": null,
+                          "systemNoteMetadata": null,
+                          "updatedAt": "2026-10-27T03:22:42Z",
+                          "url": "https://gitlab.com/gitlab-org/cli/-/work_items/8666#note_4095653650"
+                        }
+                      ],
+                      "pageInfo": {
+                        "hasNextPage": false
+                      }
+                    },
+                    "resolvable": false,
+                    "resolved": false,
+                    "resolvedAt": null,
+                    "resolvedBy": null
+                  },
+                  {
+                    "id": "gid://gitlab/Discussion/e5d799cc2e9f9f179e3b06935055b38a9f3b5de1",
+                    "notes": {
+                      "nodes": [
+                        {
+                          "author": {
+                            "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                            "id": "gid://gitlab/User/1441415",
+                            "name": "Test User 2",
+                            "state": "active",
+                            "username": "user-2",
+                            "webUrl": "https://gitlab.example.com/user-2"
+                          },
+                          "awardEmoji": {
+                            "nodes": [],
+                            "pageInfo": {
+                              "hasNextPage": false
+                            }
+                          },
+                          "body": "Thanks for the analysis and the suggested approach. The behavior was reproduced on `main` at commit `519ea19f7d3e9c701a4063f277ae27254bbafdad`, both with the CLI and through `glab_mr_create` in `glab mcp serve`.\n\nIn the reproduction, with `--repo group/project-b`, a checkout whose remote points to the unrelated `group/project-a`, and no `--head` or `GITLAB_HEAD_REPO`, the request uses A as the source and B as the target. Supplying `--head group/project-b` selects B as the source in the same setup.\n\nThe test uses a simulated GitLab API, including the `422` response. No real push was made and no real merge request was created.\n\nAs a possible fix, following the approach already suggested, when the source is inferred automatically and can be established to be neither the target nor a valid fork of it, the target could be used as the source. Explicit choices made through `--head` or `GITLAB_HEAD_REPO`, as well as valid fork workflows, should remain unchanged.\n\nThe behavior for a previously cached head selection and for cases where the relationship between the projects cannot be verified should also be defined: missing information should not be treated as proof that the projects are unrelated.\n\nFor regression coverage, I suggest testing an unrelated remote, both explicit overrides, a valid fork, the absence of a local repository or remotes, and a relationship that cannot be verified.\n\nIn the last case, would maintainers prefer a clear error rather than an automatic fallback?\n\n**Transparency note:** AI was used during this investigation.",
+                          "createdAt": "2026-11-03T13:35:13Z",
+                          "discussion": {
+                            "id": "gid://gitlab/Discussion/e5d799cc2e9f9f179e3b06935055b38a9f3b5de1"
+                          },
+                          "id": "gid://gitlab/DiscussionNote/4150688058",
+                          "internal": false,
+                          "position": null,
+                          "resolvable": true,
+                          "resolved": false,
+                          "system": false,
+                          "systemNoteIconName": null,
+                          "systemNoteMetadata": null,
+                          "updatedAt": "2026-11-04T06:48:28Z",
+                          "url": "https://gitlab.com/gitlab-org/cli/-/work_items/8666#note_4150688058"
+                        },
+                        {
+                          "author": {
+                            "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                            "id": "gid://gitlab/User/11809982",
+                            "name": "Test User 1",
+                            "state": "active",
+                            "username": "user-1",
+                            "webUrl": "https://gitlab.example.com/user-1"
+                          },
+                          "awardEmoji": {
+                            "nodes": [],
+                            "pageInfo": {
+                              "hasNextPage": false
+                            }
+                          },
+                          "body": "Thanks @user-2, the repro and the scenario list are helpful.\n\n**Unverifiable relationship:** we'd prefer a clear error over an automatic fallback. If glab can't confirm that the inferred source is the target or a fork of it (for example, the API call fails or the user lacks permission), it should stop and tell the user to pass `--head` or set `GITLAB_HEAD_REPO`. Switching the source silently would cause the same kind of surprise this issue reports.\n\n**Cached head selection:** treat the cached `remote.<name>.glab-resolved-head` value as a guess, not an explicit choice. glab writes it on every run where it works out the source itself, not only after the user picks a head at a prompt, and it writes it before the MR request. So the failing run in this issue already caches the unrelated project, and every retry then reads it back. Please run the same fork check on the cached value. A real fork workflow passes the check unchanged. Only `--head` and `GITLAB_HEAD_REPO` should skip the check. When the fallback to the `--repo` project kicks in, please don't write it back to the cache.\n\nYour proposed regression cases look right. Please also add a test for a stale cached head that points at an unrelated project.\n\nSeparately, `glab mcp serve` is deprecated in favor of the [GitLab MCP Server](https://gitlab.example.com/user/model_context_protocol/mcp_server/), and feedback goes in https://gitlab.com/gitlab-org/cli/-/work_items/8618. This fix should target the CLI path. MCP behavior will follow automatically, but we won't add MCP-specific handling.",
+                          "createdAt": "2026-11-04T06:48:28Z",
+                          "discussion": {
+                            "id": "gid://gitlab/Discussion/e5d799cc2e9f9f179e3b06935055b38a9f3b5de1"
+                          },
+                          "id": "gid://gitlab/DiscussionNote/4157101447",
+                          "internal": false,
+                          "position": null,
+                          "resolvable": true,
+                          "resolved": false,
+                          "system": false,
+                          "systemNoteIconName": null,
+                          "systemNoteMetadata": null,
+                          "updatedAt": "2026-11-04T06:48:28Z",
+                          "url": "https://gitlab.com/gitlab-org/cli/-/work_items/8666#note_4157101447"
+                        },
+                        {
+                          "author": {
+                            "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                            "id": "gid://gitlab/User/1441415",
+                            "name": "Test User 2",
+                            "state": "active",
+                            "username": "user-2",
+                            "webUrl": "https://gitlab.example.com/user-2"
+                          },
+                          "awardEmoji": {
+                            "nodes": [],
+                            "pageInfo": {
+                              "hasNextPage": false
+                            }
+                          },
+                          "body": "Thanks for the guidance. I have prepared a local draft for the CLI path based on this feedback:\n\n- It checks inferred heads, including stale cached heads.\n- It preserves explicit `--head` and `GITLAB_HEAD_REPO` selections and does not cache the fallback.\n- It stops with an error when the relationship cannot be verified. Tests cover valid fork cases.\n\nThe local changes are in `internal/commands/mr/create/`, `internal/glrepo/`, and `internal/api/`. Targeted race tests, the broader Go test suite (partly cached), and lint passed locally. End-to-end scenarios used a simulated GitLab API; no real MR or push was made. The draft is unpublished, and compatibility across GitLab versions remains to be reviewed.\n\n**AI disclosure:** AI assistance was used for the investigation, implementation, and test work.",
+                          "createdAt": "2026-11-06T12:26:26Z",
+                          "discussion": {
+                            "id": "gid://gitlab/Discussion/e5d799cc2e9f9f179e3b06935055b38a9f3b5de1"
+                          },
+                          "id": "gid://gitlab/DiscussionNote/4177476914",
+                          "internal": false,
+                          "position": null,
+                          "resolvable": true,
+                          "resolved": false,
+                          "system": false,
+                          "systemNoteIconName": null,
+                          "systemNoteMetadata": null,
+                          "updatedAt": "2026-11-06T12:26:26Z",
+                          "url": "https://gitlab.com/gitlab-org/cli/-/work_items/8666#note_4177476914"
+                        }
+                      ],
+                      "pageInfo": {
+                        "hasNextPage": false
+                      }
+                    },
+                    "resolvable": true,
+                    "resolved": false,
+                    "resolvedAt": null,
+                    "resolvedBy": null
+                  }
+                ],
+                "pageInfo": {
+                  "endCursor": "NQ",
+                  "hasNextPage": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "headers": {},
+      "status": 200
+    }
+  }
+]

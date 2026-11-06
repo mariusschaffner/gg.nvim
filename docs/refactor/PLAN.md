@@ -329,7 +329,7 @@ Every item follows the same pattern:
   - `get` → `gg.MergeChecks`: draft, detailed_merge_status, discussions_resolved, has_conflicts, head_pipeline_status?, approved?, resolvable/resolved discussions?, checks? (`mergeabilityChecks` if the docs confirm it).
   - The full query falls back to the base query **only** on a schema error. An auth or network error doesn't fall back (fix §5.6, §6.8 #12).
   - Pagination: not applicable.
-- [ ] **6.10 notes (issues and MRs)** — `feat(notes)`
+- [x] **6.10 notes (issues and MRs)** — `feat(notes)`
   - `args.noteable = "issue" | "merge_request"`.
   - Reads:
     - `discussions`/`_all` (GraphQL, paginated; fixes the unpaginated issue discussions) → `gg.Discussion {id, resolvable, resolved, resolved_by?, resolved_at?, notes, truncated?}`
@@ -339,6 +339,7 @@ Every item follows the same pattern:
     - `reply`, `edit`, `delete` (IDs always encoded).
     - `set_resolved`: MR via REST; issues via GraphQL `discussionToggleResolve`.
   - The outdated-comment and root-only resolution rules are re-specified from `mapper_spec`.
+  - Note (2026-11-06): merge request `discussions` use REST (`/merge_requests/:iid/discussions`), not GraphQL. The GraphQL `Note` type has no original position, and outdated diff threads need one. Atlas used REST here too. Issue discussions and the flat `list` use GraphQL. REST MR discussions need a token, so their fixtures are docs examples. The sanitizer now also rewrites every `@mention`, and `test_fixtures.lua` checks this.
 - [ ] **6.11 reviews** — `feat(reviews)`
   - `reviewers` (GraphQL reviewers, `approvedBy` and `reviewState`) → `gg.Reviewer {user, review_state?, approved}`. Approvers who aren't reviewers come back as `role = "participant"`.
   - `drafts`/`_all`, `create_draft` (position, `in_reply_to_discussion_id`), `edit_draft`, `delete_draft` → `gg.DraftNote`.

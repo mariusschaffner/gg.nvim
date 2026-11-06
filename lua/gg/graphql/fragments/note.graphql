@@ -1,0 +1,46 @@
+#import "user"
+fragment NoteFields on Note {
+  id
+  body
+  system
+  systemNoteIconName
+  systemNoteMetadata {
+    action
+  }
+  internal
+  createdAt
+  updatedAt
+  url
+  resolvable
+  resolved
+  author {
+    ...UserFields
+  }
+  discussion {
+    id
+  }
+  position {
+    diffRefs {
+      baseSha
+      headSha
+      startSha
+    }
+    filePath
+    oldPath
+    newPath
+    oldLine
+    newLine
+    positionType
+  }
+  awardEmoji(first: 50) {
+    nodes {
+      name
+      user {
+        username
+      }
+    }
+    pageInfo {
+      hasNextPage
+    }
+  }
+}

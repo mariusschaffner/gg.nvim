@@ -121,6 +121,12 @@ local RULES = {
     end,
     "must be a function",
   },
+  table = {
+    function(v)
+      return type(v) == "table"
+    end,
+    "must be a table",
+  },
 }
 
 --- Validate `args` against a spec. Rules are names from RULES, with a "?"

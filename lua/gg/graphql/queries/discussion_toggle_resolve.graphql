@@ -1,0 +1,24 @@
+#import "user"
+#import "note"
+mutation DiscussionToggleResolve($id: DiscussionID!, $resolve: Boolean!) {
+  discussionToggleResolve(input: { id: $id, resolve: $resolve }) {
+    errors
+    discussion {
+      id
+      resolvable
+      resolved
+      resolvedAt
+      resolvedBy {
+        ...UserFields
+      }
+      notes(first: 100) {
+        nodes {
+          ...NoteFields
+        }
+        pageInfo {
+          hasNextPage
+        }
+      }
+    }
+  }
+}

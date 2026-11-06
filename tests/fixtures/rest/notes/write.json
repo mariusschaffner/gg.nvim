@@ -1,0 +1,160 @@
+[
+  {
+    "meta": { "source": "docs.gitlab.com example (api/discussions: Create new merge request thread with a position), sanitized" },
+    "request": {
+      "method": "POST",
+      "path": "/api/v4/projects/my-group%2Fmy-project/merge_requests/12/discussions",
+      "body_contains": {
+        "body": "Typo here",
+        "position": {
+          "position_type": "text",
+          "new_path": "src/a.lua",
+          "old_path": "src/a.lua",
+          "new_line": 5,
+          "base_sha": "eeb57dffe83deb686a60a71c16c32f71046868fd",
+          "start_sha": "eeb57dffe83deb686a60a71c16c32f71046868fd",
+          "head_sha": "33e2ee8579fda5bc36accc9c6fbd0b4fefda9e30"
+        }
+      }
+    },
+    "response": {
+      "status": 201,
+      "body": {
+        "id": "bbbb1750b37d513a43987b574953fceb50b03ce7",
+        "individual_note": false,
+        "notes": [
+          {
+            "id": 1300,
+            "type": "DiffNote",
+            "body": "Typo here",
+            "author": { "id": 1, "name": "Test User 1", "username": "user-1", "state": "active", "avatar_url": null, "web_url": "https://gitlab.example.com/user-1" },
+            "created_at": "2026-11-06T10:00:00.000Z",
+            "updated_at": "2026-11-06T10:00:00.000Z",
+            "system": false,
+            "resolvable": true,
+            "resolved": false,
+            "position": {
+              "base_sha": "eeb57dffe83deb686a60a71c16c32f71046868fd",
+              "start_sha": "eeb57dffe83deb686a60a71c16c32f71046868fd",
+              "head_sha": "33e2ee8579fda5bc36accc9c6fbd0b4fefda9e30",
+              "old_path": "src/a.lua",
+              "new_path": "src/a.lua",
+              "position_type": "text",
+              "old_line": null,
+              "new_line": 5
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com example (api/merge_requests: Get merge request diff versions), sanitized" },
+    "request": { "method": "GET", "path": "/api/v4/projects/my-group%2Fmy-project/merge_requests/12/versions", "query": { "page": "1", "per_page": "1" } },
+    "response": {
+      "body": [
+        {
+          "id": 110,
+          "head_commit_sha": "33e2ee8579fda5bc36accc9c6fbd0b4fefda9e30",
+          "base_commit_sha": "eeb57dffe83deb686a60a71c16c32f71046868fd",
+          "start_commit_sha": "eeb57dffe83deb686a60a71c16c32f71046868fd",
+          "created_at": "2016-07-26T14:44:48.926Z",
+          "state": "collected",
+          "real_size": "1"
+        }
+      ]
+    }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com example (api/discussions: Create new issue thread), sanitized" },
+    "request": { "method": "POST", "path": "/api/v4/projects/my-group%2Fmy-project/issues/14/discussions", "body_contains": { "body": "Hello" } },
+    "response": {
+      "status": 201,
+      "body": {
+        "id": "cccc1750b37d513a43987b574953fceb50b03ce7",
+        "individual_note": false
+      }
+    }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com example (api/discussions: Add note to existing issue thread), sanitized" },
+    "request": { "method": "POST", "path": "/api/v4/projects/my-group%2Fmy-project/issues/14/discussions/cccc1750b37d513a43987b574953fceb50b03ce7/notes", "body_contains": { "body": "Reply" } },
+    "response": {
+      "status": 201,
+      "body": {
+        "id": 1302,
+        "body": "Reply",
+        "author": { "id": 1, "name": "Test User 1", "username": "user-1", "state": "active", "avatar_url": null, "web_url": "https://gitlab.example.com/user-1" },
+        "created_at": "2026-11-06T10:05:00.000Z",
+        "updated_at": "2026-11-06T10:05:00.000Z",
+        "system": false,
+        "resolvable": false
+      }
+    }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com example (api/discussions: Modify existing merge request thread note), sanitized" },
+    "request": { "method": "PUT", "path": "/api/v4/projects/my-group%2Fmy-project/merge_requests/12/discussions/bbbb1750b37d513a43987b574953fceb50b03ce7/notes/1300", "body_contains": { "body": "Typo fixed" } },
+    "response": {
+      "body": {
+        "id": 1300,
+        "body": "Typo fixed",
+        "author": { "id": 1, "name": "Test User 1", "username": "user-1", "state": "active", "avatar_url": null, "web_url": "https://gitlab.example.com/user-1" },
+        "created_at": "2026-11-06T10:00:00.000Z",
+        "updated_at": "2026-11-06T10:10:00.000Z",
+        "system": false,
+        "resolvable": true,
+        "resolved": false
+      }
+    }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com example (api/notes: Modify existing issue note), sanitized" },
+    "request": { "method": "PUT", "path": "/api/v4/projects/my-group%2Fmy-project/issues/14/notes/1302", "body_contains": { "body": "Edited" } },
+    "response": {
+      "body": {
+        "id": 1302,
+        "body": "Edited",
+        "author": { "id": 1, "name": "Test User 1", "username": "user-1", "state": "active", "avatar_url": null, "web_url": "https://gitlab.example.com/user-1" },
+        "created_at": "2026-11-06T10:05:00.000Z",
+        "updated_at": "2026-11-06T10:15:00.000Z",
+        "system": false
+      }
+    }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com (api/discussions: Delete a merge request thread note): 204" },
+    "request": { "method": "DELETE", "path": "/api/v4/projects/my-group%2Fmy-project/merge_requests/12/discussions/bbbb1750b37d513a43987b574953fceb50b03ce7/notes/1300" },
+    "response": { "status": 204 }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com example (api/discussions: Resolve a merge request thread), sanitized" },
+    "request": { "method": "PUT", "path": "/api/v4/projects/my-group%2Fmy-project/merge_requests/12/discussions/bbbb1750b37d513a43987b574953fceb50b03ce7", "body_contains": { "resolved": true } },
+    "response": {
+      "body": {
+        "id": "bbbb1750b37d513a43987b574953fceb50b03ce7",
+        "individual_note": false,
+        "notes": [
+          {
+            "id": 1300,
+            "type": "DiffNote",
+            "body": "Typo fixed",
+            "author": { "id": 1, "name": "Test User 1", "username": "user-1", "state": "active", "avatar_url": null, "web_url": "https://gitlab.example.com/user-1" },
+            "created_at": "2026-11-06T10:00:00.000Z",
+            "updated_at": "2026-11-06T10:20:00.000Z",
+            "system": false,
+            "resolvable": true,
+            "resolved": true,
+            "resolved_by": { "id": 1, "name": "Test User 1", "username": "user-1", "state": "active", "avatar_url": null, "web_url": "https://gitlab.example.com/user-1" },
+            "resolved_at": "2026-11-06T10:20:00.000Z"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com (api/discussions): notes cannot be added to system notes" },
+    "request": { "method": "POST", "path": "/api/v4/projects/my-group%2Fmy-project/issues/14/discussions/dddd/notes" },
+    "response": { "status": 400, "body": { "message": "400 Bad request - Notes cannot be added to system notes" } }
+  }
+]

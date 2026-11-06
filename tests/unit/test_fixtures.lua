@@ -82,6 +82,20 @@ T["e-mail addresses are only at example.com"] = function()
   eq(bad, {})
 end
 
+T["@mentions are sanitized"] = function()
+  local bad = {}
+  for _, file in ipairs(fixture_files()) do
+    -- drop e-mail addresses first, then look for @name mentions
+    local text = H.read(file):gsub("[%w%._%%+%-]+@[%w%.%-]+%.%a+", "")
+    for name in text:gmatch("%f[%w@]@([%w][%w_%.%-]*[%w])") do
+      if not name:match("^user%-%d+$") then
+        table.insert(bad, file .. ": @" .. name)
+      end
+    end
+  end
+  eq(bad, {})
+end
+
 T["URL hosts are public or example hosts"] = function()
   local bad = {}
   for _, file in ipairs(fixture_files()) do

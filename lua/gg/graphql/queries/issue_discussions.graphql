@@ -1,0 +1,31 @@
+#import "user"
+#import "note"
+query IssueDiscussions($fullPath: ID!, $iid: String!, $first: Int, $after: String) {
+  project(fullPath: $fullPath) {
+    issue(iid: $iid) {
+      discussions(first: $first, after: $after) {
+        nodes {
+          id
+          resolvable
+          resolved
+          resolvedAt
+          resolvedBy {
+            ...UserFields
+          }
+          notes(first: 100) {
+            nodes {
+              ...NoteFields
+            }
+            pageInfo {
+              hasNextPage
+            }
+          }
+        }
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
+      }
+    }
+  }
+}

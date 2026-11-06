@@ -1,0 +1,66 @@
+[
+  {
+    "meta": { "source": "docs.gitlab.com (api/graphql: discussionToggleResolve payload)" },
+    "request": { "operation": "DiscussionToggleResolve", "variables": { "id": "gid://gitlab/Discussion/e5d799cc2e9f9f179e3b06935055b38a9f3b5de1", "resolve": true } },
+    "response": {
+      "body": {
+        "data": {
+          "discussionToggleResolve": {
+            "errors": [],
+            "discussion": {
+              "id": "gid://gitlab/Discussion/e5d799cc2e9f9f179e3b06935055b38a9f3b5de1",
+              "resolvable": true,
+              "resolved": true,
+              "resolvedAt": "2026-11-06T12:00:00Z",
+              "resolvedBy": { "id": "gid://gitlab/User/1", "username": "user-1", "name": "Test User 1", "avatarUrl": null, "webUrl": "https://gitlab.example.com/user-1", "state": "active" },
+              "notes": {
+                "nodes": [
+                  {
+                    "id": "gid://gitlab/Note/1",
+                    "body": "Root",
+                    "system": false,
+                    "systemNoteIconName": null,
+                    "systemNoteMetadata": null,
+                    "internal": false,
+                    "createdAt": "2026-11-01T00:00:00Z",
+                    "updatedAt": "2026-11-01T00:00:00Z",
+                    "url": "https://gitlab.example.com/g/r/-/issues/1#note_1",
+                    "resolvable": true,
+                    "resolved": true,
+                    "author": { "id": "gid://gitlab/User/2", "username": "user-2", "name": "Test User 2", "avatarUrl": null, "webUrl": "https://gitlab.example.com/user-2", "state": "active" },
+                    "discussion": { "id": "gid://gitlab/Discussion/e5d799cc2e9f9f179e3b06935055b38a9f3b5de1" },
+                    "position": null,
+                    "awardEmoji": { "nodes": [ { "name": "thumbsup", "user": { "username": "user-1" } } ], "pageInfo": { "hasNextPage": false } }
+                  },
+                  {
+                    "id": "gid://gitlab/Note/2",
+                    "body": "Reply",
+                    "system": false,
+                    "systemNoteIconName": null,
+                    "systemNoteMetadata": null,
+                    "internal": false,
+                    "createdAt": "2026-11-02T00:00:00Z",
+                    "updatedAt": "2026-11-02T00:00:00Z",
+                    "url": "https://gitlab.example.com/g/r/-/issues/1#note_2",
+                    "resolvable": true,
+                    "resolved": true,
+                    "author": { "id": "gid://gitlab/User/1", "username": "user-1", "name": "Test User 1", "avatarUrl": null, "webUrl": "https://gitlab.example.com/user-1", "state": "active" },
+                    "discussion": { "id": "gid://gitlab/Discussion/e5d799cc2e9f9f179e3b06935055b38a9f3b5de1" },
+                    "position": null,
+                    "awardEmoji": { "nodes": [], "pageInfo": { "hasNextPage": false } }
+                  }
+                ],
+                "pageInfo": { "hasNextPage": false }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com (api/graphql: mutation payload errors)" },
+    "request": { "operation": "DiscussionToggleResolve", "variables": { "id": "gid://gitlab/Discussion/ffff" } },
+    "response": { "body": { "data": { "discussionToggleResolve": { "errors": [ "Discussion is not resolvable" ], "discussion": null } } } }
+  }
+]

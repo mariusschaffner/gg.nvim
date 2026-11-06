@@ -1,0 +1,134 @@
+{
+  "meta": {
+    "sanitized": true,
+    "source": "gitlab.com public (gitlab-org/cli), 2026-11-06"
+  },
+  "request": {
+    "operation": "MrNotes",
+    "variables": {
+      "filter": "ONLY_ACTIVITY",
+      "first": 3,
+      "fullPath": "gitlab-org/cli",
+      "iid": "4002"
+    }
+  },
+  "response": {
+    "body": {
+      "data": {
+        "project": {
+          "mergeRequest": {
+            "notes": {
+              "nodes": [
+                {
+                  "author": {
+                    "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                    "id": "gid://gitlab/User/1786152",
+                    "name": "Test User 1",
+                    "state": "active",
+                    "username": "user-1",
+                    "webUrl": "https://gitlab.example.com/user-1"
+                  },
+                  "awardEmoji": {
+                    "nodes": [],
+                    "pageInfo": {
+                      "hasNextPage": false
+                    }
+                  },
+                  "body": "assigned to @user-2",
+                  "createdAt": "2026-10-06T09:03:12Z",
+                  "discussion": {
+                    "id": "gid://gitlab/Discussion/a082c850ae8069272ecbc5250dacaec2f26b0720"
+                  },
+                  "id": "gid://gitlab/Note/3961026836",
+                  "internal": false,
+                  "position": null,
+                  "resolvable": false,
+                  "resolved": false,
+                  "system": true,
+                  "systemNoteIconName": "user",
+                  "systemNoteMetadata": {
+                    "action": "assignee"
+                  },
+                  "updatedAt": "2026-10-06T09:03:12Z",
+                  "url": "https://gitlab.com/gitlab-org/cli/-/merge_requests/4002#note_3961026836"
+                },
+                {
+                  "author": {
+                    "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                    "id": "gid://gitlab/User/42048126",
+                    "name": "Test User 2",
+                    "state": "active",
+                    "username": "user-2",
+                    "webUrl": "https://gitlab.example.com/user-2"
+                  },
+                  "awardEmoji": {
+                    "nodes": [],
+                    "pageInfo": {
+                      "hasNextPage": false
+                    }
+                  },
+                  "body": "added 1 commit\n\n<ul><li>b90725b1 - fix(config): share local config across git worktrees</li></ul>\n\n[Compare with previous version](/gitlab-org/cli/-/merge_requests/4002/diffs?diff_id=2092704763&start_sha=923413593ce83e31f038f64618414402670bcc5a)",
+                  "createdAt": "2026-10-10T12:25:36Z",
+                  "discussion": {
+                    "id": "gid://gitlab/Discussion/b67a3c5186bf5668c76839cda54fa018cdc50119"
+                  },
+                  "id": "gid://gitlab/Note/3989307288",
+                  "internal": false,
+                  "position": null,
+                  "resolvable": false,
+                  "resolved": false,
+                  "system": true,
+                  "systemNoteIconName": "commit",
+                  "systemNoteMetadata": {
+                    "action": "commit"
+                  },
+                  "updatedAt": "2026-10-10T12:25:36Z",
+                  "url": "https://gitlab.com/gitlab-org/cli/-/merge_requests/4002#note_3989307288"
+                },
+                {
+                  "author": {
+                    "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                    "id": "gid://gitlab/User/31177744",
+                    "name": "Test User 3",
+                    "state": "active",
+                    "username": "user-3",
+                    "webUrl": "https://gitlab.example.com/user-3"
+                  },
+                  "awardEmoji": {
+                    "nodes": [],
+                    "pageInfo": {
+                      "hasNextPage": false
+                    }
+                  },
+                  "body": "requested review from @user-4",
+                  "createdAt": "2026-10-11T14:44:01Z",
+                  "discussion": {
+                    "id": "gid://gitlab/Discussion/69652461e6982db011bc88efd8d424fa1f466774"
+                  },
+                  "id": "gid://gitlab/Note/3993359346",
+                  "internal": false,
+                  "position": null,
+                  "resolvable": false,
+                  "resolved": false,
+                  "system": true,
+                  "systemNoteIconName": "user",
+                  "systemNoteMetadata": {
+                    "action": "reviewer"
+                  },
+                  "updatedAt": "2026-10-11T14:44:01Z",
+                  "url": "https://gitlab.com/gitlab-org/cli/-/merge_requests/4002#note_3993359346"
+                }
+              ],
+              "pageInfo": {
+                "endCursor": "eyJjcmVhdGVkX2F0IjoiMjAyNi0xMC0xMSAxNDo0NDowMS4zODc5NDgwMDAgKzAwMDAiLCJpZCI6IjM5OTMzNTkzNDYifQ",
+                "hasNextPage": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "headers": {},
+    "status": 200
+  }
+}

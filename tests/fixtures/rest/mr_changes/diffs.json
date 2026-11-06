@@ -1,0 +1,98 @@
+[
+  {
+    "meta": {
+      "sanitized": true,
+      "source": "gitlab.com public (gitlab-org/cli), 2026-11-06"
+    },
+    "request": {
+      "method": "GET",
+      "path": "/api/v4/projects/gitlab-org%2Fcli/merge_requests/4002/diffs",
+      "query": {
+        "page": "1",
+        "per_page": "2"
+      }
+    },
+    "response": {
+      "body": [
+        {
+          "a_mode": "100644",
+          "b_mode": "100644",
+          "collapsed": false,
+          "deleted_file": false,
+          "diff": "@@ -8,16 +8,17 @@ import (\n \n // CheckPathExists checks if a folder exists and is a directory\n func CheckPathExists(path string) bool {\n-\tif info, err := os.Stat(path); err == nil || !os.IsNotExist(err) {\n-\t\treturn info.IsDir()\n+\tinfo, err := os.Stat(path)\n+\tif err != nil {\n+\t\treturn false\n \t}\n-\treturn false\n+\treturn info.IsDir()\n }\n \n // CheckFileExists: checks if a file exists and is not a directory.\n func CheckFileExists(filename string) bool {\n \tinfo, err := os.Stat(filename)\n-\tif os.IsNotExist(err) {\n+\tif err != nil {\n \t\treturn false\n \t}\n \treturn !info.IsDir()\n",
+          "generated_file": false,
+          "new_file": false,
+          "new_path": "internal/config/file.go",
+          "old_path": "internal/config/file.go",
+          "renamed_file": false,
+          "too_large": false
+        },
+        {
+          "a_mode": "100644",
+          "b_mode": "100644",
+          "collapsed": false,
+          "deleted_file": false,
+          "diff": "@@ -4,6 +4,7 @@ package config\n \n import (\n \t\"os\"\n+\t\"path/filepath\"\n \t\"testing\"\n \n \t\"github.com/stretchr/testify/assert\"\n@@ -21,6 +22,16 @@ func Test_CheckPathExists(t *testing.T) {\n \t\tgot := CheckPathExists(\"/Path/Not/Exist\")\n \t\tassert.False(t, got)\n \t})\n+\tt.Run(\"stat-error-returns-false\", func(t *testing.T) {\n+\t\tfile, err := os.CreateTemp(t.TempDir(), \"\")\n+\t\trequire.NoError(t, err)\n+\t\trequire.NoError(t, file.Close())\n+\n+\t\t// A regular file used as a directory stats with ENOTDIR, not IsNotExist,\n+\t\t// so the returned info is nil.\n+\t\tgot := CheckPathExists(filepath.Join(file.Name(), \"child\"))\n+\t\tassert.False(t, got)\n+\t})\n }\n \n func Test_CheckFileExists(t *testing.T) {\n@@ -40,6 +51,13 @@ func Test_CheckFileExists(t *testing.T) {\n \t\tgot := CheckFileExists(\"/Path/Not/Exist\")\n \t\tassert.False(t, got)\n \t})\n+\n+\tt.Run(\"stat-error-returns-false\", func(t *testing.T) {\n+\t\t// Mirrors a worktree whose \".git\" is a regular file: os.Stat on\n+\t\t// \".git/glab-cli/config.yml\" returns ENOTDIR, which os.IsNotExist misses.\n+\t\tgot := CheckFileExists(filepath.Join(fPath, \"config.yml\"))\n+\t\tassert.False(t, got)\n+\t})\n }\n \n func Test_BackupConfigFile(t *testing.T) {\n",
+          "generated_file": false,
+          "new_file": false,
+          "new_path": "internal/config/file_test.go",
+          "old_path": "internal/config/file_test.go",
+          "renamed_file": false,
+          "too_large": false
+        }
+      ],
+      "headers": {
+        "x-next-page": "2"
+      },
+      "status": 200
+    }
+  },
+  {
+    "meta": {
+      "sanitized": true,
+      "source": "gitlab.com public (gitlab-org/cli), 2026-11-06"
+    },
+    "request": {
+      "method": "GET",
+      "path": "/api/v4/projects/gitlab-org%2Fcli/merge_requests/4002/diffs",
+      "query": {
+        "page": "2",
+        "per_page": "2"
+      }
+    },
+    "response": {
+      "body": [
+        {
+          "a_mode": "100644",
+          "b_mode": "100644",
+          "collapsed": false,
+          "deleted_file": false,
+          "diff": "@@ -20,11 +20,26 @@ type LocalConfig struct {\n // for later use we might prefer relative paths\n // GitDir will find a directory or just return \".git\"\n func GitDir(preferRelative bool) []string {\n+\t// `git rev-parse --git-dir` since git v1.2.2\n+\treturn revParseDir(\"--git-dir\", preferRelative)\n+}\n+\n+// GitCommonDir will find the directory every linked worktree of a repository has\n+// in common, or just return \".git\". In a normal checkout it is the same directory\n+// GitDir returns; in a linked worktree GitDir is .git/worktrees/<name> while this\n+// is the main repository's .git. A submodule keeps its own, .git/modules/<name>.\n+func GitCommonDir(preferRelative bool) []string {\n+\t// `git rev-parse --git-common-dir` since git v2.5, which introduced worktrees\n+\treturn revParseDir(\"--git-common-dir\", preferRelative)\n+}\n+\n+// revParseDir resolves one `git rev-parse` directory flag to the caller's\n+// preferred path form, falling back to \".git\" when git cannot answer.\n+func revParseDir(revParseFlag string, preferRelative bool) []string {\n \tvar err error\n \tvar out strings.Builder\n \n-\t// `git rev-parse --git-dir` since git v1.2.2\n-\tcmd := exec.Command(\"git\", \"rev-parse\", \"--git-dir\")\n+\tcmd := exec.Command(\"git\", \"rev-parse\", revParseFlag)\n \n \tcmd.Stdout = &out\n \terr = cmd.Run()\n@@ -44,8 +59,8 @@ func GitDir(preferRelative bool) []string {\n \t\t\t\treturn []string{workDir, gitDir}\n \t\t\t}\n \t\t}\n-\t\t// relative should work\n-\t\treturn []string{gitDir}\n+\t\t// relative should work, cleaned because git answers with forward slashes\n+\t\treturn []string{filepath.Clean(gitDir)}\n \t} else {\n \t\t// gitDir is absolute\n \t\tif preferRelative {\n@@ -65,9 +80,23 @@ func GitDir(preferRelative bool) []string {\n }\n \n // LocalConfigDir returns the local config path in map\n-// which must be joined for complete path\n+// which must be joined for complete path.\n+//\n+// The shared git directory is used, so one repository has one local config that\n+// every linked worktree reads and writes. Git itself shares .git/config the same\n+// way and makes per-worktree config opt-in, and these keys describe the\n+// repository rather than the checkout.\n+//\n+// A worktree that already has its own file keeps using it, so a config written\n+// before this change is still found. In a normal checkout the two directories are\n+// the same and nothing changes.\n func LocalConfigDir() []string {\n-\treturn append(GitDir(true), \"glab-cli\")\n+\tperWorktree := append(GitDir(true), \"glab-cli\")\n+\tif CheckFileExists(filepath.Join(append(perWorktree, \"config.yml\")...)) {\n+\t\treturn perWorktree\n+\t}\n+\n+\treturn append(GitCommonDir(true), \"glab-cli\")\n }\n \n // LocalConfigFile returns the config file name with full path\n",
+          "generated_file": false,
+          "new_file": false,
+          "new_path": "internal/config/local_config.go",
+          "old_path": "internal/config/local_config.go",
+          "renamed_file": false,
+          "too_large": false
+        },
+        {
+          "a_mode": "100644",
+          "b_mode": "100644",
+          "collapsed": false,
+          "deleted_file": false,
+          "diff": "@@ -74,3 +74,78 @@ func unsetGitHookEnv(t *testing.T) {\n \t\trequire.NoError(t, os.Unsetenv(key))\n \t}\n }\n+\n+// newRepoWithWorktree creates a repository with one commit and a linked worktree,\n+// returning the absolute path of each. A worktree needs a commit to check out.\n+func newRepoWithWorktree(t *testing.T) (string, string) {\n+\tt.Helper()\n+\tunsetGitHookEnv(t)\n+\n+\tbase, err := filepath.EvalSymlinks(t.TempDir())\n+\trequire.NoError(t, err)\n+\trepo := filepath.Join(base, \"repo\")\n+\trequire.NoError(t, os.MkdirAll(repo, 0o755))\n+\n+\tgit := func(args ...string) {\n+\t\tt.Helper()\n+\t\tfull := append([]string{\"-C\", repo}, args...)\n+\t\tout, cmdErr := exec.Command(\"git\", full...).CombinedOutput()\n+\t\trequire.NoErrorf(t, cmdErr, \"git %v: %s\", args, out)\n+\t}\n+\n+\tgit(\"init\")\n+\tgit(\"config\", \"user.email\", \"test@example.com\")\n+\tgit(\"config\", \"user.name\", \"test\")\n+\tgit(\"config\", \"commit.gpgsign\", \"false\")\n+\tgit(\"commit\", \"--allow-empty\", \"-m\", \"initial\")\n+\n+\tworktree := filepath.Join(base, \"wt\")\n+\tgit(\"worktree\", \"add\", \"--detach\", worktree)\n+\n+\treturn repo, worktree\n+}\n+\n+func Test_GitCommonDir_MatchesGitDirInANormalCheckout(t *testing.T) {\n+\tchdirTwoLevelsIntoNewRepo(t)\n+\n+\tassert.Equal(t, filepath.Join(GitDir(true)...), filepath.Join(GitCommonDir(true)...),\n+\t\t\"outside a worktree the two directories are the same\")\n+}\n+\n+// Git shares .git/config across every linked worktree and makes per-worktree\n+// config opt-in. Local glab config describes the repository, not the checkout, so\n+// it is shared the same way. Before this, a worktree resolved to\n+// .git/worktrees/<name>/glab-cli and silently saw none of the repository's config.\n+func Test_LocalConfigFile_IsSharedWithLinkedWorktrees(t *testing.T) {\n+\trepo, worktree := newRepoWithWorktree(t)\n+\tshared := filepath.Join(repo, \".git\", \"glab-cli\", \"config.yml\")\n+\n+\tt.Chdir(repo)\n+\tfromRepo, err := filepath.Abs(LocalConfigFile())\n+\trequire.NoError(t, err)\n+\tassert.Equal(t, shared, fromRepo)\n+\n+\tt.Chdir(worktree)\n+\tfromWorktree, err := filepath.Abs(LocalConfigFile())\n+\trequire.NoError(t, err)\n+\tassert.Equal(t, shared, fromWorktree, \"a linked worktree reads the repository's config\")\n+}\n+\n+// A worktree that already carries its own file keeps using it, so a config\n+// written before the shared default still applies where it was written.\n+func Test_LocalConfigFile_HonoursAnExistingPerWorktreeFile(t *testing.T) {\n+\trepo, worktree := newRepoWithWorktree(t)\n+\n+\tt.Chdir(worktree)\n+\tperWorktreeDir := filepath.Join(GitDir(false)...)\n+\trequire.NotEqual(t, filepath.Join(repo, \".git\"), perWorktreeDir,\n+\t\t\"a linked worktree must have its own git dir for this case to mean anything\")\n+\n+\town := filepath.Join(perWorktreeDir, \"glab-cli\", \"config.yml\")\n+\trequire.NoError(t, os.MkdirAll(filepath.Dir(own), 0o755))\n+\trequire.NoError(t, os.WriteFile(own, []byte(\"editor: worktree-only\\n\"), 0o600))\n+\n+\tgot, err := filepath.Abs(LocalConfigFile())\n+\trequire.NoError(t, err)\n+\tassert.Equal(t, own, got)\n+}\n",
+          "generated_file": false,
+          "new_file": false,
+          "new_path": "internal/config/local_config_test.go",
+          "old_path": "internal/config/local_config_test.go",
+          "renamed_file": false,
+          "too_large": false
+        }
+      ],
+      "headers": {
+        "x-next-page": ""
+      },
+      "status": 200
+    }
+  }
+]

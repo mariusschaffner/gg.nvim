@@ -1,0 +1,110 @@
+[
+  {
+    "meta": {
+      "sanitized": true,
+      "source": "gitlab.com public (gitlab-org/cli), 2026-11-06"
+    },
+    "request": {
+      "operation": "MrCommits",
+      "variables": {
+        "first": 1,
+        "fullPath": "gitlab-org/cli",
+        "iid": "4002"
+      }
+    },
+    "response": {
+      "body": {
+        "data": {
+          "project": {
+            "mergeRequest": {
+              "commits": {
+                "nodes": [
+                  {
+                    "author": {
+                      "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                      "id": "gid://gitlab/User/42048126",
+                      "name": "Test User 1",
+                      "state": "active",
+                      "username": "user-1",
+                      "webUrl": "https://gitlab.example.com/user-1"
+                    },
+                    "authorEmail": "user1@example.com",
+                    "authorName": "Test User 2",
+                    "authoredDate": "2026-11-03T13:30:53+05:30",
+                    "committedDate": "2026-11-06T14:53:18+10:00",
+                    "committerName": "Test User 3",
+                    "message": "fix(config): return false on any stat error, not just missing\n\nCheckFileExists and CheckPathExists only treated os.IsNotExist as absence\nand then dereferenced the os.Stat info on every other error. At the root\nof a linked worktree the \".git\" fallback is a regular file, so\nos.Stat(\".git/glab-cli/config.yml\") returns ENOTDIR, which os.IsNotExist\ndoes not match. info is nil, info.IsDir() panics, and LocalConfigDir\ncrashes every glab command. The same happens on safe.directory /\ndubious-ownership errors and when git is not on PATH.\n\nReturn false on any stat error in both helpers, so a non-missing error is\ntreated as \"not present\" instead of panicking. Add tests that stat through\na regular file (ENOTDIR on Linux/CI) to cover the nil-info path.\n",
+                    "sha": "fc1a118b066a56deac5b26a27e336932a0356c0f",
+                    "shortId": "fc1a118b",
+                    "title": "fix(config): return false on any stat error, not just missing",
+                    "webUrl": "https://gitlab.com/gitlab-org/cli/-/commit/fc1a118b066a56deac5b26a27e336932a0356c0f"
+                  }
+                ],
+                "pageInfo": {
+                  "endCursor": "MQ",
+                  "hasNextPage": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "headers": {},
+      "status": 200
+    }
+  },
+  {
+    "meta": {
+      "sanitized": true,
+      "source": "gitlab.com public (gitlab-org/cli), 2026-11-06"
+    },
+    "request": {
+      "operation": "MrCommits",
+      "variables": {
+        "after": "MQ",
+        "fullPath": "gitlab-org/cli",
+        "iid": "4002"
+      }
+    },
+    "response": {
+      "body": {
+        "data": {
+          "project": {
+            "mergeRequest": {
+              "commits": {
+                "nodes": [
+                  {
+                    "author": {
+                      "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                      "id": "gid://gitlab/User/42048126",
+                      "name": "Test User 1",
+                      "state": "active",
+                      "username": "user-1",
+                      "webUrl": "https://gitlab.example.com/user-1"
+                    },
+                    "authorEmail": "user1@example.com",
+                    "authorName": "Test User 2",
+                    "authoredDate": "2026-10-26T20:54:03+05:30",
+                    "committedDate": "2026-11-06T14:53:18+10:00",
+                    "committerName": "Test User 3",
+                    "message": "test(config): disable commit signing in the worktree helper\n\nnewRepoWithWorktree makes a commit so the linked worktree has something\nto check out. With commit.gpgsign set globally the helper inherits it\nand git aborts with \"signing failed: No secret key\", failing every test\nin the file for a reason unrelated to the config lookup under test.\n\nconfigureGitConfig in internal/git already pins this alongside user.name\nand user.email for the same reason. This package cannot import that one\nwithout a cycle, so the setting is repeated here.\n",
+                    "sha": "72a213907fb513ee76afd3cf1e401e6fcbe596e0",
+                    "shortId": "72a21390",
+                    "title": "test(config): disable commit signing in the worktree helper",
+                    "webUrl": "https://gitlab.com/gitlab-org/cli/-/commit/72a213907fb513ee76afd3cf1e401e6fcbe596e0"
+                  }
+                ],
+                "pageInfo": {
+                  "endCursor": "Mg",
+                  "hasNextPage": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "headers": {},
+      "status": 200
+    }
+  }
+]

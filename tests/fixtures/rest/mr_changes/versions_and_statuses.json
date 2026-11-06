@@ -1,0 +1,93 @@
+[
+  {
+    "meta": { "source": "docs.gitlab.com example (api/merge_requests: Get merge request diff versions), sanitized" },
+    "request": { "method": "GET", "path": "/api/v4/projects/my-group%2Fmy-project/merge_requests/12/versions", "query": { "page": "1", "per_page": "1" } },
+    "response": {
+      "headers": { "x-next-page": "2" },
+      "body": [
+        {
+          "id": 110,
+          "head_commit_sha": "33e2ee8579fda5bc36accc9c6fbd0b4fefda9e30",
+          "base_commit_sha": "eeb57dffe83deb686a60a71c16c32f71046868fd",
+          "start_commit_sha": "eeb57dffe83deb686a60a71c16c32f71046868fd",
+          "created_at": "2016-07-26T14:44:48.926Z",
+          "merge_request_id": 105,
+          "state": "collected",
+          "real_size": "1"
+        }
+      ]
+    }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com example (api/merge_requests: Get merge request diff versions), empty list" },
+    "request": { "method": "GET", "path": "/api/v4/projects/my-group%2Fmy-project/merge_requests/13/versions", "query": { "page": "1", "per_page": "1" } },
+    "response": { "headers": { "x-next-page": "" }, "body": [] }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com example (api/merge_requests: List merge request diffs), adapted to every file status" },
+    "request": { "method": "GET", "path": "/api/v4/projects/my-group%2Fmy-project/merge_requests/12/diffs" },
+    "response": {
+      "headers": { "x-next-page": "" },
+      "body": [
+        {
+          "old_path": "README.md",
+          "new_path": "README.md",
+          "a_mode": "0",
+          "b_mode": "100644",
+          "diff": "@@ -0,0 +1,2 @@\n+# Title\n+text\n",
+          "new_file": true,
+          "renamed_file": false,
+          "deleted_file": false,
+          "generated_file": false
+        },
+        {
+          "old_path": "old.txt",
+          "new_path": "new.txt",
+          "a_mode": "100644",
+          "b_mode": "100644",
+          "diff": "@@ -1,3 +1,3 @@\n same\n-old line\n+new line\n same\n",
+          "new_file": false,
+          "renamed_file": true,
+          "deleted_file": false
+        },
+        {
+          "old_path": "gone.lua",
+          "new_path": "gone.lua",
+          "a_mode": "100644",
+          "b_mode": "0",
+          "diff": "@@ -1,2 +0,0 @@\n-local x = 1\n-return x\n",
+          "new_file": false,
+          "renamed_file": false,
+          "deleted_file": true
+        },
+        {
+          "old_path": "big.json",
+          "new_path": "big.json",
+          "a_mode": "100644",
+          "b_mode": "100644",
+          "diff": "",
+          "new_file": false,
+          "renamed_file": false,
+          "deleted_file": false,
+          "too_large": true,
+          "collapsed": false
+        },
+        {
+          "old_path": "mode.sh",
+          "new_path": "mode.sh",
+          "a_mode": "100644",
+          "b_mode": "100755",
+          "diff": "",
+          "new_file": false,
+          "renamed_file": false,
+          "deleted_file": false
+        }
+      ]
+    }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com example (api/rest: 404 response shape)" },
+    "request": { "method": "GET", "path": "/api/v4/projects/my-group%2Fmy-project/merge_requests/999/diffs" },
+    "response": { "status": 404, "body": { "message": "404 Not found" } }
+  }
+]

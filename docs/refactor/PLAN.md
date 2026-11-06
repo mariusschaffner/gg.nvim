@@ -320,7 +320,7 @@ Every item follows the same pattern:
   - `list`/`list_all` (`state = "active"` by default, GraphQL), `get`, `issues`/`_all` → `gg.Issue`, `merge_requests`/`_all` → `gg.MergeRequest`.
   - `create` and `update` (title, description, dates, state_event; REST).
   - `web_url` comes from the API, never from `base_url .. webPath` (fix §6.8 #19).
-- [ ] **6.8 mr_changes** — `feat(mr_changes)`
+- [x] **6.8 mr_changes** — `feat(mr_changes)`
   - `commits`/`_all` (GraphQL `mergeRequest.commits`; default 100) → `gg.Commit`.
   - `diffs`/`_all` (REST `/diffs`, with `unidiff`) → `gg.DiffFile`.
   - `diffstat({…, limit})` → `gg.DiffStat[]`, derived as in open question 22, with a pure helper in `models/diff.lua`.

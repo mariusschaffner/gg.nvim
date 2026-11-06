@@ -126,7 +126,7 @@ Each entry gives the problem in INVENTORY.md (or a conflict with CLAUDE.md), the
 
 ## 3. Config and transport
 
-- [ ] **3.1 config: defaults, schema, validation** — `feat(config)`
+- [x] **3.1 config: defaults, schema, validation** — `feat(config)`
   - Files: `lua/gg/config.lua`, `tests/unit/test_config.lua`.
   - Schema:
     - `hosts[name] = { base_url, token = string|fun():string, aliases = {} }`. The default is `{ ["gitlab.com"] = { base_url = "https://gitlab.com" } }`.

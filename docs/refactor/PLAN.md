@@ -290,7 +290,7 @@ Every item follows the same pattern:
     - The old `search_issues_picker` becomes `list({scope="all", search=…}, {per_page=30})`.
   - Also adds `tests/unit/test_public_api.lua`: every exported resource function, called with `nil`, `{}` or wrong types, returns a Task that resolves to `validation` and never throws. It covers every later resource automatically.
   - Note (2026-11-06): the GraphQL reference pages on docs.gitlab.com are too large to read in full. GraphQL field, argument and enum names are therefore checked against gitlab.com's own published schema (introspection, unauthenticated). REST parameters are checked against docs.gitlab.com/api/issues. Fixtures are real responses from `gitlab-org/cli` and `gitlab-org/quality`, plus docs examples for REST and errors. Also added: `#import "<fragment>"` support in the GraphQL loader (`graphql/fragments/`), and `resources/common.lua` (argument validation, the list/list_all pair).
-- [ ] **6.2 labels** — `feat(labels)`
+- [x] **6.2 labels** — `feat(labels)`
   - `list`/`list_all` (GraphQL `project.labels`, with `searchTerm` and `includeAncestorGroups = true`; default per_page 100) → `gg.Label`.
 - [ ] **6.3 users** — `feat(users)`
   - `current` (GraphQL `currentUser`).

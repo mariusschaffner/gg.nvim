@@ -1,0 +1,27 @@
+#import "label"
+query LabelsList(
+  $fullPath: ID!
+  $first: Int
+  $after: String
+  $searchTerm: String
+  $searchIn: [LabelSearchFieldList!]!
+  $includeAncestorGroups: Boolean
+) {
+  project(fullPath: $fullPath) {
+    labels(
+      first: $first
+      after: $after
+      searchTerm: $searchTerm
+      searchIn: $searchIn
+      includeAncestorGroups: $includeAncestorGroups
+    ) {
+      nodes {
+        ...LabelFields
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+    }
+  }
+}

@@ -1,0 +1,93 @@
+[
+  {
+    "meta": {
+      "sanitized": true,
+      "source": "gitlab.com public (gitlab-org/cli), 2026-11-06"
+    },
+    "request": {
+      "operation": "LabelsList",
+      "variables": {
+        "first": 2,
+        "fullPath": "gitlab-org/cli",
+        "searchTerm": "bug"
+      }
+    },
+    "response": {
+      "body": {
+        "data": {
+          "project": {
+            "labels": {
+              "nodes": [
+                {
+                  "color": "#8fbc8f",
+                  "description": "The pipeline has picked up this work item. Prevents re-entry while the chain runs.",
+                  "id": "gid://gitlab/GroupLabel/53202460",
+                  "textColor": "#1F1E24",
+                  "title": "AI bug resolution job triggered"
+                },
+                {
+                  "color": "#009966",
+                  "description": "Enrolls this bug in the automated AI bug resolution pipeline (RCA, work plan, readiness score).",
+                  "id": "gid://gitlab/GroupLabel/53202458",
+                  "textColor": "#FFFFFF",
+                  "title": "AI bug resolution pilot"
+                }
+              ],
+              "pageInfo": {
+                "endCursor": "eyJ0aXRsZSI6IkFJIGJ1ZyByZXNvbHV0aW9uIHBpbG90IiwiaWQiOiI1MzIwMjQ1OCJ9",
+                "hasNextPage": true
+              }
+            }
+          }
+        }
+      },
+      "headers": {},
+      "status": 200
+    }
+  },
+  {
+    "meta": {
+      "sanitized": true,
+      "source": "gitlab.com public (gitlab-org/cli), 2026-11-06"
+    },
+    "request": {
+      "operation": "LabelsList",
+      "variables": {
+        "after": "eyJ0aXRsZSI6IkFJIGJ1ZyByZXNvbHV0aW9uIHBpbG90IiwiaWQiOiI1MzIwMjQ1OCJ9",
+        "fullPath": "gitlab-org/cli"
+      }
+    },
+    "response": {
+      "body": {
+        "data": {
+          "project": {
+            "labels": {
+              "nodes": [
+                {
+                  "color": "#009966",
+                  "description": "Bug related to Duo Agentic Platform",
+                  "id": "gid://gitlab/GroupLabel/41540991",
+                  "textColor": "#FFFFFF",
+                  "title": "AgenticIDE::Bug"
+                },
+                {
+                  "color": "#ff0000",
+                  "description": "The sole purpose of this label is to communicate common bugs that the Provision Team have identified. This could probably be replaced by a more complex search using a combination of type::bug, priority::1, etc. when https://gitlab.com/groups/gitlab-org/-/epics/291 is completed",
+                  "id": "gid://gitlab/GroupLabel/27819061",
+                  "textColor": "#FFFFFF",
+                  "title": "Common Provisioning Bugs"
+                }
+              ],
+              "pageInfo": {
+                "endCursor": "eyJ0aXRsZSI6IkNvbW1vbiBQcm92aXNpb25pbmcgQnVncyIsImlkIjoiMjc4MTkwNjEifQ",
+                "hasNextPage": true
+              }
+            }
+          }
+        }
+      },
+      "headers": {},
+      "status": 200
+    }
+  }
+]

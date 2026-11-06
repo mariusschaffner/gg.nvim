@@ -15,10 +15,41 @@ local M = {}
 
 M.ENDPOINT = "/api/graphql"
 
-local QUERY_DIR = vim.fs.joinpath(vim.fs.dirname(debug.getinfo(1, "S").source:sub(2)), "queries")
+local GRAPHQL_DIR = vim.fs.dirname(debug.getinfo(1, "S").source:sub(2))
+local QUERY_DIR = vim.fs.joinpath(GRAPHQL_DIR, "queries")
+local FRAGMENT_DIR = vim.fs.joinpath(GRAPHQL_DIR, "fragments")
 
 -- Query texts, read once. Immutable constants (the files never change at runtime).
 local texts = {}
+
+local function read_file(path)
+  local f = io.open(path, "rb")
+  if not f then
+    return nil
+  end
+  local text = f:read("*a")
+  f:close()
+  return text
+end
+
+-- Append the fragments named by `#import "name"` lines (recursively, once each).
+local function with_imports(text, seen, out)
+  for name in text:gmatch('#import%s+"([%w_]+)"') do
+    if not seen[name] then
+      seen[name] = true
+      local frag = read_file(vim.fs.joinpath(FRAGMENT_DIR, name .. ".graphql"))
+      if not frag then
+        return nil, name
+      end
+      local ok, missing = with_imports(frag, seen, out)
+      if not ok then
+        return nil, missing
+      end
+      table.insert(out, frag)
+    end
+  end
+  return true
+end
 
 --- PascalCase operation name for a query file name.
 ---@param name string e.g. "issue_get"
@@ -46,18 +77,25 @@ function M.load(name)
   if texts[name] then
     return texts[name], nil
   end
-  local path = vim.fs.joinpath(QUERY_DIR, name .. ".graphql")
-  local f = io.open(path, "rb")
-  if not f then
+  local text = read_file(vim.fs.joinpath(QUERY_DIR, name .. ".graphql"))
+  if not text then
     return nil, errors.new("validation", "unknown GraphQL query: " .. name, { details = { name = name } })
   end
-  local text = f:read("*a")
-  f:close()
   local op = M.operation_name(name)
   if not text:match("%f[%w](query)%s+" .. op .. "%f[^%w]") and not text:match("%f[%w](mutation)%s+" .. op .. "%f[^%w]") then
     return nil, errors.new("validation", ("query file %s.graphql must define the operation %s"):format(name, op), {
       details = { name = name },
     })
+  end
+  local fragments = {}
+  local ok, missing = with_imports(text, {}, fragments)
+  if not ok then
+    return nil, errors.new("validation", ("query %s imports an unknown fragment %s"):format(name, missing), {
+      details = { name = name, fragment = missing },
+    })
+  end
+  if #fragments > 0 then
+    text = text .. "\n" .. table.concat(fragments, "\n")
   end
   texts[name] = text
   return text, nil

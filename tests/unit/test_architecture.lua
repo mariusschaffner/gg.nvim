@@ -120,8 +120,10 @@ end
 
 T["every model declares a gg class"] = function()
   local bad = {}
+  -- gid.lua and util.lua are mapper helpers, not models
+  local helpers = { ["lua/gg/models/gid.lua"] = true, ["lua/gg/models/util.lua"] = true }
   for _, file in ipairs(H.files("lua/gg/models", "%.lua$")) do
-    if not H.read(file):find("%-%-%-@class gg%.") then
+    if not helpers[file] and not H.read(file):find("%-%-%-@class gg%.") then
       table.insert(bad, file)
     end
   end

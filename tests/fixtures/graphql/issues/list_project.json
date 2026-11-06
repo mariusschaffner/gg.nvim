@@ -1,0 +1,724 @@
+[
+  {
+    "meta": {
+      "sanitized": true,
+      "source": "gitlab.com public (gitlab-org/cli), 2026-11-06"
+    },
+    "request": {
+      "operation": "IssuesListProject",
+      "variables": {
+        "first": 3,
+        "fullPath": "gitlab-org/cli",
+        "sort": "UPDATED_DESC",
+        "state": "opened"
+      }
+    },
+    "response": {
+      "body": {
+        "data": {
+          "project": {
+            "issues": {
+              "nodes": [
+                {
+                  "assignees": {
+                    "nodes": [],
+                    "pageInfo": {
+                      "hasNextPage": false
+                    }
+                  },
+                  "author": {
+                    "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                    "id": "gid://gitlab/User/6861791",
+                    "name": "Test User 1",
+                    "state": "active",
+                    "username": "user-1",
+                    "webUrl": "https://gitlab.example.com/user-1"
+                  },
+                  "closedAt": null,
+                  "confidential": false,
+                  "createdAt": "2026-10-22T16:15:47Z",
+                  "dueDate": null,
+                  "id": "gid://gitlab/Issue/207568333",
+                  "iid": "8666",
+                  "labels": {
+                    "nodes": [
+                      {
+                        "color": "#ffecdb",
+                        "description": "Issues triaged using AI- https://gitlab.com/gitlab-org/quality/triage-ops/-/blob/master/policies/stages/report/untriaged-issues.yml",
+                        "id": "gid://gitlab/GroupLabel/17435956",
+                        "textColor": "#1F1E24",
+                        "title": "automation:ml"
+                      },
+                      {
+                        "color": "#D10069",
+                        "description": "Issues that require backend work",
+                        "id": "gid://gitlab/GroupLabel/2492649",
+                        "textColor": "#FFFFFF",
+                        "title": "backend"
+                      },
+                      {
+                        "color": "#CC0000",
+                        "description": "Functional defects resulting from feature changes",
+                        "id": "gid://gitlab/GroupLabel/26460213",
+                        "textColor": "#FFFFFF",
+                        "title": "bug::functional"
+                      },
+                      {
+                        "color": "#6699cc",
+                        "description": "Issues related to the GitLab CLI category: https://gitlab.example.com/direction/create/gitlab_cli/",
+                        "id": "gid://gitlab/GroupLabel/15126283",
+                        "textColor": "#FFFFFF",
+                        "title": "category:gitlab cli"
+                      },
+                      {
+                        "color": "#e44d2a",
+                        "description": "Stage level label within AI section",
+                        "id": "gid://gitlab/GroupLabel/51686650",
+                        "textColor": "#FFFFFF",
+                        "title": "devops::ai clients"
+                      },
+                      {
+                        "color": "#a8d695",
+                        "description": "AI group within the AI Clients stage.",
+                        "id": "gid://gitlab/GroupLabel/51686741",
+                        "textColor": "#1F1E24",
+                        "title": "group::developer clients"
+                      },
+                      {
+                        "color": "#f0ad4e",
+                        "description": "",
+                        "id": "gid://gitlab/GroupLabel/42263609",
+                        "textColor": "#1F1E24",
+                        "title": "section::ai"
+                      },
+                      {
+                        "color": "#cc0000",
+                        "description": "Issues that report undesirable or incorrect behavior. See https://gitlab.example.com/handbook/product/groups/product-analysis/engineering/metrics/#work-type-classification",
+                        "id": "gid://gitlab/GroupLabel/2278648",
+                        "textColor": "#FFFFFF",
+                        "title": "type::bug"
+                      }
+                    ],
+                    "pageInfo": {
+                      "hasNextPage": false
+                    }
+                  },
+                  "milestone": null,
+                  "reference": "#8666",
+                  "referenceFull": "gitlab-org/cli#8666",
+                  "state": "opened",
+                  "title": "mr create: without --head, the source project comes from the current directory's git remote, causing \"Source project is not a fork of the target project\"",
+                  "type": "ISSUE",
+                  "updatedAt": "2026-11-06T12:26:26Z",
+                  "userNotesCount": 6,
+                  "webUrl": "https://gitlab.com/gitlab-org/cli/-/work_items/8666",
+                  "weight": null
+                },
+                {
+                  "assignees": {
+                    "nodes": [
+                      {
+                        "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                        "id": "gid://gitlab/User/11809982",
+                        "name": "Test User 2",
+                        "state": "active",
+                        "username": "user-2",
+                        "webUrl": "https://gitlab.example.com/user-2"
+                      }
+                    ],
+                    "pageInfo": {
+                      "hasNextPage": false
+                    }
+                  },
+                  "author": {
+                    "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                    "id": "gid://gitlab/User/11809982",
+                    "name": "Test User 2",
+                    "state": "active",
+                    "username": "user-2",
+                    "webUrl": "https://gitlab.example.com/user-2"
+                  },
+                  "closedAt": null,
+                  "confidential": false,
+                  "createdAt": "2026-10-21T04:21:08Z",
+                  "dueDate": null,
+                  "id": "gid://gitlab/Issue/207373149",
+                  "iid": "8649",
+                  "labels": {
+                    "nodes": [
+                      {
+                        "color": "#ffecdb",
+                        "description": "Set when the AI quick-win judge has scored this issue, so it is not judged again",
+                        "id": "gid://gitlab/GroupLabel/52843142",
+                        "textColor": "#1F1E24",
+                        "title": "automation:quick-win-judged"
+                      },
+                      {
+                        "color": "#6699cc",
+                        "description": "Issues related to the GitLab CLI category: https://gitlab.example.com/direction/create/gitlab_cli/",
+                        "id": "gid://gitlab/GroupLabel/15126283",
+                        "textColor": "#FFFFFF",
+                        "title": "category:gitlab cli"
+                      },
+                      {
+                        "color": "#e44d2a",
+                        "description": "Stage level label within AI section",
+                        "id": "gid://gitlab/GroupLabel/51686650",
+                        "textColor": "#FFFFFF",
+                        "title": "devops::ai clients"
+                      },
+                      {
+                        "color": "#a8d695",
+                        "description": "AI group within the AI Clients stage.",
+                        "id": "gid://gitlab/GroupLabel/51686741",
+                        "textColor": "#1F1E24",
+                        "title": "group::developer clients"
+                      },
+                      {
+                        "color": "#f0ad4e",
+                        "description": "",
+                        "id": "gid://gitlab/GroupLabel/42263609",
+                        "textColor": "#1F1E24",
+                        "title": "section::ai"
+                      },
+                      {
+                        "color": "#330066",
+                        "description": "Upkeeping efforts and catch-up corrective improvements that are not Feature nor Bugs. Read more at https://gitlab.example.com/handbook/product/groups/product-analysis/engineering/metrics/#work-type-classification",
+                        "id": "gid://gitlab/GroupLabel/15119514",
+                        "textColor": "#FFFFFF",
+                        "title": "type::maintenance"
+                      },
+                      {
+                        "color": "#428bca",
+                        "description": "Issues that are actively being worked on by a developer https://gitlab.example.com/handbook/product-development/how-we-work/product-development-flow/#build-phase-2-develop--test",
+                        "id": "gid://gitlab/GroupLabel/2526320",
+                        "textColor": "#FFFFFF",
+                        "title": "workflow::in dev"
+                      }
+                    ],
+                    "pageInfo": {
+                      "hasNextPage": false
+                    }
+                  },
+                  "milestone": null,
+                  "reference": "#8649",
+                  "referenceFull": "gitlab-org/cli#8649",
+                  "state": "opened",
+                  "title": "Make onboarding easier for glab reviewers and maintainers",
+                  "type": "ISSUE",
+                  "updatedAt": "2026-11-06T07:28:57Z",
+                  "userNotesCount": 1,
+                  "webUrl": "https://gitlab.com/gitlab-org/cli/-/work_items/8649",
+                  "weight": null
+                },
+                {
+                  "assignees": {
+                    "nodes": [
+                      {
+                        "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                        "id": "gid://gitlab/User/11809982",
+                        "name": "Test User 2",
+                        "state": "active",
+                        "username": "user-2",
+                        "webUrl": "https://gitlab.example.com/user-2"
+                      }
+                    ],
+                    "pageInfo": {
+                      "hasNextPage": false
+                    }
+                  },
+                  "author": {
+                    "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                    "id": "gid://gitlab/User/12294975",
+                    "name": "Test User 3",
+                    "state": "active",
+                    "username": "user-3",
+                    "webUrl": "https://gitlab.example.com/user-3"
+                  },
+                  "closedAt": null,
+                  "confidential": false,
+                  "createdAt": "2026-09-24T04:41:12Z",
+                  "dueDate": null,
+                  "id": "gid://gitlab/Issue/204136821",
+                  "iid": "8565",
+                  "labels": {
+                    "nodes": [
+                      {
+                        "color": "#ffecdb",
+                        "description": "Issues triaged using AI- https://gitlab.com/gitlab-org/quality/triage-ops/-/blob/master/policies/stages/report/untriaged-issues.yml",
+                        "id": "gid://gitlab/GroupLabel/17435956",
+                        "textColor": "#1F1E24",
+                        "title": "automation:ml"
+                      },
+                      {
+                        "color": "#ffecdb",
+                        "description": "Set when the AI quick-win judge has scored this issue, so it is not judged again",
+                        "id": "gid://gitlab/GroupLabel/52843142",
+                        "textColor": "#1F1E24",
+                        "title": "automation:quick-win-judged"
+                      },
+                      {
+                        "color": "#D10069",
+                        "description": "Issues that require backend work",
+                        "id": "gid://gitlab/GroupLabel/2492649",
+                        "textColor": "#FFFFFF",
+                        "title": "backend"
+                      },
+                      {
+                        "color": "#6699cc",
+                        "description": "Issues related to the GitLab CLI category: https://gitlab.example.com/direction/create/gitlab_cli/",
+                        "id": "gid://gitlab/GroupLabel/15126283",
+                        "textColor": "#FFFFFF",
+                        "title": "category:gitlab cli"
+                      },
+                      {
+                        "color": "#e44d2a",
+                        "description": "Stage level label within AI section",
+                        "id": "gid://gitlab/GroupLabel/51686650",
+                        "textColor": "#FFFFFF",
+                        "title": "devops::ai clients"
+                      },
+                      {
+                        "color": "#a8d695",
+                        "description": "AI group within the AI Clients stage.",
+                        "id": "gid://gitlab/GroupLabel/51686741",
+                        "textColor": "#1F1E24",
+                        "title": "group::developer clients"
+                      },
+                      {
+                        "color": "#7f8c8d",
+                        "description": "Issues and merge request related to pipeline implementation or improvements",
+                        "id": "gid://gitlab/GroupLabel/15119517",
+                        "textColor": "#FFFFFF",
+                        "title": "maintenance::pipelines"
+                      },
+                      {
+                        "color": "#f0ad4e",
+                        "description": "",
+                        "id": "gid://gitlab/GroupLabel/42263609",
+                        "textColor": "#1F1E24",
+                        "title": "section::ai"
+                      },
+                      {
+                        "color": "#330066",
+                        "description": "Upkeeping efforts and catch-up corrective improvements that are not Feature nor Bugs. Read more at https://gitlab.example.com/handbook/product/groups/product-analysis/engineering/metrics/#work-type-classification",
+                        "id": "gid://gitlab/GroupLabel/15119514",
+                        "textColor": "#FFFFFF",
+                        "title": "type::maintenance"
+                      }
+                    ],
+                    "pageInfo": {
+                      "hasNextPage": false
+                    }
+                  },
+                  "milestone": null,
+                  "reference": "#8565",
+                  "referenceFull": "gitlab-org/cli#8565",
+                  "state": "opened",
+                  "title": "lint CI job is non-deterministic: nolintlint flags different pre-existing directives across retries",
+                  "type": "ISSUE",
+                  "updatedAt": "2026-11-06T06:50:11Z",
+                  "userNotesCount": 5,
+                  "webUrl": "https://gitlab.com/gitlab-org/cli/-/work_items/8565",
+                  "weight": null
+                }
+              ],
+              "pageInfo": {
+                "endCursor": "eyJ1cGRhdGVkX2F0IjoiMjAyNi0xMS0wNiAwNjo1MDoxMS45NjEyMjAwMDAgKzAwMDAiLCJpZCI6IjIwNDEzNjgyMSJ9",
+                "hasNextPage": true
+              }
+            }
+          }
+        }
+      },
+      "headers": {},
+      "status": 200
+    }
+  },
+  {
+    "meta": {
+      "sanitized": true,
+      "source": "gitlab.com public (gitlab-org/cli), 2026-11-06"
+    },
+    "request": {
+      "operation": "IssuesListProject",
+      "variables": {
+        "after": "eyJ1cGRhdGVkX2F0IjoiMjAyNi0xMS0wNiAwNjo1MDoxMS45NjEyMjAwMDAgKzAwMDAiLCJpZCI6IjIwNDEzNjgyMSJ9",
+        "first": 3,
+        "fullPath": "gitlab-org/cli"
+      }
+    },
+    "response": {
+      "body": {
+        "data": {
+          "project": {
+            "issues": {
+              "nodes": [
+                {
+                  "assignees": {
+                    "nodes": [
+                      {
+                        "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                        "id": "gid://gitlab/User/11809982",
+                        "name": "Test User 1",
+                        "state": "active",
+                        "username": "user-1",
+                        "webUrl": "https://gitlab.example.com/user-1"
+                      },
+                      {
+                        "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                        "id": "gid://gitlab/User/12734622",
+                        "name": "Test User 2",
+                        "state": "active",
+                        "username": "user-2",
+                        "webUrl": "https://gitlab.example.com/user-2"
+                      }
+                    ],
+                    "pageInfo": {
+                      "hasNextPage": false
+                    }
+                  },
+                  "author": {
+                    "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                    "id": "gid://gitlab/User/11809982",
+                    "name": "Test User 1",
+                    "state": "active",
+                    "username": "user-1",
+                    "webUrl": "https://gitlab.example.com/user-1"
+                  },
+                  "closedAt": null,
+                  "confidential": false,
+                  "createdAt": "2026-10-30T06:51:08Z",
+                  "dueDate": null,
+                  "id": "gid://gitlab/Issue/208536918",
+                  "iid": "8700",
+                  "labels": {
+                    "nodes": [
+                      {
+                        "color": "#ffecdb",
+                        "description": "Set when the AI quick-win judge has scored this issue, so it is not judged again",
+                        "id": "gid://gitlab/GroupLabel/52843142",
+                        "textColor": "#1F1E24",
+                        "title": "automation:quick-win-judged"
+                      },
+                      {
+                        "color": "#D10069",
+                        "description": "Issues that require backend work",
+                        "id": "gid://gitlab/GroupLabel/2492649",
+                        "textColor": "#FFFFFF",
+                        "title": "backend"
+                      },
+                      {
+                        "color": "#6699cc",
+                        "description": "Issues related to the GitLab CLI category: https://gitlab.example.com/direction/create/gitlab_cli/",
+                        "id": "gid://gitlab/GroupLabel/15126283",
+                        "textColor": "#FFFFFF",
+                        "title": "category:gitlab cli"
+                      },
+                      {
+                        "color": "#e44d2a",
+                        "description": "Stage level label within AI section",
+                        "id": "gid://gitlab/GroupLabel/51686650",
+                        "textColor": "#FFFFFF",
+                        "title": "devops::ai clients"
+                      },
+                      {
+                        "color": "#f0ad4e",
+                        "description": "Issues or MRs related to the first MVC that gives users a foundation of new capabilities that were previously unavailable. Read more at https://gitlab.example.com/handbook/product/groups/product-analysis/engineering/metrics/#work-type-classification",
+                        "id": "gid://gitlab/GroupLabel/15119512",
+                        "textColor": "#1F1E24",
+                        "title": "feature::addition"
+                      },
+                      {
+                        "color": "#a8d695",
+                        "description": "AI group within the AI Clients stage.",
+                        "id": "gid://gitlab/GroupLabel/51686741",
+                        "textColor": "#1F1E24",
+                        "title": "group::developer clients"
+                      },
+                      {
+                        "color": "#f0ad4e",
+                        "description": "",
+                        "id": "gid://gitlab/GroupLabel/42263609",
+                        "textColor": "#1F1E24",
+                        "title": "section::ai"
+                      },
+                      {
+                        "color": "#009966",
+                        "description": "Any issue/MR that contains work to support the implementation of a feature and/or results in an improvement in the user experience. Read more at https://gitlab.example.com/handbook/product/groups/product-analysis/engineering/metrics/#work-type-classification",
+                        "id": "gid://gitlab/GroupLabel/10230929",
+                        "textColor": "#FFFFFF",
+                        "title": "type::feature"
+                      },
+                      {
+                        "color": "#428bca",
+                        "description": "Issues that are actively being worked on by a developer https://gitlab.example.com/handbook/product-development/how-we-work/product-development-flow/#build-phase-2-develop--test",
+                        "id": "gid://gitlab/GroupLabel/2526320",
+                        "textColor": "#FFFFFF",
+                        "title": "workflow::in dev"
+                      }
+                    ],
+                    "pageInfo": {
+                      "hasNextPage": false
+                    }
+                  },
+                  "milestone": null,
+                  "reference": "#8700",
+                  "referenceFull": "gitlab-org/cli#8700",
+                  "state": "opened",
+                  "title": "Use the instance default OAuth client ID on self-managed and Dedicated",
+                  "type": "ISSUE",
+                  "updatedAt": "2026-11-06T06:46:20Z",
+                  "userNotesCount": 3,
+                  "webUrl": "https://gitlab.com/gitlab-org/cli/-/work_items/8700",
+                  "weight": null
+                },
+                {
+                  "assignees": {
+                    "nodes": [],
+                    "pageInfo": {
+                      "hasNextPage": false
+                    }
+                  },
+                  "author": {
+                    "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                    "id": "gid://gitlab/User/11475637",
+                    "name": "Test User 3",
+                    "state": "active",
+                    "username": "user-3",
+                    "webUrl": "https://gitlab.example.com/user-3"
+                  },
+                  "closedAt": null,
+                  "confidential": false,
+                  "createdAt": "2023-08-10T18:21:18Z",
+                  "dueDate": null,
+                  "id": "gid://gitlab/Issue/132038081",
+                  "iid": "6434",
+                  "labels": {
+                    "nodes": [
+                      {
+                        "color": "#A8D695",
+                        "description": "Work includes additions/changes to UI text incl. error messages, button/menu labels, and user-assistance microcopy, invoking Technical Writer review per https://gitlab.example.com/handbook/engineering/ux/product-designer/#partnering-with-technical-writers",
+                        "id": "gid://gitlab/GroupLabel/12216783",
+                        "textColor": "#1F1E24",
+                        "title": "UI text"
+                      },
+                      {
+                        "color": "#6699cc",
+                        "description": "Issues related to improving the code review functionality of GitLab.",
+                        "id": "gid://gitlab/GroupLabel/3412204",
+                        "textColor": "#FFFFFF",
+                        "title": "category:code review workflow"
+                      },
+                      {
+                        "color": "#6699cc",
+                        "description": "Issues related to the GitLab CLI category: https://gitlab.example.com/direction/create/gitlab_cli/",
+                        "id": "gid://gitlab/GroupLabel/15126283",
+                        "textColor": "#FFFFFF",
+                        "title": "category:gitlab cli"
+                      },
+                      {
+                        "color": "#e44d2a",
+                        "description": "Stage level label within AI section",
+                        "id": "gid://gitlab/GroupLabel/51686650",
+                        "textColor": "#FFFFFF",
+                        "title": "devops::ai clients"
+                      },
+                      {
+                        "color": "#D10069",
+                        "description": "Epics, issues, and merge requests related to product documentation.",
+                        "id": "gid://gitlab/GroupLabel/2278655",
+                        "textColor": "#FFFFFF",
+                        "title": "documentation"
+                      },
+                      {
+                        "color": "#f0ad4e",
+                        "description": "User-facing improvements that refine the initial MVC to make it more useful and usable. Read more at https://gitlab.example.com/handbook/product/groups/product-analysis/engineering/metrics/#work-type-classification",
+                        "id": "gid://gitlab/GroupLabel/2975007",
+                        "textColor": "#1F1E24",
+                        "title": "feature::enhancement"
+                      },
+                      {
+                        "color": "#a8d695",
+                        "description": "AI group within the AI Clients stage.",
+                        "id": "gid://gitlab/GroupLabel/51686741",
+                        "textColor": "#1F1E24",
+                        "title": "group::developer clients"
+                      },
+                      {
+                        "color": "#f0ad4e",
+                        "description": "",
+                        "id": "gid://gitlab/GroupLabel/42263609",
+                        "textColor": "#1F1E24",
+                        "title": "section::ai"
+                      },
+                      {
+                        "color": "#228B22",
+                        "description": "The Technical Writing effort for this has been identified, and no additional reminders are required from the bot.",
+                        "id": "gid://gitlab/GroupLabel/18798869",
+                        "textColor": "#FFFFFF",
+                        "title": "tw::triaged"
+                      },
+                      {
+                        "color": "#009966",
+                        "description": "Any issue/MR that contains work to support the implementation of a feature and/or results in an improvement in the user experience. Read more at https://gitlab.example.com/handbook/product/groups/product-analysis/engineering/metrics/#work-type-classification",
+                        "id": "gid://gitlab/GroupLabel/10230929",
+                        "textColor": "#FFFFFF",
+                        "title": "type::feature"
+                      }
+                    ],
+                    "pageInfo": {
+                      "hasNextPage": false
+                    }
+                  },
+                  "milestone": null,
+                  "reference": "#6434",
+                  "referenceFull": "gitlab-org/cli#6434",
+                  "state": "opened",
+                  "title": "More pagination flexibility on raw api calls",
+                  "type": "ISSUE",
+                  "updatedAt": "2026-11-06T03:14:15Z",
+                  "userNotesCount": 4,
+                  "webUrl": "https://gitlab.com/gitlab-org/cli/-/work_items/6434",
+                  "weight": null
+                },
+                {
+                  "assignees": {
+                    "nodes": [
+                      {
+                        "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                        "id": "gid://gitlab/User/939514",
+                        "name": "Test User 5",
+                        "state": "active",
+                        "username": "user-5",
+                        "webUrl": "https://gitlab.example.com/user-5"
+                      }
+                    ],
+                    "pageInfo": {
+                      "hasNextPage": false
+                    }
+                  },
+                  "author": {
+                    "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                    "id": "gid://gitlab/User/25927363",
+                    "name": "Test User 4",
+                    "state": "active",
+                    "username": "user-4",
+                    "webUrl": "https://gitlab.example.com/user-4"
+                  },
+                  "closedAt": null,
+                  "confidential": false,
+                  "createdAt": "2026-04-23T21:19:05Z",
+                  "dueDate": null,
+                  "id": "gid://gitlab/Issue/188940826",
+                  "iid": "8279",
+                  "labels": {
+                    "nodes": [
+                      {
+                        "color": "#ffecdb",
+                        "description": "Issues triaged using AI- https://gitlab.com/gitlab-org/quality/triage-ops/-/blob/master/policies/stages/report/untriaged-issues.yml",
+                        "id": "gid://gitlab/GroupLabel/17435956",
+                        "textColor": "#1F1E24",
+                        "title": "automation:ml"
+                      },
+                      {
+                        "color": "#D10069",
+                        "description": "Issues that require backend work",
+                        "id": "gid://gitlab/GroupLabel/2492649",
+                        "textColor": "#FFFFFF",
+                        "title": "backend"
+                      },
+                      {
+                        "color": "#6699cc",
+                        "description": "Issues related to improving the code review functionality of GitLab.",
+                        "id": "gid://gitlab/GroupLabel/3412204",
+                        "textColor": "#FFFFFF",
+                        "title": "category:code review workflow"
+                      },
+                      {
+                        "color": "#6699cc",
+                        "description": "Issues related to the GitLab CLI category: https://gitlab.example.com/direction/create/gitlab_cli/",
+                        "id": "gid://gitlab/GroupLabel/15126283",
+                        "textColor": "#FFFFFF",
+                        "title": "category:gitlab cli"
+                      },
+                      {
+                        "color": "#e44d2a",
+                        "description": "Stage level label within AI section",
+                        "id": "gid://gitlab/GroupLabel/51686650",
+                        "textColor": "#FFFFFF",
+                        "title": "devops::ai clients"
+                      },
+                      {
+                        "color": "#f0ad4e",
+                        "description": "Issues or MRs related to the first MVC that gives users a foundation of new capabilities that were previously unavailable. Read more at https://gitlab.example.com/handbook/product/groups/product-analysis/engineering/metrics/#work-type-classification",
+                        "id": "gid://gitlab/GroupLabel/15119512",
+                        "textColor": "#1F1E24",
+                        "title": "feature::addition"
+                      },
+                      {
+                        "color": "#a8d695",
+                        "description": "AI group within the AI Clients stage.",
+                        "id": "gid://gitlab/GroupLabel/51686741",
+                        "textColor": "#1F1E24",
+                        "title": "group::developer clients"
+                      },
+                      {
+                        "color": "#f0ad4e",
+                        "description": "",
+                        "id": "gid://gitlab/GroupLabel/42263609",
+                        "textColor": "#1F1E24",
+                        "title": "section::ai"
+                      },
+                      {
+                        "color": "#009966",
+                        "description": "Any issue/MR that contains work to support the implementation of a feature and/or results in an improvement in the user experience. Read more at https://gitlab.example.com/handbook/product/groups/product-analysis/engineering/metrics/#work-type-classification",
+                        "id": "gid://gitlab/GroupLabel/10230929",
+                        "textColor": "#FFFFFF",
+                        "title": "type::feature"
+                      },
+                      {
+                        "color": "#428bca",
+                        "description": "Issues that are undergoing code review by the development team and/or undergoing design review by the UX team https://gitlab.example.com/handbook/product-development/how-we-work/product-development-flow/#build-phase-2-develop--test",
+                        "id": "gid://gitlab/GroupLabel/2526326",
+                        "textColor": "#FFFFFF",
+                        "title": "workflow::in review"
+                      }
+                    ],
+                    "pageInfo": {
+                      "hasNextPage": false
+                    }
+                  },
+                  "milestone": {
+                    "dueDate": "2026-11-13",
+                    "id": "gid://gitlab/Milestone/7324669",
+                    "iid": "144",
+                    "startDate": "2026-10-10",
+                    "state": "active",
+                    "title": "19.6",
+                    "webPath": "/groups/gitlab-org/-/milestones/144"
+                  },
+                  "reference": "#8279",
+                  "referenceFull": "gitlab-org/cli#8279",
+                  "state": "opened",
+                  "title": "Add service-account command for managing service accounts and their tokens",
+                  "type": "ISSUE",
+                  "updatedAt": "2026-11-06T02:50:26Z",
+                  "userNotesCount": 11,
+                  "webUrl": "https://gitlab.com/gitlab-org/cli/-/work_items/8279",
+                  "weight": null
+                }
+              ],
+              "pageInfo": {
+                "endCursor": "eyJ1cGRhdGVkX2F0IjoiMjAyNi0xMS0wNiAwMjo1MDoyNi43NTE2MDAwMDAgKzAwMDAiLCJpZCI6IjE4ODk0MDgyNiJ9",
+                "hasNextPage": true
+              }
+            }
+          }
+        }
+      },
+      "headers": {},
+      "status": 200
+    }
+  }
+]

@@ -1,0 +1,181 @@
+{
+  "meta": {
+    "sanitized": true,
+    "source": "gitlab.com public (gitlab-org/quality), 2026-11-06"
+  },
+  "request": {
+    "operation": "IssuesListGroup",
+    "variables": {
+      "first": 2,
+      "fullPath": "gitlab-org/quality",
+      "includeSubgroups": true,
+      "state": "opened"
+    }
+  },
+  "response": {
+    "body": {
+      "data": {
+        "group": {
+          "issues": {
+            "nodes": [
+              {
+                "assignees": {
+                  "nodes": [],
+                  "pageInfo": {
+                    "hasNextPage": false
+                  }
+                },
+                "author": {
+                  "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                  "id": "gid://gitlab/User/1786152",
+                  "name": "Test User 1",
+                  "state": "active",
+                  "username": "user-1",
+                  "webUrl": "https://gitlab.example.com/user-1"
+                },
+                "closedAt": null,
+                "confidential": false,
+                "createdAt": "2026-11-06T19:10:12Z",
+                "dueDate": null,
+                "id": "gid://gitlab/Issue/209455883",
+                "iid": "31893",
+                "labels": {
+                  "nodes": [
+                    {
+                      "color": "#ffecdb",
+                      "description": "Indicate that this should be auto closed. Remove it if undesired. Check https://gitlab.com/gitlab-org/quality/triage-ops",
+                      "id": "gid://gitlab/GroupLabel/2677573",
+                      "textColor": "#1F1E24",
+                      "title": "auto closed"
+                    },
+                    {
+                      "color": "#ff0000",
+                      "description": "Reason why this was closed: a duplicate issue already exists.",
+                      "id": "gid://gitlab/GroupLabel/26477001",
+                      "textColor": "#FFFFFF",
+                      "title": "closed::duplicate"
+                    },
+                    {
+                      "color": "#6699cc",
+                      "description": "when an incident escalation is skipped because a team member triaged the incident before escalation happened",
+                      "id": "gid://gitlab/GroupLabel/36568140",
+                      "textColor": "#FFFFFF",
+                      "title": "escalation::skipped"
+                    },
+                    {
+                      "color": "#A8D695",
+                      "description": "Issues belonging to the Container Registry group of the Package stage of the DevOps lifecycle. See https://gitlab.example.com/handbook/product/categories/#container-registry-group",
+                      "id": "gid://gitlab/GroupLabel/27358892",
+                      "textColor": "#1F1E24",
+                      "title": "group::container registry"
+                    },
+                    {
+                      "color": "#6699cc",
+                      "description": "This label represents a broken master pipeline caused by failing to pull docker image from the image registry.",
+                      "id": "gid://gitlab/GroupLabel/36464716",
+                      "textColor": "#FFFFFF",
+                      "title": "master-broken::infrastructure::failed-to-pull-image"
+                    },
+                    {
+                      "color": "#FF0000",
+                      "description": "Used to track broken masters and their fixes.",
+                      "id": "gid://gitlab/GroupLabel/3496950",
+                      "textColor": "#FFFFFF",
+                      "title": "master:broken"
+                    },
+                    {
+                      "color": "#36454f",
+                      "description": "master broken incidents caused by failed integration tests",
+                      "id": "gid://gitlab/GroupLabel/35869830",
+                      "textColor": "#FFFFFF",
+                      "title": "test-level:integration"
+                    }
+                  ],
+                  "pageInfo": {
+                    "hasNextPage": false
+                  }
+                },
+                "milestone": null,
+                "reference": "#31893",
+                "referenceFull": "gitlab-org/quality/engineering-productivity/master-broken-incidents#31893",
+                "state": "opened",
+                "title": "Friday 2026-11-06 19:10 UTC - `gitlab-org/gitlab` broken `master` with rspec-ee integration pg17 clickhouse25, rspec-all frontend_fixture 1/8",
+                "type": "INCIDENT",
+                "updatedAt": "2026-11-06T20:00:33Z",
+                "userNotesCount": 5,
+                "webUrl": "https://gitlab.com/gitlab-org/quality/engineering-productivity/master-broken-incidents/-/issues/31893",
+                "weight": null
+              },
+              {
+                "assignees": {
+                  "nodes": [],
+                  "pageInfo": {
+                    "hasNextPage": false
+                  }
+                },
+                "author": {
+                  "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                  "id": "gid://gitlab/User/1786152",
+                  "name": "Test User 1",
+                  "state": "active",
+                  "username": "user-1",
+                  "webUrl": "https://gitlab.example.com/user-1"
+                },
+                "closedAt": null,
+                "confidential": false,
+                "createdAt": "2026-11-06T18:41:37Z",
+                "dueDate": null,
+                "id": "gid://gitlab/Issue/209453424",
+                "iid": "31892",
+                "labels": {
+                  "nodes": [
+                    {
+                      "color": "#6699cc",
+                      "description": "when an incident escalation is skipped because a team member triaged the incident before escalation happened",
+                      "id": "gid://gitlab/GroupLabel/36568140",
+                      "textColor": "#FFFFFF",
+                      "title": "escalation::skipped"
+                    },
+                    {
+                      "color": "#6699cc",
+                      "description": "master-broken incidents caused by various infrastructure issue such as network error, runner memory limit reached, etc.",
+                      "id": "gid://gitlab/GroupLabel/27685340",
+                      "textColor": "#FFFFFF",
+                      "title": "master-broken::infrastructure"
+                    },
+                    {
+                      "color": "#FF0000",
+                      "description": "Used to track broken masters and their fixes.",
+                      "id": "gid://gitlab/GroupLabel/3496950",
+                      "textColor": "#FFFFFF",
+                      "title": "master:broken"
+                    }
+                  ],
+                  "pageInfo": {
+                    "hasNextPage": false
+                  }
+                },
+                "milestone": null,
+                "reference": "#31892",
+                "referenceFull": "gitlab-org/quality/engineering-productivity/master-broken-incidents#31892",
+                "state": "opened",
+                "title": "Friday 2026-11-06 18:41 UTC - `gitlab-org/gitlab` broken `master` with retrieve-tests-metadata",
+                "type": "INCIDENT",
+                "updatedAt": "2026-11-06T19:14:13Z",
+                "userNotesCount": 4,
+                "webUrl": "https://gitlab.com/gitlab-org/quality/engineering-productivity/master-broken-incidents/-/issues/31892",
+                "weight": null
+              }
+            ],
+            "pageInfo": {
+              "endCursor": "eyJjcmVhdGVkX2F0IjoiMjAyNi0xMS0wNiAxODo0MTozNy42NjAwODEwMDAgKzAwMDAiLCJpZCI6IjIwOTQ1MzQyNCJ9",
+              "hasNextPage": true
+            }
+          }
+        }
+      }
+    },
+    "headers": {},
+    "status": 200
+  }
+}

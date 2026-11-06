@@ -1,0 +1,93 @@
+[
+  {
+    "meta": { "source": "docs.gitlab.com example (api/issues: List issues), sanitized" },
+    "request": {
+      "method": "GET",
+      "path": "/api/v4/issues",
+      "query": { "scope": "assigned_to_me", "state": "opened", "labels": "foo,bar", "with_labels_details": "true", "page": "1", "per_page": "1" }
+    },
+    "response": {
+      "status": 200,
+      "headers": { "X-Next-Page": "2", "X-Page": "1", "X-Per-Page": "1" },
+      "body": [
+        {
+          "id": 76,
+          "iid": 6,
+          "project_id": 1,
+          "title": "Consequatur vero maxime deserunt laboriosam est voluptas dolorem.",
+          "description": "Ratione dolores corrupti mollitia soluta quia.",
+          "state": "opened",
+          "created_at": "2016-01-04T15:31:51.081Z",
+          "updated_at": "2016-01-04T15:31:51.081Z",
+          "closed_at": null,
+          "labels": [
+            { "id": 7, "name": "foo", "color": "#d9534f", "description": "Foo label", "text_color": "#FFFFFF" },
+            { "id": 8, "name": "bar", "color": "#5cb85c", "description": null, "text_color": "#FFFFFF" }
+          ],
+          "milestone": {
+            "id": 5,
+            "iid": 1,
+            "project_id": 1,
+            "title": "v2.0",
+            "description": "Assumenda aut placeat expedita exercitationem labore sunt enim earum.",
+            "state": "closed",
+            "created_at": "2015-02-02T19:49:26.013Z",
+            "updated_at": "2015-02-02T19:49:26.013Z",
+            "due_date": "2018-09-22",
+            "start_date": null,
+            "web_url": "https://gitlab.example.com/my-group/my-project/-/milestones/1"
+          },
+          "assignees": [
+            { "id": 1, "username": "user-1", "name": "Test User 1", "state": "active", "avatar_url": null, "web_url": "https://gitlab.example.com/user-1" }
+          ],
+          "author": { "id": 2, "username": "user-2", "name": "Test User 2", "state": "active", "avatar_url": "https://gitlab.example.com/uploads/avatar.png", "web_url": "https://gitlab.example.com/user-2" },
+          "type": "ISSUE",
+          "issue_type": "issue",
+          "user_notes_count": 1,
+          "due_date": "2016-07-22",
+          "confidential": false,
+          "weight": null,
+          "web_url": "https://gitlab.example.com/my-group/my-project/-/issues/6",
+          "references": { "short": "#6", "relative": "#6", "full": "my-group/my-project#6" }
+        }
+      ]
+    }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com example (api/issues: List issues), sanitized" },
+    "request": {
+      "method": "GET",
+      "path": "/api/v4/issues",
+      "query": { "scope": "assigned_to_me", "state": "opened", "labels": "foo,bar", "with_labels_details": "true", "page": "2", "per_page": "1" }
+    },
+    "response": {
+      "status": 200,
+      "headers": { "X-Next-Page": "", "X-Page": "2", "X-Per-Page": "1" },
+      "body": [
+        {
+          "id": 77,
+          "iid": 2,
+          "project_id": 2,
+          "title": "Second issue",
+          "description": null,
+          "state": "opened",
+          "created_at": "2016-01-05T10:00:00.000Z",
+          "updated_at": "2016-01-06T10:00:00.000Z",
+          "closed_at": null,
+          "labels": [ { "id": 7, "name": "foo", "color": "#d9534f", "description": "Foo label", "text_color": "#FFFFFF" } ],
+          "milestone": null,
+          "assignees": [],
+          "author": { "id": 2, "username": "user-2", "name": "Test User 2", "state": "active", "avatar_url": null, "web_url": "https://gitlab.example.com/user-2" },
+          "type": "INCIDENT",
+          "issue_type": "incident",
+          "user_notes_count": 0,
+          "due_date": null,
+          "confidential": true,
+          "weight": 3,
+          "web_url": "https://gitlab.example.com/other/project/-/issues/2",
+          "references": { "short": "#2", "relative": "other/project#2", "full": "other/project#2" }
+        }
+      ]
+    }
+  }
+]

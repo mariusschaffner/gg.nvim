@@ -1,0 +1,10 @@
+#import "issue"
+query IssueGet($fullPath: ID!, $iid: String!) {
+  project(fullPath: $fullPath) {
+    issue(iid: $iid) {
+      ...IssueFields
+      description
+      subscribed
+    }
+  }
+}

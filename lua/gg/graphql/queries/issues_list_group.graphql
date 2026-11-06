@@ -1,0 +1,47 @@
+#import "issue"
+query IssuesListGroup(
+  $fullPath: ID!
+  $first: Int
+  $after: String
+  $state: IssuableState
+  $labelName: [String]
+  $milestoneTitle: [String]
+  $milestoneWildcardId: MilestoneWildcardId
+  $assigneeUsernames: [String!]
+  $assigneeWildcardId: AssigneeWildcardId
+  $authorUsername: String
+  $search: String
+  $iids: [String!]
+  $sort: IssueSort
+  $confidential: Boolean
+  $types: [IssueType!]
+  $includeSubgroups: Boolean
+) {
+  group(fullPath: $fullPath) {
+    issues(
+      first: $first
+      after: $after
+      state: $state
+      labelName: $labelName
+      milestoneTitle: $milestoneTitle
+      milestoneWildcardId: $milestoneWildcardId
+      assigneeUsernames: $assigneeUsernames
+      assigneeWildcardId: $assigneeWildcardId
+      authorUsername: $authorUsername
+      search: $search
+      iids: $iids
+      sort: $sort
+      confidential: $confidential
+      types: $types
+      includeSubgroups: $includeSubgroups
+    ) {
+      nodes {
+        ...IssueFields
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+    }
+  }
+}

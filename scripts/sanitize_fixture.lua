@@ -11,6 +11,10 @@
 --   --path <p>            request.path            (raw body input only)
 --   --operation <name>    request.operation       (raw body input only)
 --   --status <n>          response.status         (default 200)
+--   --variables <json>    request.variables       (GraphQL)
+--   --query <json>        request.query           (REST, exact match)
+--   --headers <json>      response.headers
+--   --append 1            append to the fixture array already in <output.json>
 --
 -- Rules (see tests/fixtures/README.md):
 --   * user objects (tables with `username`): username -> user-N,
@@ -56,6 +60,15 @@ else
     request = opts.operation and { operation = opts.operation } or { method = opts.method or "GET", path = opts.path or "/" },
     response = { status = tonumber(opts.status or "200"), headers = vim.empty_dict(), body = data },
   }
+  if opts.variables then
+    fixture.request.variables = vim.json.decode(opts.variables)
+  end
+  if opts.query then
+    fixture.request.query = vim.json.decode(opts.query)
+  end
+  if opts.headers then
+    fixture.response.headers = vim.json.decode(opts.headers)
+  end
 end
 fixture.meta = fixture.meta or {}
 if opts.source then
@@ -203,7 +216,23 @@ local function pretty(v, indent)
   return "{\n" .. table.concat(parts, ",\n") .. "\n" .. indent .. "}"
 end
 
-local encoded = pretty(fixture)
+local document = fixture
+if opts.append == "1" then
+  local ef = io.open(output, "rb")
+  if ef then
+    local existing = vim.json.decode(ef:read("*a"))
+    ef:close()
+    if existing.request or existing.response then
+      existing = { existing }
+    end
+    table.insert(existing, fixture)
+    document = existing
+  else
+    document = { fixture }
+  end
+end
+
+local encoded = pretty(document)
 for _, pat in ipairs({ "glpat%-", "gloas%-", "glrt%-", "gldt%-", "glcbt%-", "PRIVATE%-TOKEN", "private_token=" }) do
   if encoded:find(pat) then
     die("refusing to write: the fixture still contains a token-like value (" .. pat .. ")")

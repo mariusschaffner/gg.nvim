@@ -4,4 +4,6 @@
 ---@class gg
 local M = {}
 
+M.issues = require("gg.resources.issues")
+
 return M

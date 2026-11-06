@@ -1,0 +1,26 @@
+[
+  {
+    "meta": { "source": "docs.gitlab.com example (api/graphql: null for objects that are missing or not visible)" },
+    "request": { "operation": "IssueGet", "variables": { "fullPath": "gitlab-org/cli", "iid": "999999" } },
+    "response": { "body": { "data": { "project": { "issue": null } } } }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com example (api/graphql: null for objects that are missing or not visible)" },
+    "request": { "operation": "IssuesListProject", "variables": { "fullPath": "nope/missing" } },
+    "response": { "body": { "data": { "project": null } } }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com example (api/graphql: errors array)" },
+    "request": { "operation": "IssuesListGroup", "variables": { "fullPath": "broken" } },
+    "response": {
+      "body": {
+        "errors": [ { "message": "Variable $labelName of type [String] was provided invalid value", "locations": [ { "line": 1, "column": 1 } ] } ]
+      }
+    }
+  },
+  {
+    "meta": { "source": "hand-written: HTTP 403 on GraphQL" },
+    "request": { "operation": "IssuesListProject", "variables": { "fullPath": "secret/project" } },
+    "response": { "status": 403, "body": { "message": "403 Forbidden" } }
+  }
+]

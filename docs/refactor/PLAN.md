@@ -278,7 +278,7 @@ Every item follows the same pattern:
 - The defaults are today's limits (§6.6).
 - Unless an item says otherwise: **Files** = the list above, **Acceptance** = the functions listed below behave as described, with the documented backend, and **Test** = `tests/unit/resources/test_<name>.lua` plus `tests/unit/models/test_<model>.lua` with the cases above, and any extra cases the item names.
 
-- [ ] **6.1 issues** — `feat(issues)`
+- [x] **6.1 issues** — `feat(issues)`
   - Models:
     - `gg.Issue`: id, iid, project, title, description?, state, type, confidential, author, assignees, labels, milestone?, weight?, due_date?, web_url, references, user_notes_count, created_at, updated_at, closed_at?, subscribed?, truncated?
     - shared: `gg.User` (id, username, name, avatar_url?, web_url?), `gg.Label` (id?, name, color, text_color?, description?), `gg.MilestoneRef` (id, iid?, title, state?, web_url?), and `models/gid.lua` (`tail`, `build`)
@@ -289,6 +289,7 @@ Every item follows the same pattern:
     - `create` and `update` (REST). `update` covers title, description, state_event, labels, add_labels/remove_labels, and assignee_ids/milestone_id, where clearing follows the docs.
     - The old `search_issues_picker` becomes `list({scope="all", search=…}, {per_page=30})`.
   - Also adds `tests/unit/test_public_api.lua`: every exported resource function, called with `nil`, `{}` or wrong types, returns a Task that resolves to `validation` and never throws. It covers every later resource automatically.
+  - Note (2026-11-06): the GraphQL reference pages on docs.gitlab.com are too large to read in full. GraphQL field, argument and enum names are therefore checked against gitlab.com's own published schema (introspection, unauthenticated). REST parameters are checked against docs.gitlab.com/api/issues. Fixtures are real responses from `gitlab-org/cli` and `gitlab-org/quality`, plus docs examples for REST and errors. Also added: `#import "<fragment>"` support in the GraphQL loader (`graphql/fragments/`), and `resources/common.lua` (argument validation, the list/list_all pair).
 - [ ] **6.2 labels** — `feat(labels)`
   - `list`/`list_all` (GraphQL `project.labels`, with `searchTerm` and `includeAncestorGroups = true`; default per_page 100) → `gg.Label`.
 - [ ] **6.3 users** — `feat(users)`

@@ -1,0 +1,7 @@
+fragment LabelFields on Label {
+  id
+  title
+  color
+  textColor
+  description
+}

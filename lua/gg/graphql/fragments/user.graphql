@@ -1,0 +1,8 @@
+fragment UserFields on UserCore {
+  id
+  username
+  name
+  avatarUrl
+  webUrl
+  state
+}

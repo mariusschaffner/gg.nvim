@@ -1,0 +1,43 @@
+#import "user"
+#import "label"
+#import "milestone_ref"
+# Nested connections request pageInfo so truncation is reported, never silent.
+fragment IssueFields on Issue {
+  id
+  iid
+  title
+  state
+  type
+  confidential
+  weight
+  dueDate
+  webUrl
+  userNotesCount
+  createdAt
+  updatedAt
+  closedAt
+  reference
+  referenceFull: reference(full: true)
+  author {
+    ...UserFields
+  }
+  assignees(first: 20) {
+    nodes {
+      ...UserFields
+    }
+    pageInfo {
+      hasNextPage
+    }
+  }
+  labels(first: 50) {
+    nodes {
+      ...LabelFields
+    }
+    pageInfo {
+      hasNextPage
+    }
+  }
+  milestone {
+    ...MilestoneRefFields
+  }
+}

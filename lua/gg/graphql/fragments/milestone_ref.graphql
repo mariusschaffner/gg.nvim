@@ -1,0 +1,9 @@
+fragment MilestoneRefFields on Milestone {
+  id
+  iid
+  title
+  state
+  dueDate
+  startDate
+  webPath
+}

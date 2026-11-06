@@ -1,0 +1,84 @@
+[
+  {
+    "meta": { "source": "docs.gitlab.com example (api/issues: New issue), sanitized" },
+    "request": {
+      "method": "POST",
+      "path": "/api/v4/projects/my-group%2Fmy-project/issues",
+      "body_contains": { "title": "Issues with auth", "labels": "bug,ui", "assignee_ids": [ 1 ], "milestone_id": 5 }
+    },
+    "response": {
+      "status": 201,
+      "body": {
+        "id": 85,
+        "iid": 14,
+        "project_id": 4,
+        "title": "Issues with auth",
+        "description": null,
+        "state": "opened",
+        "created_at": "2016-01-07T12:44:33.959Z",
+        "updated_at": "2016-01-07T12:44:33.959Z",
+        "closed_at": null,
+        "labels": [ "bug", "ui" ],
+        "milestone": null,
+        "assignees": [ { "id": 1, "username": "user-1", "name": "Test User 1", "state": "active", "avatar_url": null, "web_url": "https://gitlab.example.com/user-1" } ],
+        "author": { "id": 1, "username": "user-1", "name": "Test User 1", "state": "active", "avatar_url": null, "web_url": "https://gitlab.example.com/user-1" },
+        "type": "ISSUE",
+        "issue_type": "issue",
+        "user_notes_count": 0,
+        "due_date": null,
+        "confidential": false,
+        "web_url": "https://gitlab.example.com/my-group/my-project/-/issues/14",
+        "references": { "short": "#14", "relative": "#14", "full": "my-group/my-project#14" },
+        "subscribed": true
+      }
+    }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com example (api/issues: Edit an issue), sanitized" },
+    "request": {
+      "method": "PUT",
+      "path": "/api/v4/projects/my-group%2Fmy-project/issues/14",
+      "body_contains": { "state_event": "close", "labels": "", "assignee_ids": [ 0 ], "milestone_id": 0 }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "id": 85,
+        "iid": 14,
+        "project_id": 4,
+        "title": "Issues with auth",
+        "description": null,
+        "state": "closed",
+        "created_at": "2016-01-07T12:44:33.959Z",
+        "updated_at": "2016-01-08T12:44:33.959Z",
+        "closed_at": "2016-01-08T12:44:33.959Z",
+        "labels": [],
+        "milestone": null,
+        "assignees": [],
+        "author": { "id": 1, "username": "user-1", "name": "Test User 1", "state": "active", "avatar_url": null, "web_url": "https://gitlab.example.com/user-1" },
+        "type": "ISSUE",
+        "issue_type": "issue",
+        "user_notes_count": 0,
+        "due_date": null,
+        "confidential": false,
+        "web_url": "https://gitlab.example.com/my-group/my-project/-/issues/14",
+        "references": { "short": "#14", "relative": "#14", "full": "my-group/my-project#14" }
+      }
+    }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com example (api/rest: 403 response shape)" },
+    "request": { "method": "POST", "path": "/api/v4/projects/my-group%2Fsecret/issues" },
+    "response": { "status": 403, "body": { "message": "403 Forbidden" } }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com example (api/rest: 404 response shape)" },
+    "request": { "method": "PUT", "path": "/api/v4/projects/my-group%2Fmy-project/issues/999" },
+    "response": { "status": 404, "body": { "message": "404 Issue Not Found" } }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com example (api/rest: 400 validation response shape)" },
+    "request": { "method": "POST", "path": "/api/v4/projects/my-group%2Fmy-project/issues", "body_contains": { "title": "x" } },
+    "response": { "status": 400, "body": { "message": { "title": [ "is too short (minimum is 2 characters)" ] } } }
+  }
+]

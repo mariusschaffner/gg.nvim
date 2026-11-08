@@ -1,8 +1,8 @@
 --- Token lookup per host.
 ---
 --- Order: the host's `token` in config (a string, or a function called per
---- request) -> the `GITLAB_TOKEN` environment variable, only for hosts listed
---- in `config.hosts` -> no token. Hosts that are not listed never get the env
+--- request) -> the `GITLAB_TOKEN` environment variable -> no token. Requests
+--- only ever go to hosts listed in `config.hosts`, so the env
 --- token, so it cannot leak to a host parsed from an arbitrary remote URL.
 local errors = require("gg.core.errors")
 
@@ -94,10 +94,7 @@ end
 ---@return string
 function M.hint(settings, result)
   if result.source == "none" then
-    if settings.listed then
-      return ("no token configured for %s (set hosts[%q].token or %s)"):format(settings.name, settings.name, M.ENV)
-    end
-    return ("no token for %s: the host is not listed in config.hosts, so %s is not used for it"):format(settings.name, M.ENV)
+    return ("no token configured for %s (set hosts[%q].token or %s)"):format(settings.name, settings.name, M.ENV)
   end
   return ("the token for %s (from %s) was rejected"):format(settings.name, result.source)
 end

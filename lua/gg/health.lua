@@ -59,7 +59,9 @@ local function report_hosts(h)
   local names = vim.tbl_keys(config.get().hosts)
   table.sort(names)
   if #names == 0 then
-    h.info(("no hosts are listed; %s is only used for listed hosts"):format(auth.ENV))
+    h.warn("no GitLab host is configured, so every request fails", {
+      'Add your instance: gg.setup({ hosts = { ["gitlab.example.com"] = { token = ... } } })',
+    })
     return
   end
   for _, name in ipairs(names) do

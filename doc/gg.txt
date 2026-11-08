@@ -42,19 +42,25 @@ come back as a |gg-error|.
 gg.setup({opts})                                                  *gg.setup()*
     Applies the configuration. Returns `true`, or `false, err` with a
     `validation` error that names the bad key. On failure the previous
-    configuration stays. Every key is optional:
+    configuration stays.
+
+    `hosts` is the one setting you must provide. There is no default
+    instance, and requests only go to listed hosts; a call to any other host
+    is a `validation` error. The other keys are optional, and the values
+    below are their defaults:
 >lua
     require("gg").setup({
-      hosts = {
-        -- gitlab.com is listed by default; set it to false to remove it
+      hosts = { -- required
         ["gitlab.example.com"] = {
-          base_url = "https://gitlab.example.com", -- may include a relative root
           token = "...",          -- or a function returning the token
+          -- optional per host:
+          base_url = "https://gitlab.example.com", -- default; may include a relative root
           aliases = { "ssh.gitlab.example.com" }, -- other names (SSH host)
-          timeout = { total = 120 }, -- per-host overrides
+          timeout = { total = 120 }, -- overrides
           retry = { max_attempts = 5 },
         },
       },
+      -- optional, with these defaults:
       timeout = { connect = 10, total = 60, stall = 30 }, -- seconds
       retry = { max_attempts = 3, base_delay_ms = 500, max_delay_ms = 30000,
                 max_retry_after_s = 60 },
@@ -68,9 +74,8 @@ gg.setup({opts})                                                  *gg.setup()*
 
     Tokens are looked up per request, in this order:
     1. the host's `token` (a string, or a function called for each request)
-    2. the `GITLAB_TOKEN` environment variable, for hosts listed in `hosts`
-    3. none: the request is sent without a token
-    Hosts that are not listed never get `GITLAB_TOKEN`.
+    2. the `GITLAB_TOKEN` environment variable
+    3. none: the request is sent without a token (public data only)
 
     `timeout.total` limits a whole request (0 = no limit). Downloads and job
     logs have no total limit; they fail after `timeout.stall` seconds without
@@ -83,7 +88,8 @@ gg.config.get()                                              *gg.config.get()*
 
 gg.config.host({name})                                      *gg.config.host()*
     The effective settings for one host (aliases resolve to their host):
-    `{ name, base_url, token, listed, timeout, retry }`. For a bad name it
+    `{ name, base_url, token, listed, timeout, retry }`. For a bad or
+    unconfigured name it
     returns `nil, err`.
 
 gg.config.hosts()                                          *gg.config.hosts()*
@@ -585,7 +591,8 @@ unless it has `"repeat": true`.
 - The token is passed to curl through stdin, never on the command line.
 - Redirects are followed by gg, and the token is only sent to the host's
   own origin (same scheme, host and port).
-- `GITLAB_TOKEN` is only used for hosts listed in `hosts`.
+- Requests only go to hosts listed in `hosts`, so neither a configured token
+  nor `GITLAB_TOKEN` can reach a host taken from an arbitrary remote URL.
 - Tokens and other secrets are redacted from errors and logs: GitLab token
   prefixes, `PRIVATE-TOKEN` / `Authorization` values, `private_token=`
   style query parameters, URL credentials, and the exact token of the

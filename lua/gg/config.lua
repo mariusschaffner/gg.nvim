@@ -46,7 +46,8 @@ local M = {}
 ---@field retry gg.RetryConfig
 
 local DEFAULTS = {
-  hosts = { ["gitlab.com"] = { base_url = "https://gitlab.com" } },
+  -- no default instance: users list their GitLab host(s)
+  hosts = {},
   timeout = { connect = 10, total = 60, stall = 30 },
   retry = { max_attempts = 3, base_delay_ms = 500, max_delay_ms = 30000, max_retry_after_s = 60 },
   curl = { cmd = "curl" },
@@ -321,8 +322,9 @@ function M.curl_cmd()
   return state.curl.cmd
 end
 
---- Effective settings for a host. Aliases resolve to their host. Hosts that
---- are not listed get `https://<host>`, no token, and `listed = false`.
+--- Effective settings for a configured host. Aliases resolve to their host.
+--- There is no default instance: a host that is not in `config.hosts` is a
+--- `validation` error, so nothing is ever sent to an unconfigured host.
 ---@param name string
 ---@return gg.HostSettings|nil
 ---@return gg.Error|nil
@@ -342,13 +344,18 @@ function M.host(name)
       end
     end
   end
+  if not h then
+    return nil, errors.new("validation", ("host %s is not configured; add it to hosts in gg.setup()"):format(lname), {
+      details = { key = "host", host = lname },
+    })
+  end
   return {
     name = canonical,
-    base_url = h and h.base_url or ("https://" .. lname),
-    token = h and h.token or nil,
-    listed = h ~= nil,
-    timeout = vim.tbl_extend("force", state.timeout, h and h.timeout or {}),
-    retry = vim.tbl_extend("force", state.retry, h and h.retry or {}),
+    base_url = h.base_url,
+    token = h.token,
+    listed = true,
+    timeout = vim.tbl_extend("force", state.timeout, h.timeout or {}),
+    retry = vim.tbl_extend("force", state.retry, h.retry or {}),
   }, nil
 end
 

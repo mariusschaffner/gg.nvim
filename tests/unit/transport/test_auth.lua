@@ -77,12 +77,13 @@ T["config token wins over GITLAB_TOKEN"] = function()
   eq(fake:last().headers["PRIVATE-TOKEN"], H.TEST_TOKEN)
 end
 
-T["hosts that are not listed never get GITLAB_TOKEN"] = function()
+T["unconfigured hosts get no request at all (so no GITLAB_TOKEN either)"] = function()
   vim.env.GITLAB_TOKEN = "env-token-value"
   local fake = H.fake()
   fake:add(OK)
-  H.await(get("other.example.org"))
-  eq(fake:last().headers["PRIVATE-TOKEN"], nil)
+  local _, err = H.await(get("other.example.org"))
+  eq(err.kind, "validation")
+  eq(#fake:requests(), 0)
 end
 
 T["auth = false sends no token"] = function()
@@ -98,7 +99,6 @@ T["source()"] = function()
   eq(auth.source(config.host("a")), "config")
   eq(auth.source(config.host("b")), "function")
   eq(auth.source(config.host("c")), "env")
-  eq(auth.source(config.host("unlisted.example.org")), "none")
   vim.env.GITLAB_TOKEN = nil
   eq(auth.source(config.host("c")), "none")
 end

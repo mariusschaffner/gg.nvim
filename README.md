@@ -36,24 +36,36 @@ Then run `:checkhealth gg`.
 
 ## Setup
 
+`hosts` is the only thing you must set. There is no default instance, and gg sends requests only to the hosts you
+list (gitlab.com included: list it if you use it).
+
 ```lua
 require("gg").setup({
   hosts = {
-    -- gitlab.com is listed by default (set it to false to remove it)
     ["gitlab.example.com"] = {
-      base_url = "https://gitlab.example.com", -- may include a relative root
-      token = "...",                           -- or a function returning the token
-      aliases = { "ssh.gitlab.example.com" },  -- other names, e.g. an SSH host
+      token = "...", -- or a function returning the token; or set GITLAB_TOKEN
+      -- optional:
+      -- base_url = "https://gitlab.example.com/gitlab", -- default https://<host>; may include a relative root
+      -- aliases = { "ssh.gitlab.example.com" },         -- other names, e.g. an SSH host
     },
   },
-  timeout = { connect = 10, total = 60, stall = 30 }, -- seconds
-  retry = { max_attempts = 3 },
-  log = { level = "warn" },                           -- stdpath("log")/gg.log
 })
 ```
 
-Tokens are looked up per request: first the host's `token`, then `GITLAB_TOKEN` (only for hosts listed in
-`hosts`), and otherwise none. `setup` returns `true`, or `false, err` when an option is invalid.
+Everything else is optional and has a default:
+
+```lua
+require("gg").setup({
+  hosts = { ... },
+  timeout = { connect = 10, total = 60, stall = 30 },  -- seconds
+  retry = { max_attempts = 3, base_delay_ms = 500, max_delay_ms = 30000, max_retry_after_s = 60 },
+  log = { level = "warn" },                            -- written to stdpath("log")/gg.log
+})
+```
+
+Tokens are looked up per request: first the host's `token`, then `GITLAB_TOKEN`, and otherwise none (public data
+only). A call to a host that isn't in `hosts` fails with a `validation` error. `setup` returns `true`, or
+`false, err` when an option is invalid.
 
 ## Usage
 

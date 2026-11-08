@@ -41,8 +41,8 @@ end
 T["url: base URL with a relative root"] = function()
   config.setup({ hosts = { ["h.example.com"] = { base_url = "https://h.example.com/gitlab/" } }, log = { level = "off" } })
   eq(rest.url("h.example.com", "/projects/1", { a = 1 }), "https://h.example.com/gitlab/api/v4/projects/1?a=1")
-  eq(rest.url("gitlab.com", "/user"), "https://gitlab.com/api/v4/user")
-  eq(select(2, rest.url("gitlab.com", "user")).kind, "validation")
+  eq(select(2, rest.url("h.example.com", "user")).kind, "validation")
+  eq(select(2, rest.url("not-configured.example.com", "/user")).kind, "validation")
 end
 
 T["request: JSON body sets Content-Type, GET does not"] = function()

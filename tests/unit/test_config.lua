@@ -13,7 +13,7 @@ local T = MiniTest.new_set({
 T["defaults"] = function()
   eq(config.setup(), true)
   local c = config.get()
-  eq(c.hosts, { ["gitlab.com"] = { base_url = "https://gitlab.com", aliases = {} } })
+  eq(c.hosts, {}) -- no default instance
   eq(c.timeout, { connect = 10, total = 60, stall = 30 })
   eq(c.retry, { max_attempts = 3, base_delay_ms = 500, max_delay_ms = 30000, max_retry_after_s = 60 })
   eq(c.curl.cmd, "curl")
@@ -32,7 +32,7 @@ T["merging hosts, timeouts and retry"] = function()
   })
   eq(ok, true)
   local c = config.get()
-  eq(c.hosts["gitlab.com"].base_url, "https://gitlab.com")
+  eq(vim.tbl_keys(c.hosts), { "gitlab.example.com" })
   eq(c.hosts["gitlab.example.com"].base_url, "https://gitlab.example.com/gitlab")
   eq(c.hosts["gitlab.example.com"].aliases, { "ssh.example.com" })
   eq(c.timeout, { connect = 10, total = 120, stall = 30 })
@@ -40,10 +40,9 @@ T["merging hosts, timeouts and retry"] = function()
   eq(c.retry.base_delay_ms, 500)
 end
 
-T["a default host can be removed"] = function()
-  config.setup({ hosts = { ["gitlab.com"] = false } })
-  eq(config.get().hosts, {})
-  eq(config.host("gitlab.com").listed, false)
+T["a host defaults its base_url to https://<host>; false removes it"] = function()
+  config.setup({ hosts = { ["gitlab.com"] = {}, ["x.example.com"] = false } })
+  eq(config.get().hosts, { ["gitlab.com"] = { base_url = "https://gitlab.com", aliases = {} } })
 end
 
 T["host(): listed, alias, unlisted and per-host overrides"] = function()
@@ -69,11 +68,10 @@ T["host(): listed, alias, unlisted and per-host overrides"] = function()
   eq(a.name, "gitlab.example.com")
   eq(a.listed, true)
 
-  local u = config.host("other.example.org")
-  eq(u.name, "other.example.org")
-  eq(u.base_url, "https://other.example.org")
-  eq(u.token, nil)
-  eq(u.listed, false)
+  local u, err = config.host("other.example.org")
+  eq(u, nil)
+  eq(err.kind, "validation")
+  eq(err.details.host, "other.example.org")
 end
 
 T["host(): rejects non-host values"] = function()
@@ -127,12 +125,12 @@ end
 
 T["get() returns an isolated copy, but shares the backend"] = function()
   local backend = { send = function() end }
-  config.setup({ transport = { backend = backend } })
+  config.setup({ hosts = { ["gitlab.example.com"] = {} }, transport = { backend = backend } })
   local c = config.get()
   c.timeout.total = 999
-  c.hosts["gitlab.com"].base_url = "https://evil.example.com"
+  c.hosts["gitlab.example.com"].base_url = "https://evil.example.com"
   eq(config.get().timeout.total, 60)
-  eq(config.host("gitlab.com").base_url, "https://gitlab.com")
+  eq(config.host("gitlab.example.com").base_url, "https://gitlab.example.com")
   eq(config.get().transport.backend == backend, true)
   eq(config.backend() == backend, true)
 end

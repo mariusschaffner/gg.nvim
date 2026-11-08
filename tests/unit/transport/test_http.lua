@@ -126,6 +126,7 @@ end
 T["cancel cancels the backend request"] = function()
   local cancelled = 0
   config.setup({
+    hosts = { ["gitlab.example.com"] = {} },
     transport = {
       backend = {
         send = function()

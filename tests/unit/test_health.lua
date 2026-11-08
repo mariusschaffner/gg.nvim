@@ -67,7 +67,7 @@ T["missing curl is an error"] = function()
 end
 
 T["no token is a warning; http is a warning"] = function()
-  run({ hosts = { ["gitlab.com"] = false, ["git.example.com"] = { base_url = "http://git.example.com" } } })
+  run({ hosts = { ["git.example.com"] = { base_url = "http://git.example.com" } } })
   eq(find("warn", "git%.example%.com: no token") ~= nil, true)
   eq(find("warn", "plain http") ~= nil, true)
 end
@@ -102,8 +102,8 @@ T["a non-curl backend is a warning; log level is reported"] = function()
 end
 
 T["no listed hosts"] = function()
-  run({ hosts = { ["gitlab.com"] = false } })
-  eq(find("info", "no hosts are listed") ~= nil, true)
+  run({ hosts = {} })
+  eq(find("warn", "no GitLab host is configured") ~= nil, true)
 end
 
 return T

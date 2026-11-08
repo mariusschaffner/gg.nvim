@@ -21,7 +21,7 @@ With [lazy.nvim](https://github.com/folke/lazy.nvim):
 
 ```lua
 {
-  "OWNER/gg.nvim", -- replace OWNER with where the repository is hosted
+  "mariusschaffner/gg.nvim",
   config = function()
     require("gg").setup({
       hosts = {

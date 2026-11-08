@@ -377,7 +377,7 @@ Every item follows the same pattern:
 
 ## 7. Health and documentation
 
-- [ ] **7.1 health: `:checkhealth gg`** — `feat(health)`
+- [x] **7.1 health: `:checkhealth gg`** — `feat(health)`
   - Files: `lua/gg/health.lua`, `tests/unit/test_health.lua`.
   - Acceptance:
     - Reports Neovim ≥ 0.10, whether curl is executable, and whether the config validates.

@@ -385,7 +385,7 @@ Every item follows the same pattern:
     - Warns when the backend isn't curl. Reports the log level.
     - No network, no spawned processes (open question 26).
   - Test: `test_health.lua` stubs `vim.health.*` and checks the messages per scenario, and that the token text never appears.
-- [ ] **7.2 public facade, README and `:help gg`** — `docs`
+- [x] **7.2 public facade, README and `:help gg`** — `docs`
   - Files: `lua/gg/init.lua` (final re-exports: setup, config.get, task, errors, context, every resource, `testing.fake_backend`), `README.md`, `doc/gg.txt`, `tests/unit/test_docs.lua`.
   - Acceptance: README and help cover:
     - install, requirements and setup schema

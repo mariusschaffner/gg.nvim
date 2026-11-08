@@ -1,0 +1,595 @@
+*gg.txt*  A standalone, UI-free GitLab API layer for Neovim
+
+==============================================================================
+CONTENTS                                                         *gg-contents*
+
+  1. Introduction ............................................ |gg-intro|
+  2. Setup ................................................... |gg-setup|
+  3. Hosts and context ....................................... |gg-context|
+  4. Tasks ................................................... |gg-tasks|
+  5. Errors .................................................. |gg-errors|
+  6. Pagination .............................................. |gg-pagination|
+  7. Resources ............................................... |gg-resources|
+  8. Testing with the fake backend ........................... |gg-testing|
+  9. Security ................................................ |gg-security|
+
+==============================================================================
+1. INTRODUCTION                                                     *gg-intro*
+
+gg talks to the GitLab REST and GraphQL APIs and returns plain Lua tables
+("models") with GitLab's field names. It has no UI and no user commands
+(only |:checkhealth| `gg`). It never runs `git`: pass remote URLs in and use
+|gg.context.parse()|.
+
+Requirements: Neovim 0.10 or newer, and `curl` on the `PATH`. There are no
+other dependencies.
+
+Every call is asynchronous and returns a |gg-task|. Nothing throws: failures
+come back as a |gg-error|.
+>lua
+    local gg = require("gg")
+    gg.setup({ hosts = { ["gitlab.example.com"] = { token = os.getenv("GL_TOKEN") } } })
+
+    gg.issues.get({ host = "gitlab.example.com", project = "group/repo", iid = 12 })
+      :on_done(function(issue, err)
+        if err then return vim.notify(tostring(err), vim.log.levels.ERROR) end
+        print(issue.title, issue.state)
+      end)
+<
+==============================================================================
+2. SETUP                                                            *gg-setup*
+
+gg.setup({opts})                                                  *gg.setup()*
+    Applies the configuration. Returns `true`, or `false, err` with a
+    `validation` error that names the bad key. On failure the previous
+    configuration stays. Every key is optional:
+>lua
+    require("gg").setup({
+      hosts = {
+        -- gitlab.com is listed by default; set it to false to remove it
+        ["gitlab.example.com"] = {
+          base_url = "https://gitlab.example.com", -- may include a relative root
+          token = "...",          -- or a function returning the token
+          aliases = { "ssh.gitlab.example.com" }, -- other names (SSH host)
+          timeout = { total = 120 }, -- per-host overrides
+          retry = { max_attempts = 5 },
+        },
+      },
+      timeout = { connect = 10, total = 60, stall = 30 }, -- seconds
+      retry = { max_attempts = 3, base_delay_ms = 500, max_delay_ms = 30000,
+                max_retry_after_s = 60 },
+      curl = { cmd = "curl" },
+      transport = { backend = "curl" }, -- or a backend table (|gg-testing|)
+      log = { level = "warn", sink = nil, file = nil },
+    })
+<
+    Host names are bare names ("gitlab.example.com"), without scheme, path
+    or port. `base_url` defaults to `https://<host>`.
+
+    Tokens are looked up per request, in this order:
+    1. the host's `token` (a string, or a function called for each request)
+    2. the `GITLAB_TOKEN` environment variable, for hosts listed in `hosts`
+    3. none: the request is sent without a token
+    Hosts that are not listed never get `GITLAB_TOKEN`.
+
+    `timeout.total` limits a whole request (0 = no limit). Downloads and job
+    logs have no total limit; they fail after `timeout.stall` seconds without
+    progress. `log.level` is one of "trace", "debug", "info", "warn", "error"
+    or "off". By default the log is written to `stdpath("log")/gg.log`.
+    `log.sink` replaces that with `fun(level, message, fields)`.
+
+gg.config.get()                                              *gg.config.get()*
+    A copy of the effective configuration.
+
+gg.config.host({name})                                      *gg.config.host()*
+    The effective settings for one host (aliases resolve to their host):
+    `{ name, base_url, token, listed, timeout, retry }`. For a bad name it
+    returns `nil, err`.
+
+gg.config.hosts()                                          *gg.config.hosts()*
+    The listed hosts as `{ [name] = { base_url, aliases } }`, the shape
+    |gg.context.parse()| accepts as `opts.hosts`.
+
+==============================================================================
+3. HOSTS AND CONTEXT                                              *gg-context*
+
+Every resource call takes an explicit `host`; there is no "current host".
+`project` is a full path ("group/sub/repo") or a numeric ID. Paths are
+always URL-encoded for you. With GraphQL, a numeric ID costs one extra
+request to look up the path.
+
+The context functions are pure: they never call git, and they return
+`nil, err` (a plain `validation` error table) instead of a Task.
+
+gg.context.parse({url}, {opts})                            *gg.context.parse()*
+    Parses a git remote URL into `{ host, port, scheme, project, base_url }`.
+    It accepts scp-style (`git@host:group/repo.git`), `ssh://` (the port is
+    the SSH port and is not part of `base_url`), `https://`, `http://` and
+    `git://` URLs, with any depth of subgroups. Credentials in the URL are
+    dropped. Pass `{ hosts = gg.config.hosts() }` to resolve aliases and
+    relative URL roots.
+>lua
+    local ctx = require("gg").context
+    local r = ctx.parse(remote_url, { hosts = require("gg").config.hosts() })
+    -- r.host = "gitlab.example.com", r.project = "group/sub/repo"
+<
+gg.context.parse_web_url({url}, {opts})            *gg.context.parse_web_url()*
+    Parses a GitLab web URL into `{ host, base_url, project, kind, iid | id }`,
+    where `kind` is "issue", "merge_request", "pipeline", "job", "milestone",
+    "work_item" or "project".
+
+gg.context.parse_ref({ref}, {default_project})         *gg.context.parse_ref()*
+    Parses "#12", "!3", "group/repo#12" or "group/repo!3" into
+    `{ kind, project, iid }`.
+
+==============================================================================
+4. TASKS                                                    *gg-tasks* *gg-task*
+
+Every request returns a Task. Use it with a callback, await it in a
+coroutine, or cancel it.
+
+Task:on_done({cb})                                           *gg.Task:on_done()*
+    Calls `cb(result, err)` once the task settles, always through
+    |vim.schedule()| (never synchronously). A cancelled task never calls it.
+
+Task:await()                                                   *gg.Task:await()*
+    Inside a coroutine: suspends until the task settles and returns
+    `result, err`. Outside a coroutine it returns a `validation` error
+    instead of blocking.
+
+Task:cancel()                                                 *gg.Task:cancel()*
+    Cancels the task and kills its request. It is idempotent.
+
+Task:is_done(), Task:is_cancelled()                          *gg.Task:is_done()*
+
+gg.task.run({fn}, {...})                                        *gg.task.run()*
+    Runs `fn(...)` in a coroutine where tasks can be awaited. Its return
+    value `(result, err)` settles the returned task, and a Lua error inside
+    `fn` becomes an "unknown" error. Cancelling the run cancels the task
+    it is awaiting.
+>lua
+    local gg = require("gg")
+    local t = gg.task.run(function()
+      local mr, err = gg.merge_requests.get({ host = h, project = p, iid = 3 }):await()
+      if err then return nil, err end
+      local checks = gg.mr_checks.get({ host = h, project = p, iid = 3 }):await()
+      return { mr = mr, checks = checks }
+    end)
+<
+gg.task.all({tasks})                                            *gg.task.all()*
+    Resolves with all results, in order. The first error rejects it and
+    cancels the rest.
+
+gg.task.new({producer})                                         *gg.task.new()*
+    Builds a task from `producer(resolve, reject, on_cancel)`.
+
+gg.task.resolved({value}), gg.task.failed({err})           *gg.task.resolved()*
+                                                              *gg.task.failed()*
+    Tasks that have already settled.
+
+gg.task.is_task({v})                                        *gg.task.is_task()*
+
+==============================================================================
+5. ERRORS                                                 *gg-errors* *gg-error*
+
+Errors are tables `{ kind, status, message, details }`, and `tostring(err)`
+gives a readable line. Messages and details are redacted (|gg-security|).
+
+  kind            meaning ~
+  auth            401, no signed-in user, or a token function failed
+  forbidden       403
+  not_found       404, or an object GitLab returns as null
+  validation      bad arguments or config; 400/405/406/409/422; mutation
+                  payload errors
+  rate_limited    429 once the retries are used up (`details.retry_after`)
+  timeout         the request or a download stalled past its limit
+  network         connection, DNS or TLS failure
+  graphql         a GraphQL `errors` array (`details.errors`). When data came
+                  back too, it is in `details.partial`, and it is never
+                  returned as a success
+  unknown         5xx, invalid JSON, anything else
+
+`details` usually holds `method`, `url` (without the query string),
+`request_id` and part of the response `body`.
+
+gg.errors.is({v})                                               *gg.errors.is()*
+gg.errors.is_cancelled({err})                         *gg.errors.is_cancelled()*
+    True for the error a coroutine receives when a task it awaits is
+    cancelled by someone else.
+gg.errors.new({kind}, {message}, {opts})                       *gg.errors.new()*
+gg.errors.wrap({v})                                           *gg.errors.wrap()*
+gg.errors.redact({err}, {secrets})                          *gg.errors.redact()*
+gg.errors.cancelled()                                    *gg.errors.cancelled()*
+
+Retries: a 429 waits for `Retry-After` (capped by `retry.max_retry_after_s`).
+GET requests also retry 502, 503, 504 and network errors with exponential
+backoff and jitter. There are at most `retry.max_attempts` attempts.
+
+==============================================================================
+6. PAGINATION                                                  *gg-pagination*
+
+Every list has two forms:
+
+  list(args, opts)          one page: `{ items, next_cursor }`
+                            opts = `{ per_page = 1..100, cursor = "..." }`
+  list_all(args, opts)      collect pages: `{ items, truncated }`
+                            opts = `{ limit = N, per_page?, on_page? }`
+
+`next_cursor` is an opaque string (nil on the last page); pass it back as
+`opts.cursor`. `list_all` requires a `limit`. It never fetches beyond it,
+and it sets `truncated = true` when more items exist. `on_page(items)` is
+called for each page as it arrives.
+
+Nested lists in a model (an issue's labels, a pipeline's jobs, …) are capped
+by GitLab. When something was cut off, the model has
+`truncated = { labels = true }` or similar.
+
+==============================================================================
+7. RESOURCES                                                    *gg-resources*
+
+All functions take `args` with `host` and return a |gg-task|. Unknown
+arguments are rejected as `validation` errors. Models use GitLab's field
+names and values (statuses are lowercased). The LuaLS annotations in
+`lua/gg/models/` list every field.
+
+------------------------------------------------------------------------------
+ISSUES                                                             *gg-issues*
+
+gg.issues.list({args}, {opts})                               *gg.issues.list()*
+gg.issues.list_all({args}, {opts})                       *gg.issues.list_all()*
+    Issues of `project` or `group` (GraphQL), or of every project the token
+    can see when neither is given (REST, with `scope` = "created_by_me" (the
+    default), "assigned_to_me" or "all"). The other filters are `state`
+    ("opened", "closed" or "all"), `labels` (issues must have all of them),
+    `milestone` (a title, "None" or "Any"), `assignee_username` (a name,
+    "None" or "Any"), `author_username`, `search`, `iids`, `order_by`,
+    `sort` ("asc" or "desc"), `confidential`, `types` and
+    `include_subgroups` (groups only, default true). The default `per_page`
+    is 50. Items are `gg.Issue`.
+
+gg.issues.get({args})                                         *gg.issues.get()*
+    `{ host, project, iid }`. Resolves with a `gg.Issue` that includes
+    `description` and `subscribed`.
+
+gg.issues.by_iids({args})                                 *gg.issues.by_iids()*
+    `{ host, project, iids }`. Resolves with `gg.Issue[]`; missing IIDs are
+    left out.
+
+gg.issues.create({args})                                   *gg.issues.create()*
+    `{ host, project, title, description?, labels?, assignee_ids?,
+    milestone_id?, confidential?, due_date?, issue_type?, weight? }`.
+
+gg.issues.update({args})                                   *gg.issues.update()*
+    `{ host, project, iid, ... }`. The fields are `title`, `description`,
+    `state_event` ("close" or "reopen"), `labels` ({} removes them all),
+    `add_labels`, `remove_labels`, `assignee_ids` ({} unassigns everyone),
+    `milestone_id` (false removes it), `due_date`, `confidential`,
+    `issue_type`, `weight` and `discussion_locked`.
+
+------------------------------------------------------------------------------
+WORK ITEMS                                                     *gg-work_items*
+
+gg.work_items.dates({args})                             *gg.work_items.dates()*
+    `{ host, project, iid }`. Resolves with
+    `{ work_item_id, iid, start_date, due_date }`.
+
+gg.work_items.update_dates({args})               *gg.work_items.update_dates()*
+    `{ host, project, iid, start_date?, due_date?, work_item_id? }`. A date
+    set to `false` is cleared, and a date that is not given is left alone.
+
+------------------------------------------------------------------------------
+MERGE REQUESTS                                             *gg-merge_requests*
+
+gg.merge_requests.list({args}, {opts})               *gg.merge_requests.list()*
+gg.merge_requests.list_all({args}, {opts})       *gg.merge_requests.list_all()*
+    Merge requests of `project` or `group`. Without either, `scope` picks
+    them: "created_by_me" (the default), "assigned_to_me", "reviews_for_me",
+    or "all" (every MR the token can see). The filters are `state`
+    ("opened", "closed", "merged", "locked" or "all"), `labels`,
+    `milestone`, `author_username`, `assignee_username`,
+    `reviewer_username`, `search`, `iids`, `source_branch`,
+    `target_branch`, `draft`, `order_by`, `sort` and `include_subgroups`.
+    Items are `gg.MergeRequest`. Its `state` and `draft` are independent.
+
+gg.merge_requests.get({args})                         *gg.merge_requests.get()*
+    `{ host, project, iid }`. Includes `description`, `diff_refs` and
+    `subscribed`.
+
+gg.merge_requests.by_iids({args})                 *gg.merge_requests.by_iids()*
+
+gg.merge_requests.related_to_issue({args}, {opts})
+                                         *gg.merge_requests.related_to_issue()*
+gg.merge_requests.related_to_issue_all({args}, {opts})
+                                     *gg.merge_requests.related_to_issue_all()*
+    MRs related to an issue: `{ host, project, iid }`, where `iid` is the
+    issue's. The default `per_page` is 20.
+
+gg.merge_requests.create({args})                   *gg.merge_requests.create()*
+    `{ host, project, source_branch, target_branch, title, description?,
+    labels?, assignee_ids?, reviewer_ids?, milestone_id?,
+    remove_source_branch?, squash?, target_project_id?,
+    allow_collaboration?, draft? }`.
+
+gg.merge_requests.update({args})                   *gg.merge_requests.update()*
+    `{ host, project, iid, ... }`. Takes the same kinds of fields as
+    |gg.issues.update()|, plus `target_branch`, `reviewer_ids` ({} removes
+    them), `remove_source_branch`, `squash`, `allow_collaboration` and
+    `draft` (true or false).
+
+gg.merge_requests.merge({args})                     *gg.merge_requests.merge()*
+    `{ host, project, iid, sha?, squash?, should_remove_source_branch?,
+    merge_commit_message?, squash_commit_message?, auto_merge? }`. If the
+    MR cannot be merged (405), the SHA moved (409) or the merge failed
+    (422), the result is a `validation` error with GitLab's message.
+
+------------------------------------------------------------------------------
+MERGE REQUEST CHANGES                                          *gg-mr_changes*
+
+gg.mr_changes.commits({args}, {opts})                 *gg.mr_changes.commits()*
+gg.mr_changes.commits_all({args}, {opts})         *gg.mr_changes.commits_all()*
+    `{ host, project, iid }`. Items are `gg.Commit`.
+
+gg.mr_changes.diffs({args}, {opts})                     *gg.mr_changes.diffs()*
+gg.mr_changes.diffs_all({args}, {opts})             *gg.mr_changes.diffs_all()*
+    `{ host, project, iid, unidiff? }`. Items are `gg.DiffFile`.
+
+gg.mr_changes.diffstat({args}, {opts})               *gg.mr_changes.diffstat()*
+    Per-file `{ path, old_path, status, additions, deletions }`. It reads
+    the diff pages, so `opts.limit` is required. The counts are nil for
+    files GitLab marks too large.
+
+gg.mr_changes.versions({args}, {opts})               *gg.mr_changes.versions()*
+gg.mr_changes.versions_all({args}, {opts})       *gg.mr_changes.versions_all()*
+gg.mr_changes.latest_version({args})           *gg.mr_changes.latest_version()*
+    Diff versions, newest first. Each has `diff_refs`, which you need to
+    position diff comments.
+
+------------------------------------------------------------------------------
+MERGE CHECKS                                                    *gg-mr_checks*
+
+gg.mr_checks.get({args})                                   *gg.mr_checks.get()*
+    `{ host, project, iid }`. Resolves with `gg.MergeChecks`: `draft`,
+    `mergeable`, `detailed_merge_status`, `discussions_resolved`,
+    `has_conflicts`, `head_pipeline_status`, `approved`,
+    `approvals_required`, `approvals_left`, the discussion counts, and
+    `checks` (`{ identifier, status }[]`). On an older GitLab without these
+    fields, a smaller query is used and `fallback = true`.
+
+------------------------------------------------------------------------------
+NOTES AND DISCUSSIONS                                               *gg-notes*
+
+`args.noteable` is "issue" or "merge_request", and `iid` is that issue's or
+merge request's.
+
+gg.notes.discussions({args}, {opts})                   *gg.notes.discussions()*
+gg.notes.discussions_all({args}, {opts})           *gg.notes.discussions_all()*
+    Threads, as `gg.Discussion` `{ id, resolvable, resolved, resolved_by,
+    resolved_at, notes }`. Resolution data sits on the thread and its root
+    note, never on replies. A diff note on a line that no longer exists has
+    `outdated = true` and keeps its original `position`.
+
+gg.notes.list({args}, {opts})                                 *gg.notes.list()*
+gg.notes.list_all({args}, {opts})                         *gg.notes.list_all()*
+    Notes as a flat list. `filter` is "all" (the default), "comments" or
+    "activity" (system notes only).
+
+gg.notes.add({args})                                           *gg.notes.add()*
+    `{ ..., body, position? }` starts a thread. A `position` (merge requests
+    only) needs `new_path` and `new_line` or `old_line`; missing SHAs are
+    filled in from the latest diff version.
+
+gg.notes.reply({args})                                       *gg.notes.reply()*
+    `{ ..., discussion_id, body }`.
+
+gg.notes.edit({args})                                         *gg.notes.edit()*
+gg.notes.delete({args})                                     *gg.notes.delete()*
+    `{ ..., note_id, discussion_id?, body }` and `{ ..., note_id,
+    discussion_id? }`.
+
+gg.notes.set_resolved({args})                         *gg.notes.set_resolved()*
+    `{ ..., discussion_id, resolved }`.
+
+------------------------------------------------------------------------------
+REVIEWS                                                           *gg-reviews*
+
+gg.reviews.reviewers({args})                           *gg.reviews.reviewers()*
+    `{ host, project, iid }`. Resolves with `{ reviewers, truncated }`.
+    Each reviewer is `{ user, role, review_state, approved }`. Approvers who
+    are not reviewers have `role = "participant"`.
+
+gg.reviews.drafts({args}, {opts})                         *gg.reviews.drafts()*
+gg.reviews.drafts_all({args}, {opts})                 *gg.reviews.drafts_all()*
+gg.reviews.create_draft({args})                     *gg.reviews.create_draft()*
+gg.reviews.edit_draft({args})                         *gg.reviews.edit_draft()*
+gg.reviews.delete_draft({args})                     *gg.reviews.delete_draft()*
+    Pending review comments (draft notes). `create_draft` takes `note`, and
+    optionally `position`, `in_reply_to_discussion_id`, `resolve_discussion`
+    and `commit_id`.
+
+gg.reviews.discard_drafts({args}, {opts})         *gg.reviews.discard_drafts()*
+    Deletes up to `opts.limit` drafts, one at a time. It stops at the first
+    error, and `err.details.deleted` says how many were deleted.
+
+gg.reviews.publish({args})                               *gg.reviews.publish()*
+    Publishes all drafts. `{ ..., note?, reviewer_state?, internal? }`,
+    where `reviewer_state` is "reviewed" or "requested_changes".
+
+gg.reviews.approve({args})                               *gg.reviews.approve()*
+    `{ host, project, iid, sha? }`.
+
+------------------------------------------------------------------------------
+MILESTONES                                                     *gg-milestones*
+
+gg.milestones.list({args}, {opts})                       *gg.milestones.list()*
+gg.milestones.list_all({args}, {opts})               *gg.milestones.list_all()*
+    `{ host, project, state?, search?, include_ancestors?, order_by?,
+    sort? }`. `state` defaults to "active", and group milestones are
+    included.
+
+gg.milestones.get({args})                                 *gg.milestones.get()*
+    `{ host, id }`. Works for project and group milestones.
+
+gg.milestones.issues({args}, {opts})                   *gg.milestones.issues()*
+gg.milestones.issues_all({args}, {opts})           *gg.milestones.issues_all()*
+gg.milestones.merge_requests({args}, {opts})   *gg.milestones.merge_requests()*
+gg.milestones.merge_requests_all({args}, {opts})
+                                           *gg.milestones.merge_requests_all()*
+    `{ host, project, title, state? }`: the project's issues or MRs in the
+    milestone.
+
+gg.milestones.create({args})                           *gg.milestones.create()*
+gg.milestones.update({args})                           *gg.milestones.update()*
+    Project milestones. `update` takes `title`, `description`, `start_date`,
+    `due_date` and `state_event` ("close" or "activate").
+
+------------------------------------------------------------------------------
+LABELS, USERS, BRANCHES, PROJECTS                     *gg-labels* *gg-users*
+                                                    *gg-branches* *gg-projects*
+
+gg.labels.list({args}, {opts})                               *gg.labels.list()*
+gg.labels.list_all({args}, {opts})                       *gg.labels.list_all()*
+    `{ host, project, search?, include_ancestor_groups? }`. Group labels are
+    included by default.
+
+gg.users.current({args})                                   *gg.users.current()*
+    `{ host }`. The token's user; without one it is an `auth` error.
+
+gg.users.project_members({args}, {opts})           *gg.users.project_members()*
+gg.users.project_members_all({args}, {opts})   *gg.users.project_members_all()*
+    `{ host, project, search? }`: direct and inherited members, each a
+    `gg.User` with `access_level`.
+
+gg.branches.list({args}, {opts})                           *gg.branches.list()*
+gg.branches.list_all({args}, {opts})                   *gg.branches.list_all()*
+    `{ host, project, search?, regex? }`. `search` supports "^prefix" and
+    "suffix$".
+
+gg.branches.related_to_issue({args}, {opts})   *gg.branches.related_to_issue()*
+gg.branches.related_to_issue_all({args}, {opts})
+                                           *gg.branches.related_to_issue_all()*
+    Branches named `<iid>-...`.
+
+gg.branches.create({args})                               *gg.branches.create()*
+    `{ host, project, branch, ref }`.
+
+gg.projects.search({args}, {opts})                       *gg.projects.search()*
+gg.projects.search_all({args}, {opts})               *gg.projects.search_all()*
+    `{ host, query, membership? }`, most recently active first.
+
+gg.projects.get({args})                                     *gg.projects.get()*
+    `{ host, project }`.
+
+------------------------------------------------------------------------------
+TO-DO ITEMS                                                         *gg-todos*
+
+gg.todos.list({args}, {opts})                                 *gg.todos.list()*
+gg.todos.list_all({args}, {opts})                         *gg.todos.list_all()*
+    `{ host, state?, type?, action?, sort? }`. `state` defaults to
+    "pending".
+
+gg.todos.mark_done({args})                               *gg.todos.mark_done()*
+    `{ host, id }`.
+
+------------------------------------------------------------------------------
+PIPELINES AND JOBS                                      *gg-pipelines* *gg-jobs*
+
+gg.pipelines.list({args}, {opts})                         *gg.pipelines.list()*
+gg.pipelines.list_all({args}, {opts})                 *gg.pipelines.list_all()*
+    `{ host, project, mr_iid?, status?, scope?, ref?, sha?, source?,
+    username? }`. Newest first, with summary stages.
+
+gg.pipelines.get({args})                                   *gg.pipelines.get()*
+gg.pipelines.graph({args})                               *gg.pipelines.graph()*
+    `{ host, project, id }`. `graph` adds `stages[i].groups` and
+    `stages[i].jobs` (in GitLab's order) and `merge_request`.
+
+gg.pipelines.retry({args})                               *gg.pipelines.retry()*
+gg.pipelines.cancel({args})                             *gg.pipelines.cancel()*
+
+gg.jobs.list({args}, {opts})                                   *gg.jobs.list()*
+gg.jobs.list_all({args}, {opts})                           *gg.jobs.list_all()*
+    `{ host, project, pipeline_id, statuses?, include_retried? }`.
+
+gg.jobs.get({args})                                             *gg.jobs.get()*
+
+gg.jobs.trace({args})                                         *gg.jobs.trace()*
+    `{ host, project, id, output | on_chunk, offset? }`. Streams the log to
+    a file or a callback, and never holds the whole log in memory. With
+    `offset`, only the new bytes are fetched. Resolves with
+    `{ bytes, range_ignored? }`.
+
+gg.jobs.retry({args})                                         *gg.jobs.retry()*
+gg.jobs.cancel({args})                                       *gg.jobs.cancel()*
+gg.jobs.play({args})                                           *gg.jobs.play()*
+    `play` takes optional `variables = { KEY = "value" }`.
+
+------------------------------------------------------------------------------
+ARTIFACTS AND REGISTRY                                *gg-artifacts* *gg-registry*
+
+All downloads are streamed. A partial file is removed on failure or cancel,
+and a redirect to object storage never carries the token.
+
+gg.artifacts.download({args})                         *gg.artifacts.download()*
+    `{ host, project, job_id, output }`: the job's archive.
+
+gg.artifacts.download_file({args})               *gg.artifacts.download_file()*
+    `{ host, project, job_id, artifact_path, output | on_chunk }`.
+
+gg.artifacts.download_ref({args})                 *gg.artifacts.download_ref()*
+gg.artifacts.download_ref_file({args})       *gg.artifacts.download_ref_file()*
+    `{ host, project, ref, job, ... }`: from the latest successful pipeline
+    on `ref`.
+
+gg.registry.repositories({args}, {opts})           *gg.registry.repositories()*
+gg.registry.repositories_all({args}, {opts})   *gg.registry.repositories_all()*
+    `{ host, project, name? }`: container repositories.
+
+gg.registry.tags({args}, {opts})                           *gg.registry.tags()*
+gg.registry.tags_all({args}, {opts})                   *gg.registry.tags_all()*
+    `{ host, project, repository_id, sort? }`, ordered by name.
+
+gg.registry.tag({args})                                     *gg.registry.tag()*
+    `{ host, project, repository_id, name }`. Includes the digest and size.
+
+==============================================================================
+8. TESTING WITH THE FAKE BACKEND                                  *gg-testing*
+
+The fake backend replays recorded responses, so your plugin's tests never
+touch the network.
+>lua
+    local gg = require("gg")
+    local fake = gg.testing.fake_backend.new({ root = "tests/fixtures" })
+    fake:load("graphql/issues/get.json")
+    gg.setup({ hosts = { ["gitlab.example.com"] = { token = "test" } },
+               transport = { backend = fake } })
+    -- ... call gg, then inspect fake:requests() / fake:last()
+<
+gg.testing.fake_backend.new({opts})            *gg.testing.fake_backend.new()*
+    `{ root?, chunk_size? }`. Methods: `:add(fixtures)`, `:load(...)`,
+    `:requests()`, `:last()`, `:reset()`, `:unused()`.
+
+gg.testing.fake_backend.read({path}, {root})  *gg.testing.fake_backend.read()*
+gg.testing.fake_backend.parse_url({url})  *gg.testing.fake_backend.parse_url()*
+
+A fixture is a JSON object `{ meta, request, response }`, or an array of
+them. A REST request matches on `method`, `path` and `query` (exact), or
+`query_contains` / `body_contains` (subset). A GraphQL request matches on
+`operation` and a subset of `variables`. `response` holds `status`,
+`headers`, and `body` or `body_base64`. It can also simulate a failure
+(`error = { kind = "timeout" }`) or a `delay` (ms). A fixture is used once
+unless it has `"repeat": true`.
+
+==============================================================================
+9. SECURITY                                                      *gg-security*
+
+- The token is passed to curl through stdin, never on the command line.
+- Redirects are followed by gg, and the token is only sent to the host's
+  own origin (same scheme, host and port).
+- `GITLAB_TOKEN` is only used for hosts listed in `hosts`.
+- Tokens and other secrets are redacted from errors and logs: GitLab token
+  prefixes, `PRIVATE-TOKEN` / `Authorization` values, `private_token=`
+  style query parameters, URL credentials, and the exact token of the
+  request.
+- |:checkhealth| `gg` reports where a token comes from, never its value.
+
+ vim:tw=78:ts=8:ft=help:norl:

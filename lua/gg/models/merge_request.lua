@@ -1,10 +1,7 @@
 --- Merge request model. Pure.
 ---
---- GitLab-native field names. Renames from atlas's PullRequest type:
----   state open/declined/merged/draft <- state + draft,
----   destination.branch <- target_branch, source.branch <- source_branch,
----   source.commit_hash <- sha, comments_count <- user_notes_count,
----   link.html <- web_url, repo_full_name <- project.
+--- Field names follow GitLab's API. `state` and `draft` are independent: a
+--- draft merge request is `state = "opened", draft = true`.
 local gid = require("gg.models.gid")
 local label = require("gg.models.label")
 local milestone = require("gg.models.milestone")

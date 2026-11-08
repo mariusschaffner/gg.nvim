@@ -6,7 +6,7 @@
 ---   * list across all projects (no project or group): REST `GET /issues`.
 ---     The GraphQL equivalent (`Query.issues`) is marked Experiment.
 ---   * create, update: REST (`POST /projects/:id/issues`,
----     `PUT /projects/:id/issues/:iid`), as in atlas today.
+---     `PUT /projects/:id/issues/:iid`).
 local common = require("gg.resources.common")
 local graphql = require("gg.graphql.client")
 local issue_model = require("gg.models.issue")

@@ -22,8 +22,7 @@ local M = {}
 ---@field position gg.DiffPosition|nil only for diff comments (empty positions are nil)
 
 --- Build the reviewer list from a GraphQL MergeRequest node selected by
---- MrReviewers. Approvers who are not reviewers come back as participants
---- (atlas's rule).
+--- MrReviewers. Approvers who are not reviewers come back as participants.
 ---@param node table
 ---@param ctx? { origin?: string }
 ---@return gg.Reviewer[]

@@ -3,8 +3,8 @@
 --- Backend: GraphQL. The full query (approvals, discussion counts,
 --- `mergeabilityChecks`) falls back to a smaller query only when GitLab
 --- reports a schema error (an older version without those fields). Auth,
---- network and other errors are returned as they are (fix: atlas fell back on
---- any error). Nothing is remembered between calls.
+--- network and other errors are returned as they are. Nothing is remembered
+--- between calls.
 local checks_model = require("gg.models.merge_checks")
 local common = require("gg.resources.common")
 local graphql = require("gg.graphql.client")

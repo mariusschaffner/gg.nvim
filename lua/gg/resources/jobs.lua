@@ -6,8 +6,8 @@
 ---     or a callback, never buffered whole in Lua.
 ---   * retry, cancel, play: REST (`POST /jobs/:id/retry|cancel|play`).
 ---
---- Incremental logs: `offset` sends `Range: bytes=<offset>-` (atlas's
---- behaviour; the docs do not describe Range for this endpoint). A 206 is the
+--- Incremental logs: `offset` sends `Range: bytes=<offset>-` (the docs do
+--- not describe Range for this endpoint, so all outcomes are handled). A 206 is the
 --- new tail; a 200 means the server ignored the range and sent the whole log
 --- (`range_ignored = true`); a 416 means there are no new bytes.
 local common = require("gg.resources.common")

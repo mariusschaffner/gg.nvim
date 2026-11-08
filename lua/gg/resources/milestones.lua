@@ -2,7 +2,7 @@
 ---
 --- Backends:
 ---   * list: GraphQL `project.milestones` (ancestor-group milestones included
----     by default, like atlas's milestone pickers).
+---     by default).
 ---   * get: GraphQL `milestone(id:)` (works for project and group milestones).
 ---   * issues / merge_requests: the GraphQL issue and MR lists filtered by the
 ---     milestone title (the Milestone type has no issue connection).

@@ -3,10 +3,10 @@
 --- Backends:
 ---   * issue discussions, and flat note lists (all / comments / activity):
 ---     GraphQL (`issue.discussions`, `{issue,mergeRequest}.notes(filter:)`),
----     paginated (fix: atlas fetched issue discussions without paging).
+---     paginated.
 ---   * merge request discussions: REST `/merge_requests/:iid/discussions`.
 ---     GraphQL notes have no original position, which outdated diff threads
----     need (atlas used REST here too).
+---     need.
 ---   * add, reply, edit, delete: REST discussions/notes API.
 ---   * set_resolved: REST for merge requests; GraphQL
 ---     `discussionToggleResolve` for issues (the REST issue thread API cannot

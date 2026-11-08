@@ -1,9 +1,7 @@
 --- Issue model. Pure.
 ---
---- GitLab-native field names. Renames from atlas's Issue type:
----   story_points <- weight, status <- state, duedate <- due_date,
----   comment_count <- user_notes_count, reporter <- author,
----   key <- project .. "#" .. iid, url <- web_url.
+--- Field names follow GitLab's API. `references.full` ("group/repo#12") is
+--- the issue's unique reference.
 local gid = require("gg.models.gid")
 local label = require("gg.models.label")
 local milestone = require("gg.models.milestone")

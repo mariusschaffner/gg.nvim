@@ -2,8 +2,8 @@
 ---
 --- Backends:
 ---   * commits: GraphQL `mergeRequest.commits`.
----   * diffs: REST `/merge_requests/:iid/diffs` (paginated). This replaces
----     the deprecated `/changes` endpoint atlas used (PLAN §6.10 #7).
+---   * diffs: REST `/merge_requests/:iid/diffs` (paginated), not the
+---     deprecated `/changes` endpoint.
 ---   * diffstat: derived from the diffs pages (status from the file flags,
 ---     counts from the diff text), so it needs a limit like any collect-all.
 ---   * versions: REST `/merge_requests/:iid/versions` (diff refs for

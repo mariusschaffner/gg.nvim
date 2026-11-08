@@ -1,7 +1,6 @@
 --- CI job model. Pure.
 ---
 --- Statuses are GitLab's, lowercased ("success", "failed", "manual", ...).
---- atlas's STOPPED/INPROGRESS grouping is UI and stays in atlas.
 local gid = require("gg.models.gid")
 local user = require("gg.models.user")
 local util = require("gg.models.util")

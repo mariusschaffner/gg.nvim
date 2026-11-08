@@ -1,6 +1,6 @@
 --- Notes (comments, system notes) and discussions (threads). Pure.
 ---
---- Rules carried over from atlas (re-specified from its mapper_spec):
+--- Rules:
 ---   * resolution data (`resolvable`, `resolved`, `resolved_by`, `resolved_at`)
 ---     belongs to the thread: it is set on the discussion and its root note,
 ---     never on replies.

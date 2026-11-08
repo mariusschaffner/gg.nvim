@@ -1,7 +1,8 @@
---- Projects: search (atlas's `:Atlas search`) and a minimal get.
+--- Projects: search and a minimal get.
 ---
 --- Backend: GraphQL `projects(search:)` sorted by `latest_activity_desc`
---- (atlas used REST `order_by=last_activity_at`), and `project(fullPath:)`.
+--- (most recently active first; unknown sort values are silently ignored by
+--- GitLab), and `project(fullPath:)`.
 local common = require("gg.resources.common")
 local graphql = require("gg.graphql.client")
 local project_model = require("gg.models.project")

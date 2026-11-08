@@ -1,7 +1,4 @@
---- To-do items (atlas's notifications). Pure.
----
---- atlas's flattened notification (title, subtitle, icon, unread) is UI and
---- is built from these fields in atlas.
+--- To-do items. Pure.
 local gid = require("gg.models.gid")
 local user = require("gg.models.user")
 local util = require("gg.models.util")

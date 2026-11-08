@@ -118,6 +118,21 @@ T["every public function has LuaLS annotations"] = function()
   eq(bad, {})
 end
 
+T["gg is standalone: no references to the old plugin"] = function()
+  local bad = {}
+  for _, dir in ipairs({ "lua/gg", "tests", "scripts" }) do
+    for _, file in ipairs(H.files(dir, "%.lua$")) do
+      for n, line in ipairs(vim.split(H.read(file), "\n", { plain = true })) do
+        -- built from parts so this test does not match itself
+        if line:lower():find("at" .. "las", 1, true) then
+          table.insert(bad, ("%s:%d"):format(file, n))
+        end
+      end
+    end
+  end
+  eq(bad, {})
+end
+
 T["every model declares a gg class"] = function()
   local bad = {}
   -- gid.lua and util.lua are mapper helpers, not models

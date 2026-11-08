@@ -4,8 +4,8 @@
 ---   * list (project or merge request), get, graph: GraphQL. `get` and
 ---     `graph` look the pipeline up by its ID, so no REST lookup comes first.
 ---   * `graph` asks for the pipeline's merge request; on a GitLab version
----     without that field (a schema error) it retries without it, per call
----     (atlas remembered this process-wide).
+---     without that field (a schema error) it retries without it. This is
+---     decided per call; nothing is remembered.
 ---   * retry, cancel: REST (`POST /pipelines/:id/retry|cancel`).
 local common = require("gg.resources.common")
 local gid = require("gg.models.gid")

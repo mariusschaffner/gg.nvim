@@ -1,7 +1,6 @@
 --- CI pipeline model, including the stage -> group -> job graph. Pure.
 ---
---- Statuses are GitLab's, lowercased. atlas's normalized states and
---- `key = project!id` are UI and stay in atlas.
+--- Statuses are GitLab's, lowercased.
 local gid = require("gg.models.gid")
 local job = require("gg.models.job")
 local user = require("gg.models.user")

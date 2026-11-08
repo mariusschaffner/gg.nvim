@@ -1,7 +1,6 @@
 --- Merge readiness of a merge request. Pure.
 ---
---- The atlas check list (labels, icons, "successful|failed|inprogress") is UI
---- and stays in atlas; this model keeps GitLab's values, lowercased.
+--- Values are GitLab's, lowercased.
 local util = require("gg.models.util")
 
 local M = {}

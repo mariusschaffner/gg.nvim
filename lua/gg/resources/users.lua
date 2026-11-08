@@ -2,8 +2,7 @@
 ---
 --- Backends: GraphQL `currentUser` and `project.projectMembers`. Members are
 --- listed through every relation REST `/members/all` covers (direct,
---- inherited, invited groups, shared into ancestors). One code path replaces
---- atlas's two `/user` copies and three member-list copies.
+--- inherited, invited groups, shared into ancestors).
 local common = require("gg.resources.common")
 local errors = require("gg.core.errors")
 local gid = require("gg.models.gid")

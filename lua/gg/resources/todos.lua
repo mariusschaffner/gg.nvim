@@ -1,8 +1,7 @@
---- To-do items of the current user (atlas's notifications).
+--- To-do items of the current user.
 ---
 --- Backends: list via GraphQL `currentUser.todos`; mark_done via REST
---- `POST /todos/:id/mark_as_done` (writes stay on REST). atlas's `mark_read`
---- was an alias of `mark_done`, so only `mark_done` exists.
+--- `POST /todos/:id/mark_as_done` (writes stay on REST).
 local common = require("gg.resources.common")
 local errors = require("gg.core.errors")
 local graphql = require("gg.graphql.client")

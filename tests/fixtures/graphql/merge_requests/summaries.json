@@ -1,0 +1,130 @@
+[
+  {
+    "meta": {
+      "sanitized": true,
+      "source": "hand-built from the GitLab GraphQL schema (MergeRequest.headPipeline, diffStatsSummary, CiStage.status), 2026-11-09"
+    },
+    "request": {
+      "operation": "MergeRequestSummaries",
+      "variables": {
+        "fullPath": "gitlab-org/cli",
+        "iids": ["4338", "4337", "4336"]
+      }
+    },
+    "response": {
+      "body": {
+        "data": {
+          "project": {
+            "mergeRequests": {
+              "nodes": [
+                {
+                  "iid": "4338",
+                  "updatedAt": "2026-11-06T16:43:20Z",
+                  "diffHeadSha": "86f1db1086c59abd351c2db8ba22bf8f81ba84bc",
+                  "headPipeline": {
+                    "id": "gid://gitlab/Ci::Pipeline/3037601527",
+                    "iid": "17012",
+                    "status": "RUNNING",
+                    "path": "/gitlab-org/cli/-/pipelines/3037601527",
+                    "stages": {
+                      "nodes": [
+                        { "name": "build", "status": "success" },
+                        { "name": "test", "status": "running" },
+                        { "name": "deploy", "status": "manual" }
+                      ],
+                      "pageInfo": { "hasNextPage": false }
+                    }
+                  },
+                  "diffStatsSummary": { "additions": 120, "deletions": 34, "changes": 154, "fileCount": 7 }
+                },
+                {
+                  "iid": "4336",
+                  "updatedAt": "2026-11-05T09:12:00Z",
+                  "diffHeadSha": "1f0c2d9e3b4a5c6d7e8f90a1b2c3d4e5f6a7b8c9",
+                  "headPipeline": null,
+                  "diffStatsSummary": { "additions": 0, "deletions": 0, "changes": 0, "fileCount": 0 }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "headers": {},
+      "status": 200
+    }
+  },
+  {
+    "meta": {
+      "sanitized": true,
+      "source": "hand-built: GraphQL partial data (an error on one MR's diffStatsSummary), 2026-11-09"
+    },
+    "request": {
+      "operation": "MergeRequestSummaries",
+      "variables": {
+        "fullPath": "gitlab-org/cli",
+        "iids": ["4335", "4334"]
+      }
+    },
+    "response": {
+      "body": {
+        "data": {
+          "project": {
+            "mergeRequests": {
+              "nodes": [
+                {
+                  "iid": "4335",
+                  "updatedAt": "2026-11-04T10:00:00Z",
+                  "diffHeadSha": "aa00bb11cc22dd33ee44ff5566778899aabbccdd",
+                  "headPipeline": {
+                    "id": "gid://gitlab/Ci::Pipeline/3037600001",
+                    "iid": "17001",
+                    "status": "SUCCESS",
+                    "path": "/gitlab-org/cli/-/pipelines/3037600001",
+                    "stages": { "nodes": [ { "name": "build", "status": "success" } ], "pageInfo": { "hasNextPage": false } }
+                  },
+                  "diffStatsSummary": null
+                },
+                {
+                  "iid": "4334",
+                  "updatedAt": "2026-11-03T10:00:00Z",
+                  "diffHeadSha": "bb00bb11cc22dd33ee44ff5566778899aabbccdd",
+                  "headPipeline": null,
+                  "diffStatsSummary": { "additions": 5, "deletions": 1, "changes": 6, "fileCount": 1 }
+                }
+              ]
+            }
+          }
+        },
+        "errors": [
+          {
+            "message": "Gitaly timeout",
+            "path": ["project", "mergeRequests", "nodes", 0, "diffStatsSummary"]
+          }
+        ]
+      },
+      "headers": {},
+      "status": 200
+    }
+  },
+  {
+    "meta": {
+      "sanitized": true,
+      "source": "hand-built: a GraphQL error that is not about one summary field, 2026-11-09"
+    },
+    "request": {
+      "operation": "MergeRequestSummaries",
+      "variables": {
+        "fullPath": "gitlab-org/cli",
+        "iids": ["9"]
+      }
+    },
+    "response": {
+      "body": {
+        "data": { "project": null },
+        "errors": [ { "message": "Query has complexity of 300, which exceeds max complexity of 250" } ]
+      },
+      "headers": {},
+      "status": 200
+    }
+  }
+]

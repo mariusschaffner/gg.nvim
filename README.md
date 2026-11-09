@@ -4,7 +4,8 @@ A standalone GitLab API layer for Neovim, with an optional issues picker on top.
 
 gg talks to GitLab's GraphQL and REST APIs, and returns plain Lua tables with GitLab's own field names. The API layer
 has no UI and no user commands; plugins build their interface on top of it. The optional UI layer (`gg.ui`) adds
-`:Gitlab`, an issues picker grouped by milestone (see [below](#issues-picker-gitlab)).
+`:Gitlab`, an issues picker grouped by milestone, with a merge requests view one `<Tab>` away (see
+[below](#issues-picker-gitlab)).
 
 - **Async.** Every call returns a Task. Use it with a callback, await it in a coroutine, or cancel it.
 - **Never throws.** Failures are normalized errors with a `kind`: `auth`, `forbidden`, `not_found`, `validation`,
@@ -117,6 +118,11 @@ require("gg.ui").setup({
 
 Keys: `/` filter (`~label %milestone @user #iid text`), `L`/`H` Open/Closed/All, `P` next page, `]m`/`[m` milestones,
 `i`/`I` inspect issue/milestone, `R` reload, `q` close. `:help gg-ui` has the details and the highlight groups.
+
+`<Tab>` switches the same windows to the project's merge requests: one line each with branches, reviewers, assignee,
+the head pipeline's stages and the diff size. The rows show at once; pipeline and diff cells fill in afterwards
+(batched, cached while the picker is open). `i`/`<CR>` calls `on_inspect_mr(mr, ctx)`;
+`require("gg.ui").open({ view = "merge_requests" })` starts there. See `:help gg-ui-mrs`.
 
 ## Pagination
 

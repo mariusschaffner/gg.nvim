@@ -2,15 +2,16 @@
 ---
 --- Static content only. The cursor mark, the active milestone edge and the
 --- row highlight are overlays drawn by the view from `rows[*].mark_col` and
---- `rows[*].edge`, so moving the cursor never re-renders.
+--- `rows[*].edge`, so moving the cursor never re-renders. The tabs line,
+--- header, rule, separators and messages come from `gg.ui.components.grid`.
 local columns = require("gg.ui.issues.columns")
+local grid = require("gg.ui.components.grid")
 local line = require("gg.ui.lib.line")
-local tabs = require("gg.ui.components.tabs")
 local text = require("gg.ui.lib.text")
 
 local M = {}
 
-M.HEADER_LINES = 4 -- tabs, blank, column header, rule
+M.HEADER_LINES = grid.HEADER_LINES -- tabs, blank, column header, rule
 M.TABS_INDENT = 2
 M.TABS_PAD = 2
 M.MIN_BLOCK_LINES = 4 -- a milestone block is at least this tall
@@ -19,11 +20,11 @@ M.BAR_CELLS = 10
 M.EDGE = "▎"
 M.CURSOR_MARK = "▌"
 M.EMPTY = "—"
-M.RULE = "─"
+M.RULE = grid.RULE
 M.DONE = "━"
 M.TODO = "━" -- same glyph; GitlabProgressDone / Todo tell them apart
 
-local TAB_LABELS = { opened = "Open", closed = "Closed", all = "All" }
+local TABS = { { key = "opened", label = "Open" }, { key = "closed", label = "Closed" }, { key = "all", label = "All" } }
 local TONE_HL = { normal = "GitlabDue", soon = "GitlabDueSoon", overdue = "GitlabDueOverdue", none = "GitlabEmpty" }
 
 ---@class gg.ui.RenderInput
@@ -54,109 +55,45 @@ local TONE_HL = { normal = "GitlabDue", soon = "GitlabDueSoon", overdue = "Gitla
 ---@field key string
 ---@field milestone? gg.ui.MilestoneInfo
 
----@class gg.ui.Rendered
----@field lines string[]
----@field marks gg.ui.Mark[] 0-based rows, byte columns
----@field virt_lines { row: integer, chunks: gg.ui.Chunk[] }[] 0-based row the lines go below
----@field rows gg.ui.RowInfo[] indexed by 1-based line number
----@field blocks gg.ui.RenderedBlock[]
----@field selectable integer[] 1-based line numbers of issue lines
----@field columns gg.ui.Columns
-
-local function new_out(cols)
-  return { lines = {}, marks = {}, virt_lines = {}, rows = {}, blocks = {}, selectable = {}, columns = cols }
-end
-
-local function push(out, l, info)
-  local s, marks = l:result()
-  table.insert(out.lines, s)
-  local row = #out.lines - 1
-  for _, m in ipairs(marks) do
-    table.insert(out.marks, { row = row, col = m.col, end_col = m.end_col, hl = m.hl })
-  end
-  out.rows[#out.lines] = info
-  return #out.lines
-end
+local push = grid.push
 
 --- True while issues of `tab` are still loading.
 ---@param pending? { opened: boolean, closed: boolean }
 ---@param tab gg.ui.Tab
 ---@return boolean
 function M.tab_pending(pending, tab)
-  if not pending then
-    return false
-  end
-  if tab == "all" then
-    return pending.opened == true or pending.closed == true
-  end
-  return pending[tab] == true
+  return grid.tab_pending(pending, tab)
 end
 
 local function tabs_line(input)
-  local counts = input.model and input.model.counts or nil
-  local items = {}
-  for _, key in ipairs({ "opened", "closed", "all" }) do
-    local count = counts and counts[key] or nil
-    if count and M.tab_pending(input.pending, key) then
-      count = count .. "…"
-    end
-    table.insert(items, { key = key, label = TAB_LABELS[key], count = count })
-  end
   -- indented like the column header, with roomier tabs
-  local l = line.new():add(text.rep(" ", M.TABS_INDENT))
-  for _, seg in ipairs(tabs.segments(items, input.tab, { pad = M.TABS_PAD })) do
-    l:add(seg[1], seg[2])
-  end
-  if input.truncated then
-    l:add(("  (first %d)"):format(input.truncated), "Comment")
-  end
-  return l
+  return grid.tabs_line({
+    tabs = TABS,
+    active = input.tab,
+    counts = input.model and input.model.counts or nil,
+    pending = input.pending,
+    indent = M.TABS_INDENT,
+    pad = M.TABS_PAD,
+    truncated = input.truncated,
+  })
 end
 
 local function header_line(cols)
-  local l = line.new()
-  local function at(col, label)
-    l:pad_to(col.col)
-    l:add(label, "GitlabColumnHeader")
-  end
-  at(cols.milestone, "Milestone")
-  at(cols.iid, "Issue")
-  if cols.labels then
-    at(cols.labels, "Labels")
-  end
-  if cols.assignee then
-    at(cols.assignee, "Assignee")
-  end
-  at(cols.state, "State")
-  return l
+  return grid.header_line({
+    { cols.milestone, "Milestone" },
+    { cols.iid, "Issue" },
+    { cols.labels, "Labels" },
+    { cols.assignee, "Assignee" },
+    { cols.state, "State" },
+  })
 end
 
 local function labels_cell(l, labels, width, label_hl)
-  local start = l.cells
-  local used = 0
+  local items = {}
   for _, lab in ipairs(labels or {}) do
-    local s = "~" .. text.clean(lab.name)
-    local sep = used > 0 and 1 or 0
-    local w = text.width(s)
-    local hl = label_hl(lab.color)
-    if used + sep + w <= width then
-      if sep == 1 then
-        l:add(" ")
-      end
-      l:add(s, hl)
-      used = used + sep + w
-    else
-      local room = width - used - sep
-      if room >= 1 then
-        if sep == 1 then
-          l:add(" ")
-        end
-        l:add(text.truncate(s, room), hl)
-      end
-      break
-    end
+    table.insert(items, { "~" .. text.clean(lab.name), label_hl(lab.color) })
   end
-  l:pad_to(start + width)
+  l:items(items, width)
 end
 
 local function assignee_text(issue)
@@ -236,8 +173,8 @@ local function milestone_cell(l, info, i, width)
   end
 end
 
-local function separator(out, cols, row)
-  table.insert(out.virt_lines, { row = row - 1, chunks = { { text.rep(M.RULE, cols.width), "GitlabSeparator" } } })
+local function separator(out, _, row)
+  grid.separator(out, row)
 end
 
 local function render_block(out, cols, block, bi, label_hl, next_block)
@@ -284,50 +221,30 @@ local function render_block(out, cols, block, bi, label_hl, next_block)
   separator(out, cols, last)
 end
 
-local function message(out, cols, s, hl)
-  local l = line.new()
-  l:pad_to(cols.milestone.col)
-  l:add(text.clean(s), hl)
-  push(out, l, { kind = "message" })
-end
-
 --- Render the table.
 ---@param input gg.ui.RenderInput
 ---@return gg.ui.Rendered
 function M.render(input)
   local cols = columns.layout(input.width)
-  local out = new_out(cols)
+  local out = grid.new(cols)
   local label_hl = input.label_hl or function()
     return "GitlabLabelFallback"
   end
 
-  push(out, tabs_line(input), { kind = "tabs" })
-  push(out, line.new(), { kind = "blank" })
-  push(out, header_line(cols), { kind = "header" })
-  push(out, line.new():add(text.rep(M.RULE, cols.width), "GitlabSeparator"), { kind = "rule" })
+  grid.head(out, tabs_line(input), header_line(cols))
 
-  if input.status == "error" then
-    message(out, cols, "Failed to load issues: " .. (input.error or "unknown error"), "DiagnosticError")
-    if input.retry_key then
-      local l = line.new()
-      l:pad_to(cols.milestone.col)
-      l:add("[" .. input.retry_key .. "]", "GitlabHintKey")
-      l:add(" Retry", "GitlabHintText")
-      push(out, l, { kind = "message" })
-    end
-    return out
-  end
-  if input.status == "loading" and not input.model then
-    local s = "Loading issues…"
-    if input.loaded and input.loaded > 0 then
-      s = ("%s (%d)"):format(s, input.loaded)
-    end
-    message(out, cols, s, "Comment")
-    return out
-  end
   local page = input.page
-  if not page or #page.blocks == 0 then
-    message(out, cols, M.tab_pending(input.pending, input.tab) and "Loading issues…" or "No issues match", "Comment")
+  if grid.state(out, {
+    status = input.status,
+    noun = "issues",
+    col = cols.milestone.col,
+    has_model = input.model ~= nil,
+    empty = not page or #page.blocks == 0,
+    pending = M.tab_pending(input.pending, input.tab),
+    error = input.error,
+    retry_key = input.retry_key,
+    loaded = input.loaded,
+  }) then
     return out
   end
   for bi, block in ipairs(page.blocks) do

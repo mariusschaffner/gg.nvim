@@ -2,9 +2,11 @@
 ---
 --- Field names follow GitLab's API. `state` and `draft` are independent: a
 --- draft merge request is `state = "opened", draft = true`.
+local diff = require("gg.models.diff")
 local gid = require("gg.models.gid")
 local label = require("gg.models.label")
 local milestone = require("gg.models.milestone")
+local pipeline = require("gg.models.pipeline")
 local user = require("gg.models.user")
 local util = require("gg.models.util")
 
@@ -49,6 +51,14 @@ local M = {}
 ---@field closed_at string|nil
 ---@field subscribed boolean|nil only from `get`
 ---@field truncated gg.Truncated|nil
+
+---@class gg.MergeRequestSummary
+---@field iid integer
+---@field updated_at string|nil
+---@field sha string|nil head commit of the source branch
+---@field head_pipeline gg.Pipeline|nil id, iid, status, web_url and stages (name, status) only
+---@field diff_stats gg.DiffStatsSummary|nil
+---@field failed { head_pipeline?: true, diff_stats?: true }|nil fields GitLab reported an error for
 
 local function diff_refs_rest(r)
   r = util.value(r)
@@ -181,6 +191,31 @@ function M.from_graphql(node, ctx)
     closed_at = util.value(node.closedAt),
     subscribed = util.value(node.subscribed),
     truncated = truncated,
+  }
+end
+
+--- Map a GraphQL MergeRequest node selected by MergeRequestSummaries.
+--- `failed` names the fields GitLab returned an error for (partial data).
+---@param node table|nil
+---@param ctx? { origin?: string, project?: string }
+---@param failed? { head_pipeline?: true, diff_stats?: true }
+---@return gg.MergeRequestSummary|nil
+function M.summary_from_graphql(node, ctx, failed)
+  node = util.value(node)
+  if type(node) ~= "table" then
+    return nil
+  end
+  local iid = tonumber(util.value(node.iid))
+  if not iid then
+    return nil
+  end
+  return {
+    iid = iid,
+    updated_at = util.value(node.updatedAt),
+    sha = util.value(node.diffHeadSha),
+    head_pipeline = pipeline.from_graphql(node.headPipeline, ctx),
+    diff_stats = diff.summary_from_graphql(node.diffStatsSummary),
+    failed = failed and next(failed) and failed or nil,
   }
 end
 

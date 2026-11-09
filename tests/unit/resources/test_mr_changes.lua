@@ -102,4 +102,25 @@ T["errors"] = function()
   eq(select(2, H.await(changes.diffs({ host = HOST, project = MP }))).kind, "validation")
 end
 
+T["stats: exact summary and per-file counts in one GraphQL request"] = function()
+  local fake = H.fake({ "graphql/mr_changes/stats.json" })
+  local res = H.await(changes.stats({ host = HOST, project = "gitlab-org/cli", iid = 4338 }))
+  eq(#fake:requests(), 1)
+  eq(fake:last().variables, { fullPath = "gitlab-org/cli", iid = "4338" })
+  eq(res.summary, { additions = 120, deletions = 34, changes = 154, file_count = 2 })
+  eq(res.files, {
+    { path = "internal/commands/mr/view.go", additions = 100, deletions = 30 },
+    { path = "docs/source/mr/view.md", additions = 20, deletions = 4 },
+  })
+end
+
+T["stats: an invisible merge request is not_found; HTTP errors are mapped"] = function()
+  local fake = H.fake({ "graphql/mr_changes/stats.json" })
+  local _, err = H.await(changes.stats({ host = HOST, project = "gitlab-org/cli", iid = 1 }))
+  eq(err.kind, "not_found")
+  fake:add({ request = { operation = "MrDiffStats" }, response = { status = 403, body = { message = "403 Forbidden" } } })
+  _, err = H.await(changes.stats({ host = HOST, project = "gitlab-org/cli", iid = 2 }))
+  eq(err.kind, "forbidden")
+end
+
 return T

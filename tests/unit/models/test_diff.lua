@@ -25,4 +25,11 @@ T["commit_from_graphql"] = function()
   eq({ c.sha, c.short_sha, c.title, c.author }, { "abc", "ab", "t", nil })
 end
 
+T["summary_from_graphql and file_stat_from_graphql"] = function()
+  eq(diff.summary_from_graphql({ additions = 3, deletions = 2, fileCount = 1 }), { additions = 3, deletions = 2, changes = 5, file_count = 1 })
+  eq(diff.summary_from_graphql(vim.NIL), nil)
+  eq(diff.file_stat_from_graphql({ path = "a.lua", additions = 1, deletions = vim.NIL }), { path = "a.lua", additions = 1, deletions = 0 })
+  eq(diff.file_stat_from_graphql({ additions = 1 }), nil)
+end
+
 return T

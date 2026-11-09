@@ -71,6 +71,13 @@ function Prompt:set_text(s)
   self:_fire()
 end
 
+--- Change the placeholder shown while the prompt is empty.
+---@param s string
+function Prompt:set_placeholder(s)
+  self._opts.placeholder = s
+  self:_decorate()
+end
+
 --- Show `s` right-aligned (nil hides it).
 ---@param s string|nil
 function Prompt:set_counter(s)

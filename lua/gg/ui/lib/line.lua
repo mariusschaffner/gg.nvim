@@ -65,6 +65,45 @@ function Line:cell(s, width, hl)
   return self:pad_to(start + width)
 end
 
+---@class gg.ui.LineItem
+---@field [1] string text
+---@field [2]? string highlight group
+---@field [3]? string a second group layered on the same text (e.g. bold)
+
+--- Append space-separated items into exactly `width` cells. Items that do
+--- not fit are dropped; the first one that does not fit is cut with "…"
+--- when at least one cell is left for it.
+---@param items gg.ui.LineItem[]
+---@param width integer
+---@return gg.ui.Line self
+function Line:items(items, width)
+  local start = self.cells
+  local used = 0
+  for _, it in ipairs(items) do
+    local s = it[1]
+    local sep = used > 0 and 1 or 0
+    local w = text.width(s)
+    local room = width - used - sep
+    if room < 1 then
+      break
+    end
+    if sep == 1 then
+      self:add(" ")
+    end
+    local cut = w > room
+    local at = self.bytes
+    self:add(cut and text.truncate(s, room) or s, it[2])
+    if it[3] and self.bytes > at then
+      table.insert(self._marks, { col = at, end_col = self.bytes, hl = it[3] })
+    end
+    used = used + sep + math.min(w, room)
+    if cut then
+      break
+    end
+  end
+  return self:pad_to(start + width)
+end
+
 --- The finished string and its highlights. Trailing padding is removed, but
 --- never inside a highlight (a highlighted " All 12 " keeps its space).
 ---@return string

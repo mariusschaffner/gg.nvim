@@ -6,6 +6,8 @@
 ---     deprecated `/changes` endpoint.
 ---   * diffstat: derived from the diffs pages (status from the file flags,
 ---     counts from the diff text), so it needs a limit like any collect-all.
+---   * stats: GraphQL `diffStatsSummary` + `diffStats` (exact counts from
+---     GitLab, per file; the reusable source for a diff viewer's file list).
 ---   * versions: REST `/merge_requests/:iid/versions` (diff refs for
 ---     positioned comments).
 local common = require("gg.resources.common")
@@ -129,6 +131,33 @@ function M.diffstat(args, opts)
       return nil, derr
     end
     return { items = vim.tbl_map(diff_model.stat, res.items), truncated = res.truncated }
+  end)
+end
+
+--- Exact line counts of a merge request, computed by GitLab: the summary and
+--- one entry per changed file (no diff text is downloaded). One GraphQL
+--- request; GitLab returns every file at once (not paginated).
+---@param args { host: string, project: string|integer, iid: integer }
+---@return gg.Task resolves with { summary: gg.DiffStatsSummary|nil, files: gg.DiffFileStat[] }
+function M.stats(args)
+  return common.run(args, MR_SPEC, function()
+    local path, perr = graphql.project_path(args.host, args.project):await()
+    if not path then
+      return nil, perr
+    end
+    local data, err = graphql.query(args.host, "mr_diff_stats", { fullPath = path, iid = tostring(args.iid) }):await()
+    if err then
+      return nil, err
+    end
+    local node, nerr = graphql.require(data, "project.mergeRequest", ("merge request %s!%s"):format(path, tostring(args.iid)))
+    if not node then
+      return nil, nerr
+    end
+    local files = {}
+    for _, f in ipairs(type(node.diffStats) == "table" and node.diffStats or {}) do
+      table.insert(files, diff_model.file_stat_from_graphql(f))
+    end
+    return { summary = diff_model.summary_from_graphql(node.diffStatsSummary), files = files }
   end)
 end
 

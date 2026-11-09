@@ -1,0 +1,18 @@
+# Exact per-file line counts of a merge request, computed by GitLab (no diff text).
+query MrDiffStats($fullPath: ID!, $iid: String!) {
+  project(fullPath: $fullPath) {
+    mergeRequest(iid: $iid) {
+      diffStatsSummary {
+        additions
+        deletions
+        changes
+        fileCount
+      }
+      diffStats {
+        path
+        additions
+        deletions
+      }
+    }
+  }
+}

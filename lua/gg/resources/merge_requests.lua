@@ -5,6 +5,7 @@
 ---     review-requested), get, by_iids: GraphQL.
 ---   * list with scope = "all" (every MR visible to the token): REST
 ---     `GET /merge_requests` (GraphQL has no equivalent).
+---   * summaries (head pipeline stages + diff stats, by IID): GraphQL.
 ---   * related_to_issue: REST `/issues/:iid/related_merge_requests`.
 ---   * create, update, merge: REST. Draft status is not a REST parameter, so
 ---     it is set with the GraphQL `mergeRequestSetDraft` mutation.
@@ -313,6 +314,79 @@ function M.by_iids(args)
       return nil, err
     end
     return res.items
+  end)
+end
+
+--- Most IIDs one `summaries` call accepts. diffStatsSummary calls Gitaly per
+--- merge request and GraphQL limits query complexity, so batches stay small.
+M.SUMMARIES_MAX = 20
+
+-- summary field -> GraphQL field name in merge_request_summaries.graphql
+local SUMMARY_FIELDS = { headPipeline = "head_pipeline", diffStatsSummary = "diff_stats" }
+
+-- For a GraphQL error with partial data: the failed summary fields per node
+-- index (0-based, as in the error paths), or nil when an error is not about
+-- one of those fields (then the whole call fails).
+local function failed_fields(err)
+  local out = {}
+  for _, e in ipairs(err.details and err.details.errors or {}) do
+    local path = type(e.path) == "table" and e.path or {}
+    local idx, field = path[4], SUMMARY_FIELDS[path[5]]
+    if path[1] ~= "project" or path[2] ~= "mergeRequests" or path[3] ~= "nodes" or type(idx) ~= "number" or not field then
+      return nil
+    end
+    out[idx] = out[idx] or {}
+    out[idx][field] = true
+  end
+  return out
+end
+
+--- Head pipeline (stage statuses) and diff stats of merge requests, by IID,
+--- in one request. Missing IIDs are absent. At most `M.SUMMARIES_MAX` IIDs
+--- per call (more is a validation error). When GitLab reports an error for
+--- one MR's pipeline or diff stats, that summary lists the field in `failed`
+--- and the others are returned normally; any other error fails the call.
+---@param args { host: string, project: string|integer, iids: integer[] }
+---@return gg.Task resolves with gg.MergeRequestSummary[]
+function M.summaries(args)
+  return common.run(args, { host = "host", project = "project", iids = "ids" }, function()
+    if #args.iids > M.SUMMARIES_MAX then
+      return nil, common.invalid("iids", ("at most %d per call (got %d)"):format(M.SUMMARIES_MAX, #args.iids))
+    end
+    if #args.iids == 0 then
+      return {}
+    end
+    local path, perr = graphql.project_path(args.host, args.project):await()
+    if not path then
+      return nil, perr
+    end
+    local vars = { fullPath = path, iids = vim.tbl_map(tostring, args.iids), first = #args.iids }
+    local data, err = graphql.query(args.host, "merge_request_summaries", vars):await()
+    local failed = {}
+    if err then
+      local partial = err.kind == "graphql" and err.details and err.details.partial
+      if partial == vim.NIL then
+        partial = nil
+      end
+      failed = partial and failed_fields(err) or nil
+      if not failed then
+        return nil, err
+      end
+      data = partial
+    end
+    local conn, nerr = graphql.require(data, "project.mergeRequests", "project " .. path)
+    if not conn then
+      return nil, nerr
+    end
+    local ctx = { origin = common.origin(args.host), project = path }
+    local out = {}
+    for i, node in ipairs(type(conn.nodes) == "table" and conn.nodes or {}) do
+      local s = mr_model.summary_from_graphql(node, ctx, failed[i - 1])
+      if s then
+        table.insert(out, s)
+      end
+    end
+    return out
   end)
 end
 

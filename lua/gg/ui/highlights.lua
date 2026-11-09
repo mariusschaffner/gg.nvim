@@ -33,7 +33,33 @@ M.LINKS = {
   { "GitlabCursorMark", "Function" },
   { "GitlabCursorLine", "CursorLine" },
   { "GitlabLabelFallback", "Comment" },
+  -- merge requests
+  { "GitlabDraft", "Comment" },
+  { "GitlabBranchSource", "Statement" },
+  { "GitlabBranchTarget", "Comment" },
+  { "GitlabPipelineSuccess", "DiagnosticOk" },
+  { "GitlabPipelineFailed", "DiagnosticError" },
+  { "GitlabPipelineRunning", "DiagnosticWarn" },
+  { "GitlabPipelinePending", "Comment" },
+  { "GitlabPipelineManual", "Comment" },
+  { "GitlabPipelineCanceled", "Comment" },
+  { "GitlabPipelineSkipped", "NonText" },
+  -- one colour per user (a stable hash picks the group), see gg.ui.lib.user_hl
+  { "GitlabUser1", "Function" },
+  { "GitlabUser2", "Special" },
+  { "GitlabUser3", "Constant" },
+  { "GitlabUser4", "Statement" },
+  { "GitlabUser5", "String" },
+  { "GitlabUser6", "Type" },
+  { "GitlabUser7", "Identifier" },
+  { "GitlabUser8", "PreProc" },
 }
+
+-- `Added` / `Removed` exist since Neovim 0.10; older colourschemes may only
+-- define the Diff* groups.
+local function diff_link(modern, fallback)
+  return vim.fn.hlexists(modern) == 1 and modern or fallback
+end
 
 local function resolved(name)
   local ok, hl = pcall(vim.api.nvim_get_hl, 0, { name = name, link = false })
@@ -55,6 +81,10 @@ function M.define()
   local key = { fg = resolved("Function").fg, bold = true, default = true }
   vim.api.nvim_set_hl(0, "GitlabHintKey", key)
   vim.api.nvim_set_hl(0, "GitlabHintText", { fg = resolved("Comment").fg, default = true })
+  vim.api.nvim_set_hl(0, "GitlabDiffAdd", { link = diff_link("Added", "DiffAdd"), default = true })
+  vim.api.nvim_set_hl(0, "GitlabDiffDelete", { link = diff_link("Removed", "DiffDelete"), default = true })
+  -- layered over a GitlabUserN group for the signed-in user
+  vim.api.nvim_set_hl(0, "GitlabCurrentUser", { bold = true, default = true })
   -- the table hides the cursor; blend = 100 makes it invisible
   vim.api.nvim_set_hl(0, "GitlabHiddenCursor", { blend = 100, nocombine = true, default = true })
 end

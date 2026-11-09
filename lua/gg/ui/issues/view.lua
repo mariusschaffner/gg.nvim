@@ -2,24 +2,25 @@
 --- grouped by milestone, with Open/Closed/All tabs and client-side pages.
 ---
 --- Open and closed issues load in two parallel streams of pages
---- (`gg.issues.list`). The table is drawn as soon as the first page arrives
---- and grows while the rest loads; tabs still loading show "…" after their
---- count. Tab, filter and paging then work locally without requests. `R`
---- reloads and keeps the current rows until each stream has finished.
+--- (`gg.issues.list`, see `gg.ui.components.streams`). The table is drawn
+--- as soon as the first page arrives and grows while the rest loads; tabs
+--- still loading show "…" after their count. Tab, filter and paging then
+--- work locally without requests. `R` reloads and keeps the current rows
+--- until each stream has finished.
+---
+--- The windows, prompt, cursor rules and shared keys are the picker shell
+--- (`gg.ui.components.picker`); `<Tab>` switches to the merge requests view.
 local gg = require("gg")
 local config = require("gg.ui.config")
 local date = require("gg.ui.lib.date")
-local float = require("gg.ui.components.float")
-local float_group = require("gg.ui.components.float_group")
 local highlights = require("gg.ui.highlights")
 local hint = require("gg.ui.lib.hint")
-local layout = require("gg.ui.components.layout")
-local list_buffer = require("gg.ui.components.list_buffer")
 local model = require("gg.ui.issues.model")
 local paginate = require("gg.ui.issues.paginate")
+local picker = require("gg.ui.components.picker")
 local project = require("gg.ui.project")
-local prompt = require("gg.ui.components.prompt")
 local render = require("gg.ui.issues.render")
+local streams = require("gg.ui.components.streams")
 
 local M = {}
 
@@ -32,9 +33,11 @@ local M = {}
 ---@field config? gg.ui.Config for tests; default: the configured UI options
 
 ---@class gg.ui.IssuesView
+---@field name "issues"
+---@field shell gg.ui.Picker
 ---@field host string|nil
 ---@field project string|nil
----@field status "loading"|"ready"|"error"
+---@field status "idle"|"loading"|"ready"|"error"
 ---@field tab gg.ui.Tab
 ---@field query string
 ---@field page integer
@@ -54,137 +57,84 @@ local M = {}
 local View = {}
 View.__index = View
 
-local TABLE_WIN_OPTS = {
-  cursorline = false, -- the row highlight is an overlay on the issue part only
-  wrap = false,
-  number = false,
-  relativenumber = false,
-  signcolumn = "no",
-  foldcolumn = "0",
-  spell = false,
-  list = false,
-}
+local STATES = { "opened", "closed" }
 
-local function stack()
-  local r = layout.stack({ { height = 1 }, { fill = true } }, { gap = 0 })
-  return { filter = r[1], table = r[2] }
+--- Create the issues view inside an open picker (not activated).
+---@param shell gg.ui.Picker
+---@param opts? gg.ui.IssuesViewOpts
+---@return gg.ui.IssuesView
+function M.attach(shell, opts)
+  opts = opts or {}
+  local self = setmetatable({
+    name = "issues",
+    filetype = "gg_ui_issues",
+    placeholder = "filter",
+    shell = shell,
+    cfg = shell.cfg,
+    keys = shell.keys,
+    today = opts.today,
+    status = "idle",
+    tab = "opened",
+    query = "",
+    page = 1,
+    pages = { { blocks = {}, count = 0 } },
+    touched = false,
+    closed = false,
+    -- the shell's windows and parts, under the names the view always had
+    group = shell.group,
+    list = shell.list,
+    prompt = shell.prompt,
+    filter_float = shell.filter_float,
+    table_float = shell.table_float,
+    ns = shell.ns,
+  }, View)
+  streams.init(self, STATES)
+  shell:add(self)
+  return self
 end
 
-local function map(buf, modes, lhs, fn, desc)
-  if not lhs then
-    return
-  end
-  vim.keymap.set(modes, lhs, fn, { buffer = buf, nowait = true, silent = true, desc = desc })
-end
-
---- Open a picker. Returns at once; issues load in the background.
+--- Open a picker on the issues view. Returns at once; issues load in the
+--- background.
 ---@param opts? gg.ui.IssuesViewOpts
 ---@return gg.ui.IssuesView
 function M.open(opts)
   opts = opts or {}
   local cfg = opts.config or config.get()
   highlights.setup()
-  local self = setmetatable({
+  local direct = opts.host and opts.project
+  local shell = picker.new({
     cfg = cfg,
-    keys = cfg.keymaps,
-    today = opts.today,
-    status = "loading",
-    tab = "opened",
-    query = "",
-    page = 1,
-    pages = { { blocks = {}, count = 0 } },
-    truncated = false,
-    truncated_by = {},
-    pending = { opened = false, closed = false },
-    refreshing = false,
-    tasks = {},
-    touched = false,
-    loaded = 0,
-    gen = 0,
-    closed = false,
-    ns = vim.api.nvim_create_namespace("gg.ui.issues.overlay"),
-  }, View)
-
-  self.group = float_group.new({ layout = stack })
-  local filter_title = self.keys.focus_filter and hint.chunks({ { key = self.keys.focus_filter, desc = "Filter" } }, { desc_hl = "GitlabPickerTitle" }) or " Filter "
-  local f = self.group:add({ name = "filter", title = filter_title, filetype = "gg_ui_filter", win_opts = { wrap = false } })
-  local t = self.group:add({
-    name = "table",
-    enter = true,
-    title = " Table ",
-    footer = self:_footer(),
-    -- always gray: the cursor mark shows when the table has focus
-    border_hl = "GitlabTableBorder",
-    border_active_hl = "GitlabTableBorder",
     filetype = "gg_ui_issues",
-    win_opts = TABLE_WIN_OPTS,
+    host = direct and opts.host or nil,
+    project = direct and opts.project or nil,
+    target_opts = not direct and { arg = opts.arg or opts.project, cwd = opts.cwd } or nil,
   })
-  self.filter_float, self.table_float = f, t
-
-  self.prompt = prompt.new({
-    buf = f.buf,
-    debounce_ms = cfg.filter_debounce_ms,
-    on_change = function(s)
-      self:set_query(s)
-    end,
-  })
-  self.list = list_buffer.new({
-    buf = t.buf,
-    win = t.win,
-    on_select = function(lnum)
-      self:_on_select(lnum)
-    end,
-    -- the cursor rests on the cursor-mark column, not on the milestone edge
-    cursor_col = function(lnum)
-      local row = self.rendered and self.rendered.rows[lnum]
-      return row and row.mark_col or 0
-    end,
-  })
-  self.list:attach_navigation()
-  self:_keymaps()
-
-  self.augroup = vim.api.nvim_create_augroup(("gg.ui.issues.%d"):format(t.buf), { clear = true })
-  vim.api.nvim_create_autocmd("ColorScheme", {
-    group = self.augroup,
-    callback = function()
-      vim.schedule(function()
-        self:render()
-      end)
-    end,
-  })
-  -- the table draws its own cursor mark, so the real cursor is hidden there
-  vim.api.nvim_create_autocmd({ "WinEnter", "WinLeave" }, {
-    group = self.augroup,
-    buffer = t.buf,
-    callback = function(ev)
-      self:_hide_cursor(ev.event == "WinEnter")
-    end,
-  })
-  self.group:on_resize(function()
-    self:render()
-  end)
-  self.group:on_close(function()
-    self:_teardown()
-  end)
-  self.group:focus("table")
-  self:_hide_cursor(vim.api.nvim_get_current_win() == t.win)
-
-  if opts.host and opts.project then
-    self.host, self.project = opts.host, opts.project
-    self:load()
-  else
-    self.target_opts = { arg = opts.arg or opts.project, cwd = opts.cwd }
-    self:render()
-    self:_resolve()
-  end
+  local self = M.attach(shell, opts)
+  shell:activate(self)
   return self
+end
+
+--- Called by the picker when this view becomes active: the first time it
+--- starts loading, later it redraws.
+function View:activate()
+  if self.status == "idle" then
+    if self.shell.host then
+      self.host, self.project = self.shell.host, self.shell.project
+      self:load()
+    else
+      self:render()
+      self:_resolve()
+    end
+    return
+  end
+  self:render()
 end
 
 ---@private
 function View:_resolve()
   self.status = "loading"
   self:render()
-  local task = project.resolve(self.target_opts)
+  local task = project.resolve(self.shell.target_opts or {})
   self.task = task
   task:on_done(function(target, err)
     if self.closed or self.task ~= task then
@@ -196,21 +146,10 @@ function View:_resolve()
       self:render()
       return
     end
+    self.shell.host, self.shell.project = target.host, target.project
     self.host, self.project = target.host, target.project
     self:load()
   end)
-end
-
--- Page sizes: a small first page draws the table quickly, then full pages.
-local FIRST_PAGE, PAGE = 20, 100
-local STATES = { "opened", "closed" }
-
----@private
-function View:_cancel_streams()
-  for state, t in pairs(self.tasks) do
-    t:cancel()
-    self.tasks[state] = nil
-  end
 end
 
 --- (Re)load every issue of the project from the API: open and closed issues
@@ -222,108 +161,41 @@ function View:load()
   if not self.host then
     return self:_resolve()
   end
-  self:_cancel_streams()
-  self.gen = self.gen + 1
-  local gen = self.gen
-  self.err_msg, self.loaded, self.truncated_by = nil, 0, {}
-  self.refreshing = self.status == "ready" and self.issues ~= nil
-  if not self.refreshing then
-    self.status, self.issues = "loading", nil
-    self.by_state = { opened = {}, closed = {} }
-  end
-  local into = {}
-  for _, state in ipairs(STATES) do
-    self.pending[state] = true
-    -- first load: pages go straight into the shown list; refresh: into a
-    -- new list that replaces the old one when the stream is done
-    into[state] = self.refreshing and {} or self.by_state[state]
-  end
-  self:render()
-  for _, state in ipairs(STATES) do
-    self:_stream(state, gen, into[state])
-  end
+  streams.start(self, {
+    limit = self.cfg.limit,
+    has_items = self.status == "ready" and self.issues ~= nil,
+    fetch = function(state, cursor, per_page)
+      return gg.issues.list({
+        host = self.host,
+        project = self.project,
+        state = state,
+        -- recently updated first: the first pages are the most relevant ones,
+        -- and a limit cuts the stalest issues (the table sorts on its own)
+        order_by = "updated_at",
+        sort = "desc",
+      }, { per_page = per_page, cursor = cursor })
+    end,
+    on_start = function()
+      if not self.refreshing then
+        self.status, self.issues = "loading", nil
+      end
+      self:render()
+    end,
+    on_update = function(all)
+      self.issues, self.status = all, "ready"
+      self:render()
+    end,
+    on_error = function(err)
+      self.status, self.err_msg = "error", err.message or tostring(err)
+      self:render()
+    end,
+  })
 end
 
----@private
-function View:_stream(state, gen, into)
-  local limit = self.cfg.limit
-  local seen = {}
-  local function step(cursor)
-    local per_page = math.min(cursor and PAGE or FIRST_PAGE, limit - #into)
-    local t = gg.issues.list({
-      host = self.host,
-      project = self.project,
-      state = state,
-      -- recently updated first: the first pages are the most relevant ones,
-      -- and a limit cuts the stalest issues (the table sorts on its own)
-      order_by = "updated_at",
-      sort = "desc",
-    }, { per_page = per_page, cursor = cursor })
-    self.tasks[state] = t
-    t:on_done(function(page, err)
-      if self.closed or gen ~= self.gen then
-        return
-      end
-      if err then
-        return self:_load_failed(err)
-      end
-      local items = page.items or {}
-      local take = math.min(#items, limit - #into)
-      for i = 1, take do
-        into[#into + 1] = items[i]
-      end
-      self.loaded = self.loaded + take
-      local next_cursor = page.next_cursor
-      if next_cursor and seen[next_cursor] then
-        return self:_load_failed({ message = "pagination did not advance (the same cursor came back twice)" })
-      end
-      if next_cursor and #into < limit then
-        seen[next_cursor] = true
-        step(next_cursor)
-      else
-        self.tasks[state] = nil
-        self.pending[state] = false
-        self.truncated_by[state] = take < #items or next_cursor ~= nil
-        if self.refreshing then
-          self.by_state[state] = into
-        end
-      end
-      self:_loaded()
-    end)
-  end
-  step(nil)
-end
-
--- a page arrived or a stream finished
----@private
-function View:_loaded()
-  self.truncated = self.truncated_by.opened == true or self.truncated_by.closed == true
-  local was_refreshing = self.refreshing
-  if not self.pending.opened and not self.pending.closed then
-    self.refreshing = false
-  end
-  if was_refreshing and self.refreshing and self.pending.opened and self.pending.closed then
-    return -- refreshing and no stream finished yet: nothing new to show
-  end
-  local all = {}
-  vim.list_extend(all, self.by_state.opened)
-  vim.list_extend(all, self.by_state.closed)
-  self.issues, self.status = all, "ready"
-  self:render()
-end
-
----@private
-function View:_load_failed(err)
-  self:_cancel_streams()
-  self.pending = { opened = false, closed = false }
-  self.refreshing = false
-  self.status, self.err_msg = "error", err.message or tostring(err)
-  self:render()
-end
-
---- Redraw the table from the current state; the selection survives.
+--- Redraw the table from the current state; the selection survives. A no-op
+--- while another view is active.
 function View:render()
-  if self.closed or not vim.api.nvim_win_is_valid(self.table_float.win) then
+  if self.closed or not self.shell:is_active(self) or not self.shell:valid() then
     return
   end
   if not self.touched then
@@ -345,8 +217,8 @@ function View:render()
   self.model = mdl
   local pending = (self.status == "ready" and not self.refreshing) and self.pending or nil
   local r = render.render({
-    width = vim.api.nvim_win_get_width(self.table_float.win),
-    status = self.status,
+    width = self.shell:width(),
+    status = self.status == "idle" and "loading" or self.status,
     pending = pending,
     tab = self.tab,
     model = mdl,
@@ -354,7 +226,7 @@ function View:render()
     error = self.err_msg,
     loaded = self.loaded,
     truncated = self.truncated and self.cfg.limit or nil,
-    retry_key = self.keys.refresh,
+    retry_key = picker.first_key(self.keys.refresh) or false,
     label_hl = highlights.label,
   })
   self.rendered = r
@@ -376,10 +248,7 @@ function View:render()
   self._rendering = false
 
   self.prompt:set_counter(mdl and mdl.filtered and ("%d / %d"):format(mdl.matching, mdl.total) or nil)
-  float.set_text(self.table_float.win, {
-    title = self:_title(),
-    footer = self:_footer(),
-  })
+  self.shell:chrome(self:_title(), self:_footer())
 end
 
 ---@private
@@ -396,15 +265,16 @@ end
 ---@private
 function View:_footer()
   local hints = {}
-  if self.keys.inspect_milestone then
-    table.insert(hints, { key = self.keys.inspect_milestone, desc = "Milestone" })
+  local k = picker.first_key
+  if k(self.keys.inspect_milestone) then
+    table.insert(hints, { key = k(self.keys.inspect_milestone), desc = "Milestone" })
   end
-  if self.keys.inspect_issue then
-    table.insert(hints, { key = self.keys.inspect_issue, desc = "Issue" })
+  if k(self.keys.inspect_issue) then
+    table.insert(hints, { key = k(self.keys.inspect_issue), desc = "Issue" })
   end
   local pages = self.pages and #self.pages or 1
-  if pages > 1 and self.keys.next_page then
-    table.insert(hints, { key = self.keys.next_page, desc = ("Page %d/%d"):format(self.page, pages) })
+  if pages > 1 and k(self.keys.next_page) then
+    table.insert(hints, { key = k(self.keys.next_page), desc = ("Page %d/%d"):format(self.page, pages) })
   end
   if #hints == 0 then
     return " "
@@ -412,22 +282,9 @@ function View:_footer()
   return hint.chunks(hints)
 end
 
--- Hide the cursor in Normal/Visual mode (guicursor with a blend = 100
--- group), or restore the user's 'guicursor'.
----@private
-function View:_hide_cursor(hide)
-  if hide and not self.saved_guicursor then
-    self.saved_guicursor = vim.o.guicursor
-    local base = self.saved_guicursor ~= "" and (self.saved_guicursor .. ",") or ""
-    vim.o.guicursor = base .. "n-v-ve:GitlabHiddenCursor"
-  elseif not hide and self.saved_guicursor then
-    vim.o.guicursor = self.saved_guicursor
-    self.saved_guicursor = nil
-  end
-end
-
----@private
-function View:_on_select(lnum)
+--- The cursor moved to `lnum` (called by the picker).
+---@param lnum integer|nil
+function View:on_select(lnum)
   local r = self.rendered
   local row = r and lnum and r.rows[lnum]
   if row and row.issue then
@@ -440,34 +297,22 @@ function View:_on_select(lnum)
   self:_overlay(row and row.issue and lnum or nil)
 end
 
--- cursor mark, row highlight and active milestone edge (second namespace)
+-- cursor mark and row highlight (the shell), plus the active milestone edge
 ---@private
 function View:_overlay(lnum)
-  local buf = self.table_float.buf
-  if not vim.api.nvim_buf_is_valid(buf) then
-    return
-  end
-  vim.api.nvim_buf_clear_namespace(buf, self.ns, 0, -1)
   local r = self.rendered
   local row = r and lnum and r.rows[lnum]
-  if not row or not row.mark_col then
-    return
-  end
-  local set = function(l, col, o)
-    o.strict = false
-    pcall(vim.api.nvim_buf_set_extmark, buf, self.ns, l, col, o)
-  end
-  set(lnum - 1, row.mark_col, { end_row = lnum, end_col = 0, hl_group = "GitlabCursorLine", hl_eol = true, priority = 100 })
-  set(lnum - 1, row.mark_col, { virt_text = { { render.CURSOR_MARK, "GitlabCursorMark" } }, virt_text_pos = "overlay", priority = 200 })
-  local block = r.blocks[row.block]
-  if block and block.kind == "milestone" then
-    for l = block.first, block.last do
-      local edge = r.rows[l].edge
-      if edge then
-        set(l - 1, edge.col, { end_col = edge.end_col, hl_group = "GitlabMilestoneEdgeActive", priority = 5000 })
+  self.shell:overlay(lnum, function(set)
+    local block = r.blocks[row.block]
+    if block and block.kind == "milestone" then
+      for l = block.first, block.last do
+        local edge = r.rows[l].edge
+        if edge then
+          set(l - 1, edge.col, { end_col = edge.end_col, hl_group = "GitlabMilestoneEdgeActive", priority = 5000 })
+        end
       end
     end
-  end
+  end)
 end
 
 ---@private
@@ -570,80 +415,53 @@ end
 
 --- Focus the filter in insert mode, at the end of the text.
 function View:focus_filter()
-  self.group:focus("filter")
-  vim.cmd("startinsert!")
+  self.shell:focus_filter()
 end
 
 --- Back to the table (the filter stays).
 function View:focus_table()
-  vim.cmd("stopinsert")
-  self.group:focus("table")
+  self.shell:focus_table()
 end
 
----@private
-function View:_keymaps()
+--- The view's own table keymaps (the shell maps the shared ones).
+---@return { [1]: gg.ui.Keymap, [2]: fun(), [3]: string }[]
+function View:keymaps()
   local k = self.keys
-  local tb, fb = self.table_float.buf, self.filter_float.buf
-  map(tb, "n", k.focus_filter, function()
-    self:focus_filter()
-  end, "Filter issues")
-  map(tb, "n", k.inspect_issue, function()
-    self:inspect_issue()
-  end, "Inspect issue")
-  map(tb, "n", k.inspect_milestone, function()
-    self:inspect_milestone()
-  end, "Inspect milestone")
-  map(tb, "n", k.next_tab, function()
-    self:switch_tab(1)
-  end, "Next tab")
-  map(tb, "n", k.prev_tab, function()
-    self:switch_tab(-1)
-  end, "Previous tab")
-  map(tb, "n", k.next_page, function()
-    self:next_page()
-  end, "Next page")
-  map(tb, "n", k.next_milestone, function()
-    self:jump_milestone(1)
-  end, "Next milestone")
-  map(tb, "n", k.prev_milestone, function()
-    self:jump_milestone(-1)
-  end, "Previous milestone")
-  map(tb, "n", k.refresh, function()
-    self:load()
-  end, "Reload issues")
-  map(tb, "n", k.close, function()
-    self:close()
-  end, "Close")
-  map(fb, { "i", "n" }, k.filter_submit, function()
-    self:focus_table()
-  end, "Back to the table")
-  map(fb, { "i", "n" }, k.filter_clear, function()
-    self.prompt:set_text("")
-    self:focus_table()
-  end, "Clear the filter")
+  return {
+    { k.inspect_issue, function()
+      self:inspect_issue()
+    end, "Inspect issue" },
+    { k.inspect_milestone, function()
+      self:inspect_milestone()
+    end, "Inspect milestone" },
+    { k.next_page, function()
+      self:next_page()
+    end, "Next page" },
+    { k.next_milestone, function()
+      self:jump_milestone(1)
+    end, "Next milestone" },
+    { k.prev_milestone, function()
+      self:jump_milestone(-1)
+    end, "Previous milestone" },
+  }
 end
 
 --- Close the picker (both windows) and cancel any request in flight.
 function View:close()
-  self.group:close()
+  self.shell:close()
 end
 
----@private
-function View:_teardown()
+--- The picker closed: cancel everything (called by the picker).
+function View:teardown()
   if self.closed then
     return
   end
   self.closed = true
-  self:_hide_cursor(false)
   if self.task then
     self.task:cancel()
     self.task = nil
   end
-  self:_cancel_streams()
-  pcall(vim.api.nvim_del_augroup_by_id, self.augroup)
-  if self.prompt then
-    self.prompt:destroy()
-  end
+  streams.cancel(self)
 end
 
 return M

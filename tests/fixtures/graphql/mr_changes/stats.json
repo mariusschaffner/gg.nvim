@@ -1,0 +1,50 @@
+[
+  {
+    "meta": {
+      "sanitized": true,
+      "source": "hand-built from the GitLab GraphQL schema (MergeRequest.diffStatsSummary, diffStats), 2026-11-09"
+    },
+    "request": {
+      "operation": "MrDiffStats",
+      "variables": {
+        "fullPath": "gitlab-org/cli",
+        "iid": "4338"
+      }
+    },
+    "response": {
+      "body": {
+        "data": {
+          "project": {
+            "mergeRequest": {
+              "diffStatsSummary": { "additions": 120, "deletions": 34, "changes": 154, "fileCount": 2 },
+              "diffStats": [
+                { "path": "internal/commands/mr/view.go", "additions": 100, "deletions": 30 },
+                { "path": "docs/source/mr/view.md", "additions": 20, "deletions": 4 }
+              ]
+            }
+          }
+        }
+      },
+      "headers": {},
+      "status": 200
+    }
+  },
+  {
+    "meta": {
+      "sanitized": true,
+      "source": "hand-built: merge request not visible (null without an error), 2026-11-09"
+    },
+    "request": {
+      "operation": "MrDiffStats",
+      "variables": {
+        "fullPath": "gitlab-org/cli",
+        "iid": "1"
+      }
+    },
+    "response": {
+      "body": { "data": { "project": { "mergeRequest": null } } },
+      "headers": {},
+      "status": 200
+    }
+  }
+]

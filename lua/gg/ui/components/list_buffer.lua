@@ -68,6 +68,41 @@ function List:set(content)
   end
 end
 
+--- Rewrite only lines `lnums` (1-based) from `content`, with their
+--- highlights and virtual lines. The line count and the selectable lines
+--- must be unchanged; the cursor is not moved.
+---@param content gg.ui.ListContent
+---@param lnums integer[]
+function List:patch(content, lnums)
+  local buf = self.buf
+  if not vim.api.nvim_buf_is_valid(buf) or #lnums == 0 then
+    return
+  end
+  local want = {}
+  for _, l in ipairs(lnums) do
+    want[l - 1] = true
+  end
+  -- clear first: replacing a line can move its extmarks onto the next one
+  for _, l in ipairs(lnums) do
+    vim.api.nvim_buf_clear_namespace(buf, self.ns, l - 1, l)
+  end
+  vim.bo[buf].modifiable = true
+  for _, l in ipairs(lnums) do
+    vim.api.nvim_buf_set_lines(buf, l - 1, l, false, { content.lines[l] })
+  end
+  vim.bo[buf].modifiable = false
+  for _, m in ipairs(content.marks) do
+    if want[m.row] then
+      pcall(vim.api.nvim_buf_set_extmark, buf, self.ns, m.row, m.col, { end_col = m.end_col, hl_group = m.hl })
+    end
+  end
+  for _, v in ipairs(content.virt_lines or {}) do
+    if want[v.row] then
+      pcall(vim.api.nvim_buf_set_extmark, buf, self.ns, v.row, 0, { virt_lines = { v.chunks } })
+    end
+  end
+end
+
 --- The selected line, or nil when nothing is selectable.
 ---@return integer|nil
 function List:current()

@@ -6,7 +6,7 @@ local gg = require("gg")
 
 local M = {}
 
----@alias gg.ui.Keymap string|false a key (lhs), or false to disable the mapping
+---@alias gg.ui.Keymap string|string[]|false a key (lhs), several keys, or false to disable the mapping
 
 ---@class gg.ui.Keymaps
 ---@field focus_filter gg.ui.Keymap Table: focus the filter (default "/")
@@ -21,6 +21,9 @@ local M = {}
 ---@field prev_milestone gg.ui.Keymap Table: previous milestone block (default "[m")
 ---@field refresh gg.ui.Keymap Table: reload from the API (default "R")
 ---@field close gg.ui.Keymap Table: close the picker (default "q")
+---@field next_view gg.ui.Keymap Table: next view, issues -> merge requests (default "<Tab>")
+---@field prev_view gg.ui.Keymap Table: previous view (default "<S-Tab>")
+---@field inspect_mr gg.ui.Keymap Table: inspect the merge request under the cursor (default { "i", "<CR>" })
 
 ---@class gg.ui.InspectContext
 ---@field host string
@@ -33,13 +36,15 @@ local M = {}
 ---@field issues? fun(a: gg.Issue, b: gg.Issue): boolean issues inside a milestone
 
 ---@class gg.ui.Config
----@field limit integer upper bound on the issues fetched per state (open, closed)
----@field page_size integer issues per page
+---@field limit integer upper bound on the items fetched per state, per view
+---@field page_size integer rows per page
 ---@field filter_debounce_ms integer
 ---@field keymaps gg.ui.Keymaps
 ---@field order gg.ui.Order comparators; nil entries use the defaults
 ---@field on_inspect_issue fun(issue: gg.Issue, ctx: gg.ui.InspectContext)
 ---@field on_inspect_milestone fun(milestone: gg.MilestoneRef, ctx: gg.ui.InspectContext)
+---@field on_inspect_mr fun(mr: gg.MergeRequest, ctx: gg.ui.InspectContext)
+---@field user_colors table<string, string> username -> highlight group (e.g. "GitlabUser1")
 
 local function default_inspect_issue(issue)
   vim.notify(("#%d %s\n%s"):format(issue.iid, issue.title or "", issue.web_url or ""), vim.log.levels.INFO)
@@ -47,6 +52,10 @@ end
 
 local function default_inspect_milestone(milestone)
   vim.notify(("%%%s\n%s"):format(milestone.title or "", milestone.web_url or ""), vim.log.levels.INFO)
+end
+
+local function default_inspect_mr(mr)
+  vim.notify(("!%d %s\n%s"):format(mr.iid, mr.title or "", mr.web_url or ""), vim.log.levels.INFO)
 end
 
 local function defaults()
@@ -67,10 +76,15 @@ local function defaults()
       prev_milestone = "[m",
       refresh = "R",
       close = "q",
+      next_view = "<Tab>",
+      prev_view = "<S-Tab>",
+      inspect_mr = { "i", "<CR>" },
     },
     order = {},
     on_inspect_issue = default_inspect_issue,
     on_inspect_milestone = default_inspect_milestone,
+    on_inspect_mr = default_inspect_mr,
+    user_colors = {},
   }
 end
 
@@ -92,7 +106,36 @@ local function check_fn(v, key)
   end
 end
 
-local TOP = { limit = true, page_size = true, filter_debounce_ms = true, keymaps = true, order = true, on_inspect_issue = true, on_inspect_milestone = true }
+local TOP = {
+  limit = true,
+  page_size = true,
+  filter_debounce_ms = true,
+  keymaps = true,
+  order = true,
+  on_inspect_issue = true,
+  on_inspect_milestone = true,
+  on_inspect_mr = true,
+  user_colors = true,
+}
+
+local function is_key(v)
+  return type(v) == "string" and v ~= ""
+end
+
+local function check_keymap(v, key)
+  if v == false or is_key(v) then
+    return nil
+  end
+  if type(v) == "table" and #v > 0 and vim.islist(v) then
+    for _, lhs in ipairs(v) do
+      if not is_key(lhs) then
+        return fail(key, "must be a key string, a list of them, or false to disable it")
+      end
+    end
+    return nil
+  end
+  return fail(key, "must be a key string, a list of them, or false to disable it")
+end
 local ORDER = { top = true, milestones = true, issues = true }
 
 --- Validate UI options without applying them.
@@ -115,6 +158,7 @@ function M.validate(opts)
     or check_int(opts.filter_debounce_ms, "filter_debounce_ms", 0, 10000)
     or check_fn(opts.on_inspect_issue, "on_inspect_issue")
     or check_fn(opts.on_inspect_milestone, "on_inspect_milestone")
+    or check_fn(opts.on_inspect_mr, "on_inspect_mr")
   if err then
     return err
   end
@@ -127,8 +171,19 @@ function M.validate(opts)
       if known[k] == nil then
         return fail("keymaps." .. tostring(k), "unknown keymap")
       end
-      if v ~= false and (type(v) ~= "string" or v == "") then
-        return fail("keymaps." .. k, "must be a key string, or false to disable it")
+      err = check_keymap(v, "keymaps." .. k)
+      if err then
+        return err
+      end
+    end
+  end
+  if opts.user_colors ~= nil then
+    if type(opts.user_colors) ~= "table" then
+      return fail("user_colors", "must be a table of username = highlight group")
+    end
+    for name, group in pairs(opts.user_colors) do
+      if not is_key(name) or not is_key(group) then
+        return fail("user_colors." .. tostring(name), "must map a username to a highlight group name")
       end
     end
   end
@@ -158,7 +213,12 @@ function M.setup(opts)
   if err then
     return false, err
   end
-  current = vim.tbl_deep_extend("force", defaults(), opts or {})
+  local merged = vim.tbl_deep_extend("force", defaults(), opts or {})
+  -- a keymap given as a list replaces the default (no merge by index)
+  for k, v in pairs(opts and opts.keymaps or {}) do
+    merged.keymaps[k] = v
+  end
+  current = merged
   return true, nil
 end
 

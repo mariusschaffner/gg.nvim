@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Merge requests: one-line table with pipeline stages</title>
+<script src="./vendor/react.js"></script>
+<script src="./vendor/react-dom.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#7aa2f7}a:hover{color:#9ab8ff}
+</style>
+</helmet>
+<div style="width: 1280px; height: 760px; box-sizing: border-box; background: #1a1b26; color: #c0caf5; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 13px; line-height: 20px; display: flex; flex-direction: column; overflow: hidden">
+
+
+
+<div style="flex: 1; position: relative; min-height: 0; background: #111118">
+<div style="position: absolute; left: 10px; right: 10px; top: 18px; bottom: 10px; display: flex; flex-direction: column; gap: 14px">
+
+<div style="position: relative; height: 46px; box-sizing: border-box; background: #16161e; border: 1px solid {{accent}}; border-radius: 8px; display: flex; align-items: center; padding: 0 16px; gap: 10px; flex-shrink: 0"><span style="position: absolute; top: -11px; left: 14px; background: rgb(22, 22, 30); padding: 0px 6px; color: rgb(122, 162, 247); font-weight: 700">[/] Filter</span><span style="color: rgb(122, 162, 247); font-weight: 700">❯</span><span style="width: 8px; height: 18px; background: rgb(192, 202, 245)"></span><span style="color: rgb(138, 144, 184)">Filter</span><span style="flex: 1 1 0%"></span><span style="color: rgb(138, 144, 184)"><br></span></div>
+
+<div style="position: relative; flex: 1; min-height: 0; box-sizing: border-box; background: #16161e; border: 1px solid #3b4261; border-radius: 8px; padding: 18px 16px 14px; display: flex; flex-direction: column">
+<span style="position: absolute; top: -11px; left: 14px; background: #16161e; padding: 0 6px; color: #c0caf5; font-weight: 700">Table</span>
+
+<div style="display: flex; gap: 6px; align-items: center; height: 24px; flex-shrink: 0"><span style="background: rgb(122, 162, 247); color: rgb(22, 22, 30); font-weight: 700; padding: 0px 10px; border-radius: 3px">Open 6</span><span style="padding: 0px 10px; color: rgb(169, 177, 214)">Merged 2</span><span style="padding: 0px 10px; color: rgb(169, 177, 214)">Closed 1</span><span style="padding: 0px 10px; color: rgb(169, 177, 214)">All 9</span><span style="flex: 1 1 0%"></span><span style="color: rgb(138, 144, 184)"><br></span></div>
+<div style="display: grid; grid-template-columns: 16px 44px minmax(0, 1fr) 190px 60px 130px 100px 90px 150px; height: 26px; align-items: center; color: #8a90b8; border-bottom: 1px solid #3b4261; font-weight: 600; margin-top: 12px; padding: 0 10px; column-gap: 10px">
+<span></span><span>!</span><span>Title</span><span>Source</span><span>Target</span><span>Reviewers</span><span>Assignee</span><span>Pipeline</span><span>Diff</span>
+</div>
+<div style="display: flex; flex-direction: column; margin-top: 4px">
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="6">
+<div style="display: grid; grid-template-columns: 16px 44px minmax(0, 1fr) 190px 60px 130px 100px 90px 150px; height: 32px; align-items: center; background: {{r.bg}}; padding: 0 10px; column-gap: 10px; border-bottom: 1px solid #1f2335; border-radius: 3px">
+<span style="color: {{r.accent}}; font-weight: 700">{{r.cursor}}</span>
+<span style="color: #8a90b8">!{{r.iid}}</span>
+<span style="display: flex; align-items: center; min-width: 0"><sc-if value="{{r.draft}}" hint-placeholder-val="{{ false }}"><span style="color: #8a90b8; border: 1px solid #3b4261; border-radius: 3px; padding: 0 5px; line-height: 17px; margin-right: 8px; flex-shrink: 0">Draft</span></sc-if><span style="overflow: hidden; white-space: nowrap; text-overflow: ellipsis">{{r.title}}</span><sc-if value="{{r.conflicts}}" hint-placeholder-val="{{ false }}"><span style="color: #f7768e; margin-left: 8px; flex-shrink: 0"><br></span></sc-if></span>
+<span style="color: #bb9af7; overflow: hidden; white-space: nowrap; text-overflow: ellipsis">{{r.source}}</span>
+<span style="color: #a9b1d6">main</span>
+<span style="color: {{r.reviewersColor}}; overflow: hidden; white-space: nowrap; text-overflow: ellipsis">{{r.reviewers}}</span>
+<span style="color: {{r.assigneeColor}}; overflow: hidden; white-space: nowrap; text-overflow: ellipsis">{{r.assignee}}</span>
+<span style="display: flex; gap: 6px; font-weight: 700"><sc-for list="{{r.stages}}" as="st" hint-placeholder-count="4"><span style="color: {{st.c}}">{{st.g}}</span></sc-for></span>
+<span style="display: flex; align-items: center; gap: 6px; white-space: nowrap"><span style="width: 40px; flex-shrink: 0; text-align: right; color: #9ece6a">{{r.addText}}</span><span style="width: 40px; flex-shrink: 0; text-align: right; color: #f7768e">{{r.delText}}</span><span style="letter-spacing: -1px; font-size: 11px"><span style="color: #9ece6a">{{r.statAdd}}</span><span style="color: #f7768e">{{r.statDel}}</span></span></span>
+</div>
+</sc-for>
+</div>
+
+<span style="position: absolute; bottom: -11px; left: 14px; background: #16161e; padding: 0 6px; color: {{accent}}; display: flex; gap: 6px"><span><b>[i]</b>&nbsp;Merge Request</span></span>
+</div>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#7aa2f7","options":["#7aa2f7","#bb9af7","#9ece6a","#ff9e64"]},"$preview":{"width":1280,"height":760}}'>
+class Component extends DCLogic {
+  bar(done, total, len) {
+    const on = total ? Math.round(done / total * len) : 0;
+    return { barOn: '▰'.repeat(on), barOff: '▱'.repeat(len - on) };
+  }
+  base() {
+    const accent = this.props.accent ?? '#7aa2f7';
+    const CI = {
+      passed:  { g: '✓', c: '#9ece6a', t: 'passed' },
+      failed:  { g: '✗', c: '#f7768e', t: 'failed' },
+      running: { g: '◐', c: '#e0af68', t: 'running' },
+      pending: { g: '○', c: '#8a90b8', t: 'pending' },
+      manual:  { g: '▸', c: '#8a90b8', t: 'manual' }
+    };
+    const raw = [
+      // iid, title, draft, source, author, reviewers, ci, stages, approved, required, unresolved, threads, add, del, ms, issue, upd, conflicts, role
+      [88,'Rotate Terraform state backend credentials',false,'feat/rotate-tf-creds','@marro',['@sfrei'],'passed',['passed','passed','passed','manual'],1,2,1,4,120,34,'2026.11',214,'2h',false,'mine'],
+      [87,'WinRM over HTTPS listener role',true,'feat/winrm-https','@marro',[],'running',['passed','running','pending','pending'],0,2,0,0,310,12,'2026.11',211,'5h',false,'mine'],
+      [86,'OCI load balancer module for edge',false,'feat/oci-edge-lb','@marro',['@lhuber','@sfrei'],'failed',['passed','failed','pending','pending'],0,2,3,5,482,0,'2026.12',219,'1h',false,'mine'],
+      [85,'DNS-01 wildcard renewal via OCI DNS',false,'feat/dns01-wildcard','@sfrei',['@marro'],'passed',['passed','passed','passed','manual'],1,2,0,2,96,8,'2026.12',218,'3h',false,'review'],
+      [84,'Fix flaky weekend backup schedule',false,'fix/backup-weekend','@lhuber',['@marro'],'passed',['passed','passed','passed','passed'],2,2,0,1,14,6,null,220,'1d',false,'review'],
+      [83,'Bump Ansible collections',false,'chore/bump-collections','@renovate',[],'passed',['passed','passed','passed','manual'],0,1,0,0,40,40,null,null,'2d',true,'other']
+    ];
+    const mrs = raw.map(([iid, title, draft, source, author, reviewers, ci, stages, approved, required, unresolved, threads, add, del, ms, issue, upd, conflicts, role]) => {
+      const cur = iid === 88;
+      const ready = approved >= required && ci === 'passed' && unresolved === 0 && !draft && !conflicts;
+      const total = add + del, blocks = 10;
+      const addB = total ? Math.max(add ? 1 : 0, Math.round(add / total * blocks)) : 0;
+      return { iid, title, draft, source, author, ci, add, del, ms, issue, upd, conflicts, role, accent, ready,
+        reviewers: reviewers.length ? reviewers.join(' ') : '—',
+        reviewersColor: reviewers.length ? '#a9b1d6' : '#545c7e',
+        assignee: ({ 88: '@marro', 87: '@marro', 86: '@marro', 85: '@sfrei', 84: '@lhuber' })[iid] || 'unassigned',
+        assigneeColor: ({ 88: 1, 87: 1, 86: 1, 85: 1, 84: 1 })[iid] ? '#c0caf5' : '#8a90b8',
+        ciGlyph: CI[ci].g, ciColor: CI[ci].c, ciText: CI[ci].t,
+        stages: stages.map((s, i) => ({ g: CI[s].g, c: CI[s].c, name: ['build','test','plan','apply'][i] })),
+        approvals: approved + '/' + required,
+        apprColor: approved >= required ? '#9ece6a' : approved > 0 ? '#e0af68' : '#8a90b8',
+        threadsText: threads === 0 ? '—' : unresolved ? unresolved + ' open' : 'resolved',
+        threadsColor: threads === 0 ? '#545c7e' : unresolved ? '#e0af68' : '#9ece6a',
+        addText: '+' + add, delText: '−' + del,
+        statAdd: '█'.repeat(addB), statDel: '█'.repeat(blocks - addB),
+        msLabel: ms ? '%' + ms : '—', msColor: ms ? '#7dcfff' : '#545c7e',
+        issueText: issue ? '#' + issue : '',
+        bg: cur ? '#283457' : 'transparent',
+        cursor: cur ? '▌' : ''
+      };
+    });
+    const MS = [
+      { key: '2026.11', name: '%2026.11', title: 'Patch cycle', due: 'Nov 20', dueRel: 'in 11d', dueColor: '#c0caf5', done: 2, total: 6 },
+      { key: '2026.12', name: '%2026.12', title: 'Cloud migration', due: 'Dec 18', dueRel: 'in 39d', dueColor: '#c0caf5', done: 1, total: 4 }
+    ];
+    return { accent, mrs, MS };
+  }
+  renderVals() {
+    const { accent, mrs } = this.base();
+    return { accent, rows: mrs };
+  }
+}
+</script>
+</body>
+</html>

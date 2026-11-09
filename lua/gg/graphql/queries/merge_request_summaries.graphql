@@ -1,0 +1,23 @@
+#import "pipeline_stages"
+# Head pipeline stages and diff stats of several merge requests (by IID).
+# diffStatsSummary calls Gitaly (batch-loaded), so callers keep the IID list short.
+query MergeRequestSummaries($fullPath: ID!, $iids: [String!], $first: Int) {
+  project(fullPath: $fullPath) {
+    mergeRequests(iids: $iids, first: $first) {
+      nodes {
+        iid
+        updatedAt
+        diffHeadSha
+        headPipeline {
+          ...PipelineStagesFields
+        }
+        diffStatsSummary {
+          additions
+          deletions
+          changes
+          fileCount
+        }
+      }
+    }
+  }
+}

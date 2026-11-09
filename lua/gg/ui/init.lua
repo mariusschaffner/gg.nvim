@@ -21,15 +21,17 @@ function M.setup(opts)
   return ok, err
 end
 
---- Open the issues picker.
+--- Open the picker (issues and merge requests; `<Tab>` switches).
 --- `opts.project`: `[host/]group/project` or a remote URL; without it, the
 --- `origin` remote of the current directory. `opts.host` with
---- `opts.project` opens that target directly.
----@param opts? { project?: string, host?: string, cwd?: string }
----@return gg.ui.IssuesView
+--- `opts.project` opens that target directly. `opts.view` picks the view
+--- shown first: "issues" (default) or "merge_requests".
+---@param opts? { project?: string, host?: string, cwd?: string, view?: "issues"|"merge_requests" }
+---@return gg.ui.IssuesView|gg.ui.MrView
 function M.open(opts)
   opts = opts or {}
-  local view = require("gg.ui.issues.view")
+  local name = opts.view or "issues"
+  local view = require(name == "merge_requests" and "gg.ui.merge_requests.view" or "gg.ui.issues.view")
   if opts.host and opts.project then
     return view.open({ host = opts.host, project = opts.project })
   end

@@ -203,4 +203,64 @@ T["errors and validation"] = function()
   end
 end
 
+T["summaries: head pipeline stages and diff stats in one request"] = function()
+  local fake = H.fake({ "graphql/merge_requests/summaries.json" })
+  local items = H.await(mrs.summaries({ host = HOST, project = P, iids = { 4338, 4337, 4336 } }))
+  eq(#fake:requests(), 1)
+  eq(fake:last().variables, { fullPath = P, iids = { "4338", "4337", "4336" }, first = 3 })
+  -- 4337 is missing (not visible): absent, not an error
+  eq(iids(items), { 4338, 4336 })
+  local a = items[1]
+  eq(a.updated_at, "2026-11-06T16:43:20Z")
+  eq(a.head_pipeline.id, 3037601527)
+  eq(a.head_pipeline.status, "running")
+  eq(a.head_pipeline.web_url, "https://" .. HOST .. "/gitlab-org/cli/-/pipelines/3037601527")
+  eq(vim.tbl_map(function(s)
+    return s.name .. ":" .. s.status
+  end, a.head_pipeline.stages), { "build:success", "test:running", "deploy:manual" })
+  eq(a.diff_stats, { additions = 120, deletions = 34, changes = 154, file_count = 7 })
+  eq(a.failed, nil)
+  eq(items[2].head_pipeline, nil)
+  eq(items[2].diff_stats.changes, 0)
+end
+
+T["summaries: partial data marks the failed field, keeps the rest"] = function()
+  H.fake({ "graphql/merge_requests/summaries.json" })
+  local items, err = H.await(mrs.summaries({ host = HOST, project = P, iids = { 4335, 4334 } }))
+  eq(err, nil)
+  eq(iids(items), { 4335, 4334 })
+  eq(items[1].failed, { diff_stats = true })
+  eq(items[1].diff_stats, nil)
+  eq(items[1].head_pipeline.status, "success")
+  eq(items[2].failed, nil)
+  eq(items[2].diff_stats.additions, 5)
+end
+
+T["summaries: other GraphQL errors fail the call"] = function()
+  H.fake({ "graphql/merge_requests/summaries.json" })
+  local items, err = H.await(mrs.summaries({ host = HOST, project = P, iids = { 9 } }))
+  eq(items, nil)
+  eq(err.kind, "graphql")
+  eq(err.message:find("complexity", 1, true) ~= nil, true)
+end
+
+T["summaries: limits and empty input"] = function()
+  local fake = H.fake()
+  local many = {}
+  for i = 1, mrs.SUMMARIES_MAX + 1 do
+    many[i] = i
+  end
+  local _, err = H.await(mrs.summaries({ host = HOST, project = P, iids = many }))
+  eq(err.kind, "validation")
+  eq(H.await(mrs.summaries({ host = HOST, project = P, iids = {} })), {})
+  eq(#fake:requests(), 0)
+end
+
+T["summaries: HTTP errors are mapped"] = function()
+  local fake = H.fake()
+  fake:add({ request = { operation = "MergeRequestSummaries" }, response = { status = 401, body = { message = "401 Unauthorized" } } })
+  local _, err = H.await(mrs.summaries({ host = HOST, project = P, iids = { 1 } }))
+  eq(err.kind, "auth")
+end
+
 return T

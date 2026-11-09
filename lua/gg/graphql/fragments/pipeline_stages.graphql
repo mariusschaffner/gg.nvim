@@ -1,0 +1,18 @@
+# A pipeline's identity, status and stage statuses only (cheap enough to
+# select for many merge requests at once). Stages request pageInfo so
+# truncation is reported, never silent.
+fragment PipelineStagesFields on Pipeline {
+  id
+  iid
+  status
+  path
+  stages(first: 20) {
+    nodes {
+      name
+      status
+    }
+    pageInfo {
+      hasNextPage
+    }
+  }
+}

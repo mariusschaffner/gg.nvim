@@ -37,6 +37,17 @@ local M = {}
 ---@field additions integer|nil nil when the diff was too large or collapsed
 ---@field deletions integer|nil
 
+---@class gg.DiffStatsSummary
+---@field additions integer
+---@field deletions integer
+---@field changes integer additions + deletions
+---@field file_count integer
+
+---@class gg.DiffFileStat
+---@field path string relative to the repository root
+---@field additions integer
+---@field deletions integer
+
 ---@class gg.MergeRequestVersion
 ---@field id integer
 ---@field head_commit_sha string
@@ -140,6 +151,39 @@ function M.stat(file)
     s.additions, s.deletions = 0, 0
   end
   return s
+end
+
+--- Map a GraphQL DiffStatsSummary (`mergeRequest.diffStatsSummary`).
+---@param node table|nil
+---@return gg.DiffStatsSummary|nil
+function M.summary_from_graphql(node)
+  node = util.value(node)
+  if type(node) ~= "table" then
+    return nil
+  end
+  local add = tonumber(util.value(node.additions)) or 0
+  local del = tonumber(util.value(node.deletions)) or 0
+  return {
+    additions = add,
+    deletions = del,
+    changes = tonumber(util.value(node.changes)) or (add + del),
+    file_count = tonumber(util.value(node.fileCount)) or 0,
+  }
+end
+
+--- Map a GraphQL DiffStats entry (`mergeRequest.diffStats`).
+---@param node table|nil
+---@return gg.DiffFileStat|nil
+function M.file_stat_from_graphql(node)
+  node = util.value(node)
+  if type(node) ~= "table" or type(util.value(node.path)) ~= "string" then
+    return nil
+  end
+  return {
+    path = node.path,
+    additions = tonumber(util.value(node.additions)) or 0,
+    deletions = tonumber(util.value(node.deletions)) or 0,
+  }
 end
 
 --- Map a REST MR diff version (`/merge_requests/:iid/versions`).

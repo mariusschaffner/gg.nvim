@@ -12,7 +12,7 @@ CONTENTS                                                         *gg-contents*
   7. Resources ............................................... |gg-resources|
   8. Testing with the fake backend ........................... |gg-testing|
   9. Security ................................................ |gg-security|
- 10. UI: issues picker ....................................... |gg-ui|
+ 10. UI: issues and merge requests ........................... |gg-ui|
 
 ==============================================================================
 1. INTRODUCTION                                                     *gg-intro*
@@ -306,6 +306,16 @@ gg.merge_requests.get({args})                         *gg.merge_requests.get()*
 
 gg.merge_requests.by_iids({args})                 *gg.merge_requests.by_iids()*
 
+gg.merge_requests.summaries({args})             *gg.merge_requests.summaries()*
+    `{ host, project, iids }`, at most `SUMMARIES_MAX` (20) IIDs. One GraphQL
+    request. Resolves with `gg.MergeRequestSummary[]`: `iid`, `updated_at`,
+    `sha`, `head_pipeline` (`gg.Pipeline` with `id`, `iid`, `status`,
+    `web_url` and `stages` `{ name, status }[]`, or nil) and `diff_stats`
+    (`{ additions, deletions, changes, file_count }`). When GitLab reports
+    an error for one MR's pipeline or diff stats, that summary has
+    `failed = { head_pipeline = true }` (or `diff_stats`); other errors fail
+    the call. Missing IIDs are absent.
+
 gg.merge_requests.related_to_issue({args}, {opts})
                                          *gg.merge_requests.related_to_issue()*
 gg.merge_requests.related_to_issue_all({args}, {opts})
@@ -346,6 +356,12 @@ gg.mr_changes.diffstat({args}, {opts})               *gg.mr_changes.diffstat()*
     Per-file `{ path, old_path, status, additions, deletions }`. It reads
     the diff pages, so `opts.limit` is required. The counts are nil for
     files GitLab marks too large.
+
+gg.mr_changes.stats({args})                             *gg.mr_changes.stats()*
+    `{ host, project, iid }`. Exact line counts computed by GitLab, without
+    downloading diffs: `{ summary, files }`, where `summary` is
+    `{ additions, deletions, changes, file_count }` and `files` is
+    `{ path, additions, deletions }[]`. One GraphQL request.
 
 gg.mr_changes.versions({args}, {opts})               *gg.mr_changes.versions()*
 gg.mr_changes.versions_all({args}, {opts})       *gg.mr_changes.versions_all()*
@@ -610,30 +626,32 @@ unless it has `"repeat": true`.
 - |:checkhealth| `gg` reports where a token comes from, never its value.
 
 ==============================================================================
-10. UI: ISSUES PICKER                                                  *gg-ui*
+10. UI: ISSUES AND MERGE REQUESTS                                      *gg-ui*
 
 `gg.ui` is an optional UI built on the API above (it uses only `require("gg")`).
 It needs the hosts from |gg-setup|; its own options are separate.
 
                                                                      *:Gitlab*
 :Gitlab [project]
-    Open the issues picker over the whole editor. [project] is
+    Open the picker over the whole editor, on the issues view (`<Tab>`
+    switches to merge requests, see |gg-ui-mrs|). [project] is
     `group/project`, `host/group/project` or a remote URL. Without it, the
     `origin` remote of the current directory is used (`git remote get-url
     origin`, run asynchronously; the only place gg runs git). With several
     configured hosts, name the host.
 
 gg.ui.open({opts})                                               *gg.ui.open()*
-    Open the picker from Lua. `{ project?, host?, cwd? }`: `project` as for
-    |:Gitlab|; `host` + `project` open that target directly; `cwd` is where
-    to look for the git remote. Returns the view (`:close()` closes it).
+    Open the picker from Lua. `{ project?, host?, cwd?, view? }`: `project`
+    as for |:Gitlab|; `host` + `project` open that target directly; `cwd` is
+    where to look for the git remote; `view` is "issues" (default) or
+    "merge_requests". Returns the view (`:close()` closes it).
 
 gg.ui.setup({opts})                                             *gg.ui.setup()*
     Returns `true`, or `false, err` (the previous options stay). Defaults:
 >lua
     require("gg.ui").setup({
-      limit = 2000,          -- issues fetched per state (open, closed)
-      page_size = 50,        -- issues per page
+      limit = 2000,          -- items fetched per state, per view
+      page_size = 50,        -- rows per page
       filter_debounce_ms = 50,
       keymaps = {            -- buffer-local; false disables one
         focus_filter = "/", filter_submit = "<CR>", filter_clear = "<Esc><Esc>",
@@ -641,14 +659,18 @@ gg.ui.setup({opts})                                             *gg.ui.setup()*
         next_tab = "L", prev_tab = "H", next_page = "P",
         next_milestone = "]m", prev_milestone = "[m",
         refresh = "R", close = "q",
+        next_view = "<Tab>", prev_view = "<S-Tab>",
+        inspect_mr = { "i", "<CR>" }, -- a key or a list of keys
       },
       order = {},            -- { top?, milestones?, issues? } comparators
       on_inspect_issue = function(issue, ctx) end,         -- default: notify
       on_inspect_milestone = function(milestone, ctx) end, -- default: notify
+      on_inspect_mr = function(mr, ctx) end,               -- default: notify
+      user_colors = {},      -- { ["username"] = "GitlabUser1" } pins a colour
     })
 <
-    The inspect callbacks get a mapped |gg-issues| model or the issue's
-    milestone, and `ctx = { host, project, close }` (`close()` closes the
+    The inspect callbacks get a mapped |gg-issues| model, the issue's
+    milestone or a |gg-merge_requests| model, and `ctx = { host, project, close }` (`close()` closes the
     picker first, e.g. before opening a detail window).
 
 Layout                                                          *gg-ui-layout*
@@ -682,11 +704,37 @@ Filter                                                          *gg-ui-filter*
     The prompt shows `matching / total` (in the active tab) while filtering.
 
 Keys                                                              *gg-ui-keys*
-    Table: `j` `k` `<Down>` `<Up>` `gg` `G` move between issues only,
+    Table: `j` `k` `<Down>` `<Up>` `gg` `G` move between rows only,
     `/` filter, `L` / `H` next / previous tab, `P` next page, `]m` / `[m`
     next / previous milestone, `i` / `I` inspect the issue / its milestone,
-    `R` reload, `q` close. Filter: `<CR>` back to the table, `<Esc><Esc>`
-    clear and go back. Closing either window closes both.
+    `R` reload, `q` close, `<Tab>` / `<S-Tab>` switch between the issues
+    and merge requests views. Filter: `<CR>` back to the table,
+    `<Esc><Esc>` clear and go back. Closing either window closes both.
+
+Merge requests                                                   *gg-ui-mrs*
+    The second view of the picker (`<Tab>`), in the same windows; each view
+    keeps its own tab, filter text, page and selection. One line per merge
+    request: `!iid`, title (`[Draft]` first for drafts), source and target
+    branch, reviewers, assignee (`+N` for more), the head pipeline's stages
+    (`✓` success, `✗` failed, `◐` running, `○` pending, `▸` manual, `⊘`
+    canceled, `–` skipped; more than four: the first three and `…`; `—`
+    without a pipeline) and the diff (`+added −deleted` and an 8-cell bar).
+    Tabs: Open / Merged / Closed / All, recently updated first. Narrow
+    windows hide Target, then Reviewers, then the diff bar, then Source.
+    Usernames have a stable colour (`GitlabUser1`…`8`, see `user_colors`);
+    the signed-in user is bold. `i` or `<CR>` calls `on_inspect_mr`.
+
+    The list loads first (three parallel streams, like the issues). The
+    Pipeline and Diff cells of the visible page fill in afterwards with
+    |gg.merge_requests.summaries()| (10 merge requests per request, at most
+    4 requests at a time) and show `·` until then; the cursor never moves.
+    Results are cached while the picker is open and reused as long as the
+    merge request's `updated_at` is unchanged. `R` also refreshes cells
+    whose pipeline was still active and cells that failed to load.
+
+    Filter tokens: `!12` the IID starts with 12, `@user` an assignee,
+    reviewer or the author (`@none`: unassigned), `~label`, `%milestone`
+    (`%none`), `draft`, other text: the title or the source branch.
 
 Highlights                                                  *gg-ui-highlights*
     All groups are defined with `default = true` and link to standard
@@ -702,6 +750,13 @@ Highlights                                                  *gg-ui-highlights*
     `GitlabStateOpened` `GitlabStateClosed` `GitlabCursorMark`
     `GitlabCursorLine` `GitlabLabelFallback`. Labels use their GitLab
     colour through `GitlabLabel_<hex>` groups.
+    Merge requests: `GitlabDraft` `GitlabBranchSource`
+    `GitlabBranchTarget` `GitlabUser1` … `GitlabUser8`
+    `GitlabCurrentUser` (bold, layered on the user's colour)
+    `GitlabPipelineSuccess` `GitlabPipelineFailed` `GitlabPipelineRunning`
+    `GitlabPipelinePending` `GitlabPipelineManual` `GitlabPipelineCanceled`
+    `GitlabPipelineSkipped` `GitlabDiffAdd` (links `Added`, else `DiffAdd`)
+    `GitlabDiffDelete` (links `Removed`, else `DiffDelete`).
     `GitlabIssueTitle` and `GitlabDue` take only the foreground of
     `Normal`, so the row highlight shows behind them.
     Key hints use `GitlabHintKey` (the `Function` colour, bold) for the

@@ -76,4 +76,21 @@ T["from_rest: work_in_progress fallback and empty lists"] = function()
   eq(mr.from_rest(vim.NIL), nil)
 end
 
+T["summary_from_graphql: pipeline stages, diff stats, failed fields"] = function()
+  local s = mr.summary_from_graphql({
+    iid = "7",
+    updatedAt = "2026-11-01T00:00:00Z",
+    diffHeadSha = "abc",
+    headPipeline = { id = "gid://gitlab/Ci::Pipeline/5", status = "FAILED", stages = { nodes = { { name = "b", status = "failed" } } } },
+    diffStatsSummary = vim.NIL,
+  }, { origin = "https://h" }, { diff_stats = true })
+  eq({ s.iid, s.updated_at, s.sha }, { 7, "2026-11-01T00:00:00Z", "abc" })
+  eq({ s.head_pipeline.id, s.head_pipeline.status, s.head_pipeline.stages[1].status }, { 5, "failed", "failed" })
+  eq(s.diff_stats, nil)
+  eq(s.failed, { diff_stats = true })
+  eq(mr.summary_from_graphql({ iid = "8" }, nil, {}).failed, nil)
+  eq(mr.summary_from_graphql({ title = "no iid" }), nil)
+  eq(mr.summary_from_graphql(vim.NIL), nil)
+end
+
 return T

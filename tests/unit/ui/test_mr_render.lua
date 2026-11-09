@@ -181,7 +181,7 @@ T["cells: diff numbers, compact counts, bar maths"] = function()
       return s[1]
     end, segs))
   end
-  eq(txt(cells.diff({ additions = 120, deletions = 34 }, nil, true)), " +120   −34 ██████" .. "██")
+  eq(txt(cells.diff({ additions = 120, deletions = 34 }, nil, true)), " +120   −34 ━━━━━━" .. "━━")
   eq(txt(cells.diff({ additions = 12345, deletions = 0 }, nil, false)), " +12k    −0")
   eq(txt(cells.diff({ additions = 0, deletions = 0 }, nil, true)), "   +0    −0 ········")
   eq(txt(cells.diff(nil, { loading = true }, true)), "    ·     · ········")
@@ -243,7 +243,7 @@ T["render: head lines, every column lined up, drafts, missing data"] = function(
     eq(col_of(s, "main"), c.target.col)
     eq(col_of(s, "✓"), c.pipeline.col)
     -- the bar starts in the same column on every row
-    eq(col_of(s, "█"), c.diff.col + 12)
+    eq(col_of(s, cells.BAR), c.diff.col + 12)
   end
   local draft = r.lines[6]
   eq(col_of(draft, "[Draft] WinRM"), c.title.col)
@@ -328,7 +328,7 @@ T["render: narrow width keeps the diff numbers, drops the bar"] = function()
   local h = r.lines[3]
   eq(h:find("Target", 1, true), nil)
   eq(h:find("Reviewers", 1, true), nil)
-  eq(r.lines[5]:find("█", 1, true), nil)
+  eq(r.lines[5]:find(cells.BAR, 1, true), nil)
   eq(vim.endswith(r.lines[5], " +120   −34"), true)
 end
 

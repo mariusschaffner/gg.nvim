@@ -719,7 +719,7 @@ Merge requests                                                   *gg-ui-mrs*
     branch, reviewers, assignee (`+N` for more), the head pipeline's stages
     (`✓` success, `✗` failed, `◐` running, `○` pending, `▸` manual, `⊘`
     canceled, `–` skipped; more than four: the first three and `…`; `—`
-    without a pipeline) and the diff (`+added −deleted` and an 8-cell bar).
+    without a pipeline) and the diff (`+added −deleted` and an 8-cell `━` bar).
     Tabs: Open / Merged / Closed / All, recently updated first. Narrow
     windows hide Target, then Reviewers, then the diff bar, then Source.
     Usernames have a stable colour (`GitlabUser1`…`8`, see `user_colors`);

@@ -45,7 +45,7 @@ M.LINKS = {
   { "GitlabPipelineCanceled", "Comment" },
   { "GitlabPipelineSkipped", "NonText" },
   -- the same green and red as the pipeline icons; foreground only, so the
-  -- bar's "█" cells are drawn in that colour (Diff* groups carry a background)
+  -- bar's "━" cells are drawn in that colour (Diff* groups carry a background)
   { "GitlabDiffAdd", "GitlabPipelineSuccess" },
   { "GitlabDiffDelete", "GitlabPipelineFailed" },
   -- one colour per user (a stable hash picks the group), see gg.ui.lib.user_hl

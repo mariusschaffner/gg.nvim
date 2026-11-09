@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Pipelines: classic table</title>
+<script src="./vendor/react.js"></script>
+<script src="./vendor/react-dom.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#7aa2f7}a:hover{color:#9ab8ff}
+</style>
+</helmet>
+<div style="width: 1280px; height: 760px; box-sizing: border-box; background: #1a1b26; color: #c0caf5; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 13px; line-height: 20px; display: flex; flex-direction: column; overflow: hidden">
+
+
+
+<div style="flex: 1; position: relative; min-height: 0; background: #111118">
+<div style="position: absolute; left: 10px; right: 10px; top: 18px; bottom: 10px; display: flex; flex-direction: column; gap: 14px">
+
+<div style="position: relative; height: 46px; box-sizing: border-box; background: #16161e; border: 1px solid {{accent}}; border-radius: 8px; display: flex; align-items: center; padding: 0 16px; gap: 10px; flex-shrink: 0"><span style="position: absolute; top: -11px; left: 14px; background: rgb(22, 22, 30); padding: 0px 6px; color: rgb(122, 162, 247); font-weight: 700">[/] Filter</span><span style="color: rgb(122, 162, 247); font-weight: 700">❯</span><span style="width: 8px; height: 18px; background: rgb(192, 202, 245)"></span><span style="color: rgb(138, 144, 184)">Filter</span><span style="flex: 1 1 0%"></span><span style="color: rgb(138, 144, 184)"><br></span></div>
+
+<div style="position: relative; flex: 1; min-height: 0; box-sizing: border-box; background: #16161e; border: 1px solid #3b4261; border-radius: 8px; padding: 18px 16px 14px; display: flex; flex-direction: column">
+<span style="position: absolute; top: -11px; left: 14px; background: #16161e; padding: 0 6px; color: #c0caf5; font-weight: 700">Table</span>
+
+<div style="display: flex; gap: 6px; align-items: center; height: 24px; flex-shrink: 0"><span style="background: rgb(122, 162, 247); color: rgb(22, 22, 30); font-weight: 700; padding: 0px 10px; border-radius: 3px">All 8</span><span style="padding: 0px 10px; color: rgb(169, 177, 214)">Running 1</span><span style="padding: 0px 10px; color: rgb(169, 177, 214)">Failed 2</span><span style="padding: 0px 10px; color: rgb(169, 177, 214)">Passed 4</span><span style="flex: 1 1 0%"></span><span style="color: rgb(138, 144, 184)"><br></span></div>
+<div style="display: grid; grid-template-columns: 16px 100px 56px 210px 44px minmax(0, 1fr) 76px 90px 64px; height: 26px; align-items: center; color: #8a90b8; border-bottom: 1px solid #3b4261; font-weight: 600; margin-top: 12px; padding: 0 10px; column-gap: 10px">
+<span></span><span>Status</span><span>#</span><span>Ref</span><span>MR</span><span>Commit</span><span>Source</span><span>Stages</span><span style="text-align: right">Started</span>
+</div>
+<div style="display: flex; flex-direction: column; margin-top: 4px">
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="8">
+<div style="display: grid; grid-template-columns: 16px 100px 56px 210px 44px minmax(0, 1fr) 76px 90px 64px; height: 32px; align-items: center; background: {{r.bg}}; padding: 0 10px; column-gap: 10px; border-bottom: 1px solid #1f2335; border-radius: 3px">
+<span style="color: {{r.accent}}; font-weight: 700">{{r.cursor}}</span>
+<span style="color: {{r.statusColor}}"><b>{{r.statusGlyph}}</b> {{r.statusText}}</span>
+<span style="color: #8a90b8">#{{r.id}}</span>
+<span style="color: {{r.refColor}}; overflow: hidden; white-space: nowrap; text-overflow: ellipsis">{{r.ref}}</span>
+<span style="color: #a9b1d6">{{r.mrText}}</span>
+<span style="overflow: hidden; white-space: nowrap; text-overflow: ellipsis"><span style="color: #e0af68">{{r.sha}}</span> {{r.message}}</span>
+<span style="color: {{r.sourceColor}}">{{r.sourceText}}</span>
+<span style="display: flex; gap: 6px; font-weight: 700"><sc-for list="{{r.stages}}" as="st" hint-placeholder-count="4"><span style="color: {{st.c}}">{{st.g}}</span></sc-for></span>
+<span style="color: #8a90b8; text-align: right">{{r.started}}</span>
+</div>
+</sc-for>
+</div>
+
+<span style="position: absolute; bottom: -11px; left: 14px; background: #16161e; padding: 0 6px; color: {{accent}}; display: flex; gap: 6px"><span><b>[i]</b> Pipeline</span></span>
+</div>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#7aa2f7","options":["#7aa2f7","#bb9af7","#9ece6a","#ff9e64"]},"$preview":{"width":1280,"height":760}}'>
+class Component extends DCLogic {
+  base() {
+    const accent = this.props.accent ?? '#7aa2f7';
+    const S = {
+      passed:   { g: '✓', c: '#9ece6a', t: 'passed' },
+      failed:   { g: '✗', c: '#f7768e', t: 'failed' },
+      running:  { g: '◐', c: '#e0af68', t: 'running' },
+      pending:  { g: '○', c: '#8a90b8', t: 'pending' },
+      manual:   { g: '▸', c: '#a9b1d6', t: 'manual' },
+      canceled: { g: '⊘', c: '#8a90b8', t: 'canceled' },
+      skipped:  { g: '–', c: '#545c7e', t: 'skipped' }
+    };
+    // id, status, ref, mr, source, sha, message, user, stages[4], stageSecs[4], duration, started
+    const raw = [
+      [4821,'running','feat/winrm-https','!87','push','a1f3c9e','Add HTTPS listener task','@marro',['passed','running','pending','pending'],[52,140,0,0],'3m 12s','2m ago'],
+      [4819,'failed','feat/oci-edge-lb','!86','push','7c2e0b1','Add backend set health checks','@marro',['passed','failed','skipped','skipped'],[61,184,0,0],'4m 05s','1h ago'],
+      [4817,'manual','feat/rotate-tf-creds','!88','push','3d9aa47','Move state key to CI variable','@marro',['passed','passed','passed','manual'],[58,170,172,0],'6m 40s','2h ago'],
+      [4815,'passed','feat/dns01-wildcard','!85','merge_request','e58b21f','Handle CAA records','@sfrei',['passed','passed','passed','manual'],[49,151,151,0],'5m 51s','3h ago'],
+      [4812,'passed','main',null,'push','9f0c3d2','Merge !82 Pin PowerShell modules','@marro',['passed','passed','passed','passed'],[55,162,168,169],'9m 14s','8h ago'],
+      [4810,'canceled','fix/backup-weekend','!84','push','1b77e40','Shift schedule to 02:30','@lhuber',['passed','canceled','skipped','skipped'],[44,18,0,0],'1m 02s','1d ago'],
+      [4808,'passed','main',null,'schedule','9f0c3d2','nightly drift check','schedule',['passed','passed','passed','skipped'],[50,160,240,0],'7m 30s','1d ago'],
+      [4806,'failed','main',null,'schedule','c4a81de','nightly drift check','schedule',['passed','passed','failed','skipped'],[51,158,212,0],'7m 01s','2d ago']
+    ];
+    const pipes = raw.map(([id, status, ref, mr, source, sha, message, user, stages, secs, duration, started]) => {
+      const cur = id === 4819;
+      const st = status === 'manual' ? { g: '▸', c: '#a9b1d6', t: 'manual' } : S[status];
+      return { id, status, ref, mr, source, sha, message, user, duration, started, accent,
+        statusGlyph: st.g, statusColor: st.c, statusText: status === 'manual' ? 'waiting' : st.t,
+        stages: stages.map((s, i) => ({ g: S[s].g, c: S[s].c, t: S[s].t, name: ['build','test','plan','apply'][i], secs: secs[i] })),
+        mrText: mr || '', sourceText: source === 'merge_request' ? 'MR' : source,
+        sourceColor: source === 'schedule' ? '#e0af68' : '#8a90b8',
+        refColor: ref === 'main' ? '#7dcfff' : '#bb9af7',
+        bg: cur ? '#283457' : 'transparent', cursor: cur ? '▌' : '', isCur: cur
+      };
+    });
+    return { accent, pipes, S };
+  }
+  renderVals() {
+    const { accent, pipes } = this.base();
+    return { accent, rows: pipes };
+  }
+}
+</script>
+</body>
+</html>

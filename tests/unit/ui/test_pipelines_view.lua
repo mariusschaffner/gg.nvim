@@ -85,7 +85,8 @@ T["rows show at once; the MR column and the ref colour fill in without moving th
   local l = lines(v)
   eq(l[1], "  All 8     Running 1     Failed 2     Passed 3  ")
   eq(l[5]:find("◐ running", 1, true) ~= nil, true)
-  eq(l[5]:find("a1f3c9e0 Add HTTPS listener task", 1, true) ~= nil, true)
+  eq(l[5]:find("a1f3c9e0", 1, true) ~= nil, true)
+  eq(l[5]:find("Add HTTPS", 1, true), nil) -- SHA only
   eq(l[5]:find("✓ ◐ ○ ○", 1, true) ~= nil, true)
   eq(l[5]:sub(-#"2m ago"), "2m ago")
   -- still loading: "·" in the MR column of branch pipelines; MR pipelines know theirs
@@ -112,18 +113,18 @@ T["rows show at once; the MR column and the ref colour fill in without moving th
     hls[m[4].hl_group or ""] = true
   end
   eq(hls.GitlabRefDefault, true)
-  -- a thin separator below every row
+  -- no separators between rows
   local virt = vim.api.nvim_buf_get_extmarks(v.shell.table_float.buf, v.list.ns, 0, -1, { details = true })
   eq(#vim.tbl_filter(function(m)
     return m[4].virt_lines ~= nil
-  end, virt), 8)
+  end, virt), 0)
 end
 
 T["P appends the next page and keeps the selection"] = function()
   local v, fake = open(nil, D.all({ now = os.time(), next_cursor = "c1" }))
   ready(v)
-  eq(footer_text(v), " [i] Pipeline • [P] More ")
-  eq(lines(v)[1]:find("(first 8)", 1, true) ~= nil, true)
+  eq(footer_text(v), " [i] Pipeline ") -- no hint for P, the key still works
+  eq(lines(v)[1]:find("(first", 1, true), nil)
   keys("jjj")
   local at = cursor(v)
   eq(v.selected_id, 4815)

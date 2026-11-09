@@ -758,7 +758,7 @@ Pipelines                                                  *gg-ui-pipelines*
     `#id`, the ref (the default branch, other branches and tags in their own
     colours; a merge request pipeline shows its source branch), the merge
     request (`!iid` for merge request pipelines and branches with an open
-    merge request), the short SHA and commit title, the source (`push`,
+    merge request), the short SHA, the source (`push`,
     `MR`, `schedule`, `manual`, `api`, `trigger`, `child`), the stages (the
     same icons as the merge requests view) and when it started (`2m ago`,
     `3h ago`, `2d ago`, a date after a week). Tabs: All / Running (running,
@@ -769,8 +769,8 @@ Pipelines                                                  *gg-ui-pipelines*
     The first 50 pipelines load in one request with everything but the MR
     of branch pipelines; the open merge requests and the default branch
     load next to it and fill in without moving the cursor (`·` until
-    then). `P` loads the next 50 and appends them; the counts and the
-    `(first N)` note cover the loaded pipelines. While the view is shown,
+    then). `P` loads the next 50 and appends them; the tab counts cover
+    the loaded pipelines. While the view is shown,
     the active pipelines among the rows are fetched again every
     `pipeline_refresh_ms` (one request per 20) and only their lines change;
     this stops once none is active. The "Started" times are redrawn every

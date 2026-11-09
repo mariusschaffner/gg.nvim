@@ -128,7 +128,7 @@ T["filter tokens"] = function()
   eq(ids("!87"), { 4821 })
   eq(ids("!85"), { 4815 })
   eq(ids("c4a81"), { 4806 }) -- SHA
-  eq(ids("drift"), { 4808, 4806 }) -- commit title
+  eq(ids("drift"), { 4808, 4806 }) -- commit title (filter only, not shown)
   eq(ids("nightly status:failed"), { 4806 }) -- AND
   eq(#ids("status:"), 8) -- a bare key matches everything
   eq(#ids("#"), 8)
@@ -162,19 +162,19 @@ end
 T["columns: widths and the narrow-window hiding order"] = function()
   local c = columns.layout(170, 6)
   eq({ c.mark.col, c.status.col, c.id.col, c.ref.col, c.mr.col, c.commit.col }, { 0, 2, 15, 23, 52, 60 })
-  eq({ c.commit.width, c.source.width, c.stages.width, c.started.width }, { 77, 10, 9, 8 })
+  eq({ c.commit.width, c.fill.width, c.source.col, c.stages.col, c.started.col }, { 8, 69, 139, 151, 162 })
   eq(c.started.col + c.started.width, 170)
   local function shown(w)
     local l = columns.layout(w, 6)
     return { mr = l.mr ~= nil, source = l.source ~= nil, ref = l.ref and l.ref.width or false, started = l.started ~= nil }
   end
-  eq(shown(113), { mr = true, source = true, ref = 27, started = true })
-  eq(shown(112), { mr = false, source = true, ref = 27, started = true }) -- MR first
-  eq(shown(104), { mr = false, source = false, ref = 27, started = true }) -- then Source
-  eq(shown(92), { mr = false, source = false, ref = 14, started = true }) -- then Ref shrinks
-  eq(shown(79), { mr = false, source = false, ref = false, started = true }) -- then Ref hides
-  eq(shown(63), { mr = false, source = false, ref = false, started = false }) -- then Started
-  eq(columns.layout(40, 6).commit.width, 20) -- never below 20
+  eq(shown(101), { mr = true, source = true, ref = 27, started = true })
+  eq(shown(100), { mr = false, source = true, ref = 27, started = true }) -- MR first
+  eq(shown(92), { mr = false, source = false, ref = 27, started = true }) -- then Source
+  eq(shown(80), { mr = false, source = false, ref = 14, started = true }) -- then Ref shrinks
+  eq(shown(67), { mr = false, source = false, ref = false, started = true }) -- then Ref hides
+  eq(shown(51), { mr = false, source = false, ref = false, started = false }) -- then Started
+  eq(columns.layout(40, 6).commit.width, 8) -- the SHA keeps its width
   eq(columns.id_width({ { id = 3046451100 }, { id = 7 } }), 11)
   eq(columns.id_width({ { id = 7 } }), columns.ID_MIN)
 end
@@ -217,11 +217,12 @@ T["render: tabs, header, rows like the mockup"] = function()
   eq(header:sub(-#"Started"), "Started") -- right-aligned
   eq(text.width(header), 170)
   eq(#r.selectable, 8)
-  eq(#r.virt_lines, 8) -- a thin separator below every row
+  eq(#r.virt_lines, 0) -- no separators between rows
   local first = r.lines[r.selectable[1]]
-  for _, part in ipairs({ "◐ running", "#4821", "feat/winrm-https", "!87", "a1f3c9e0 Add HTTPS listener task", "push", "✓ ◐ ○ ○" }) do
+  for _, part in ipairs({ "◐ running", "#4821", "feat/winrm-https", "!87", "a1f3c9e0", "push", "✓ ◐ ○ ○" }) do
     eq(first:find(part, 1, true) ~= nil, true)
   end
+  eq(first:find("Add HTTPS", 1, true), nil) -- the commit column is the SHA only
   eq(first:sub(-#"2m ago"), "2m ago")
   eq(text.width(first), 170) -- Started ends at the right edge
   eq(r.rows[r.selectable[1]].pipeline.id, 4821)
@@ -240,7 +241,7 @@ end
 T["render: tags, warnings, the MR placeholder and more pages"] = function()
   local list = D.pipelines(D.specs_page2())
   local r = rendered({ pipelines = list, ctx = { default_branch = "main" }, more = true })
-  eq(r.lines[1]:find("(first 2)", 1, true) ~= nil, true)
+  eq(r.lines[1]:find("(first", 1, true), nil) -- no "(first N)" note
   local tag = marks_on(r, r.selectable[1])
   eq(tag["v1.4.0"], "GitlabRefTag")
   eq(r.lines[r.selectable[2]]:find("✓ passed !", 1, true) ~= nil, true)
@@ -259,10 +260,9 @@ end
 -- headless) current window; the renderer only measures short pieces
 local sw = vim.fn.strwidth
 
-T["render: multi-byte refs and titles are cut by display width"] = function()
+T["render: multi-byte refs are cut by display width"] = function()
   local specs = D.specs()
   specs[1].ref = "feat/ünïcödé-ブランチ-with-a-very-long-name"
-  specs[1].title = "日本語のコミットタイトルがとても長い場合の切り詰めテスト ✓ ✗ ◐"
   for _, w in ipairs({ 170, 100, 90, 70 }) do
     local r = rendered({ pipelines = D.pipelines(specs), width = w })
     local l = r.lines[r.selectable[1]]

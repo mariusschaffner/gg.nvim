@@ -1,8 +1,7 @@
 --- Render the pipelines table into lines, highlights and row metadata.
 --- Pure.
 ---
---- One line per pipeline with a thin separator (a virtual line) below each.
---- Static content only: the cursor mark and row highlight are overlays the
+--- One line per pipeline. Static content only: the cursor mark and row highlight are overlays the
 --- picker draws from `rows[*].mark_col`. The MR cell shows "·" while the
 --- open merge requests are still loading.
 local columns = require("gg.ui.pipelines.columns")
@@ -36,7 +35,6 @@ local TABS = {
 ---@field now integer epoch seconds, for the Started column
 ---@field utc_offset? integer local zone, seconds east of UTC
 ---@field error? string
----@field more? boolean more pages exist (the counts cover the loaded ones)
 ---@field loaded? integer pipelines loaded
 ---@field retry_key? string|false
 
@@ -84,18 +82,7 @@ end
 
 local function commit_cell(l, p, width)
   local sha = p.short_sha or (p.sha and p.sha:sub(1, M.SHA)) or ""
-  local segs = {}
-  if sha ~= "" then
-    table.insert(segs, { sha, "GitlabSha" })
-  end
-  local title = text.clean(p.commit_title)
-  if title ~= "" then
-    if #segs > 0 then
-      table.insert(segs, { " ", nil })
-    end
-    table.insert(segs, { title, nil })
-  end
-  l:segments(segs, width)
+  l:cell(sha, width, "GitlabSha")
 end
 
 local function pipeline_line(p, cols, input)
@@ -149,7 +136,6 @@ function M.render(input)
     counts = input.model and input.model.counts or nil,
     indent = M.TABS_INDENT,
     pad = M.TABS_PAD,
-    truncated = input.more and input.loaded or nil,
   }), header_line(cols))
 
   local mdl = input.model
@@ -170,7 +156,6 @@ function M.render(input)
     local l, mark_col = pipeline_line(p, cols, input)
     local lnum = grid.push(out, l, { kind = "pipeline", pipeline = p, mark_col = mark_col })
     table.insert(out.selectable, lnum)
-    grid.separator(out, lnum)
   end
   return out
 end

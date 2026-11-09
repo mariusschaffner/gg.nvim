@@ -259,7 +259,6 @@ function View:_output()
     now = os.time(),
     utc_offset = self.utc_offset,
     error = self.err_msg,
-    more = self.next_cursor ~= nil,
     loaded = #self.pipelines,
     retry_key = picker.first_key(self.keys.refresh) or false,
   })
@@ -366,9 +365,6 @@ function View:_footer()
   local k = picker.first_key
   if k(self.keys.inspect_pipeline) then
     table.insert(hints, { key = k(self.keys.inspect_pipeline), desc = "Pipeline" })
-  end
-  if self.next_cursor and k(self.keys.next_page) then
-    table.insert(hints, { key = k(self.keys.next_page), desc = "More" })
   end
   if #hints == 0 then
     return " "

@@ -33,7 +33,7 @@ local M = {}
 ---@field issues? fun(a: gg.Issue, b: gg.Issue): boolean issues inside a milestone
 
 ---@class gg.ui.Config
----@field limit integer upper bound on the issues fetched for one picker
+---@field limit integer upper bound on the issues fetched per state (open, closed)
 ---@field page_size integer issues per page
 ---@field filter_debounce_ms integer
 ---@field keymaps gg.ui.Keymaps

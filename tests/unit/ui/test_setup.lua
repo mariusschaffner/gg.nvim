@@ -102,7 +102,13 @@ T["highlights: default links, label groups, re-defined on ColorScheme"] = functi
   vim.cmd("highlight clear") -- like a colourscheme switch
   vim.api.nvim_set_hl(0, "Function", { fg = "#0000ff" })
   vim.api.nvim_set_hl(0, "Comment", { fg = "#808080", italic = true })
+  vim.api.nvim_set_hl(0, "Normal", { fg = "#eeeeee", bg = "#111111" })
   highlights.define()
+  -- Normal's foreground without its background, so the row highlight shows through
+  for _, name in ipairs({ "GitlabIssueTitle", "GitlabDue" }) do
+    local hl = vim.api.nvim_get_hl(0, { name = name })
+    eq({ hl.fg, hl.bg }, { 0xeeeeee, nil })
+  end
   local key, desc = vim.api.nvim_get_hl(0, { name = "GitlabHintKey" }), vim.api.nvim_get_hl(0, { name = "GitlabHintText" })
   eq({ key.fg, key.bold, desc.fg, desc.italic }, { 0x0000ff, true, 0x808080, nil })
   eq(highlights.label("#FF9E64"), "GitlabLabel_ff9e64")

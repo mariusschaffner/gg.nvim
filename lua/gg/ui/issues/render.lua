@@ -35,6 +35,8 @@ local TONE_HL = { normal = "GitlabDue", soon = "GitlabDueSoon", overdue = "Gitla
 ---@field error? string message for the error state
 ---@field loaded? integer issues loaded so far (loading state)
 ---@field truncated? integer the fetch limit, when it was hit
+---@field pending? { opened: boolean, closed: boolean } states still loading: their
+---  tab counts get a "…" and an empty result says "Loading issues…"
 ---@field retry_key? string|false key shown as "[R] Retry"
 ---@field label_hl? fun(color: string|nil): string highlight group for a label colour
 
@@ -76,11 +78,29 @@ local function push(out, l, info)
   return #out.lines
 end
 
+--- True while issues of `tab` are still loading.
+---@param pending? { opened: boolean, closed: boolean }
+---@param tab gg.ui.Tab
+---@return boolean
+function M.tab_pending(pending, tab)
+  if not pending then
+    return false
+  end
+  if tab == "all" then
+    return pending.opened == true or pending.closed == true
+  end
+  return pending[tab] == true
+end
+
 local function tabs_line(input)
   local counts = input.model and input.model.counts or nil
   local items = {}
   for _, key in ipairs({ "opened", "closed", "all" }) do
-    table.insert(items, { key = key, label = TAB_LABELS[key], count = counts and counts[key] or nil })
+    local count = counts and counts[key] or nil
+    if count and M.tab_pending(input.pending, key) then
+      count = count .. "…"
+    end
+    table.insert(items, { key = key, label = TAB_LABELS[key], count = count })
   end
   -- indented like the column header, with roomier tabs
   local l = line.new():add(text.rep(" ", M.TABS_INDENT))
@@ -307,7 +327,7 @@ function M.render(input)
   end
   local page = input.page
   if not page or #page.blocks == 0 then
-    message(out, cols, "No issues match", "Comment")
+    message(out, cols, M.tab_pending(input.pending, input.tab) and "Loading issues…" or "No issues match", "Comment")
     return out
   end
   for bi, block in ipairs(page.blocks) do

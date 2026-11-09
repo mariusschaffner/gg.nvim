@@ -95,4 +95,32 @@ function D.response(nodes, opts)
   }
 end
 
+--- One page of `nodes` as a GraphQL issue-list body.
+---@param nodes table[]
+---@param next_cursor? string
+function D.body(nodes, next_cursor)
+  return { data = { project = { issues = { nodes = nodes, pageInfo = { hasNextPage = next_cursor ~= nil, endCursor = next_cursor or vim.NIL } } } } }
+end
+
+--- Fake-backend entries for the picker's two streams: one answering
+--- `state = "opened"`, one `state = "closed"`, each with its part of `nodes`.
+---@param nodes? table[] default D.nodes()
+---@param opts? { repeat?: boolean, delay?: integer }
+function D.responses(nodes, opts)
+  opts = opts or {}
+  nodes = nodes or D.nodes()
+  local out = {}
+  for _, state in ipairs({ "opened", "closed" }) do
+    local part = vim.tbl_filter(function(n)
+      return (n.state == "closed") == (state == "closed")
+    end, nodes)
+    table.insert(out, {
+      ["repeat"] = opts["repeat"],
+      request = { operation = "IssuesListProject", variables = { state = state } },
+      response = { delay = opts.delay, body = D.body(part) },
+    })
+  end
+  return out
+end
+
 return D

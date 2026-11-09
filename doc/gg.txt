@@ -632,7 +632,7 @@ gg.ui.setup({opts})                                             *gg.ui.setup()*
     Returns `true`, or `false, err` (the previous options stay). Defaults:
 >lua
     require("gg.ui").setup({
-      limit = 2000,          -- issues fetched per picker (all states)
+      limit = 2000,          -- issues fetched per state (open, closed)
       page_size = 50,        -- issues per page
       filter_debounce_ms = 50,
       keymaps = {            -- buffer-local; false disables one
@@ -663,8 +663,14 @@ Layout                                                          *gg-ui-layout*
       milestone). Issues inside are sorted by due date, then IID.
     Labels and Assignee columns hide on narrow windows. Pages hold at most
     `page_size` issues; `P` cycles through them and the footer shows
-    `[P] Page 2/5`. The whole project is fetched once (up to `limit`);
-    tabs, filter and pages work without further requests. `R` reloads.
+    `[P] Page 2/5`.
+    Open and closed issues load in two parallel streams of pages (up to
+    `limit` each, recently updated first). The table appears with the first page and grows while
+    the rest arrives: the title reads `Table · loading… N`, and the count
+    of a tab that is still loading ends in `…`. Until you move, the
+    cursor stays on the first row; after that it follows its issue. Once
+    loaded, tabs, filter and pages work without further requests. `R`
+    reloads and keeps the current rows until each stream has finished.
 
 Filter                                                          *gg-ui-filter*
     Space-separated tokens, all must match, case-insensitive:
@@ -696,6 +702,8 @@ Highlights                                                  *gg-ui-highlights*
     `GitlabStateOpened` `GitlabStateClosed` `GitlabCursorMark`
     `GitlabCursorLine` `GitlabLabelFallback`. Labels use their GitLab
     colour through `GitlabLabel_<hex>` groups.
+    `GitlabIssueTitle` and `GitlabDue` take only the foreground of
+    `Normal`, so the row highlight shows behind them.
     Key hints use `GitlabHintKey` (the `Function` colour, bold) for the
     key and `GitlabHintText` (the `Comment` colour, not italic) for the
     description.

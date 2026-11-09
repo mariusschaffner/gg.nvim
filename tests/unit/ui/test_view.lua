@@ -29,15 +29,16 @@ local T = MiniTest.new_set({
 
 local function open(cfg, response, extra)
   local fake = H.fake()
-  fake:add(response or D.response(nil, { ["repeat"] = true }))
+  fake:add(response or D.responses(nil, { ["repeat"] = true }))
   local c = vim.tbl_deep_extend("force", config.get(), cfg or {})
   current = view.open(vim.tbl_extend("force", { host = D.HOST, project = D.PROJECT, today = D.TODAY, config = c }, extra or {}))
   return current, fake
 end
 
+-- loaded completely: both streams done
 local function ready(v)
   H.wait_for(function()
-    return v.status == "ready"
+    return v.status == "ready" and not v.pending.opened and not v.pending.closed
   end)
   return v
 end
@@ -66,9 +67,14 @@ T["opens two floats, loads every state once, renders the table"] = function()
   -- synchronous first frame: loading state
   eq(lines(v)[5], "  Loading issues…")
   ready(v)
-  local rec = fake:last()
-  eq(rec.operation, "IssuesListProject")
-  eq({ rec.variables.fullPath, rec.variables.state, rec.variables.sort, rec.variables.first }, { D.PROJECT, "all", "MILESTONE_DUE_ASC", 100 })
+  -- two streams, one per state, each starting with a small page
+  local seen = {}
+  for _, rec in ipairs(fake:requests()) do
+    eq(rec.operation, "IssuesListProject")
+    eq({ rec.variables.fullPath, rec.variables.sort, rec.variables.first }, { D.PROJECT, "UPDATED_DESC", 20 })
+    seen[rec.variables.state] = true
+  end
+  eq(seen, { opened = true, closed = true })
   eq(lines(v)[1], "    Open 9     Closed 3     All 12  ")
   eq(vim.startswith(lines(v)[7], "▎ %2026.11 Patch cycle"), true)
   -- the cursor starts on the first issue, not on the header
@@ -82,6 +88,7 @@ T["opens two floats, loads every state once, renders the table"] = function()
   eq({ fc.width, fc.height, tc.width, tc.height }, { 168, 1, 168, 40 - 1 - 3 - 2 })
   eq(tc.row, fc.row + 1 + 2) -- right below the filter box, no blank line
   eq(footer_text(v), " [I] Milestone • [i] Issue ")
+  eq(vim.api.nvim_win_get_config(v.table_float.win).title[1][1], " Table ")
   local title = table.concat(vim.tbl_map(function(c)
     return c[1]
   end, fc.title))
@@ -264,31 +271,123 @@ T["error state with retry, then R reloads"] = function()
   eq(vim.startswith(l[5], "  Failed to load issues:"), true)
   eq(l[6], "  [R] Retry")
   eq(cursor(v) >= 1, true)
-  fake:add(D.response())
+  fake:reset():add(D.responses())
   keys("R")
   ready(v)
   eq(v.model.counts.all, 12)
 end
 
-T["refresh keeps the rows and says so in the title; close cancels the request"] = function()
-  local nodes = D.nodes()
+T["refresh keeps the rows until each stream is done; close cancels the requests"] = function()
   local v, fake = open()
   ready(v)
-  fake:reset():add(D.response(nodes, { response = { delay = 300, body = { data = { project = { issues = { nodes = { nodes[1] }, pageInfo = { hasNextPage = false } } } } } } }))
+  local nodes = D.nodes()
+  fake:reset():add({
+    { request = { operation = "IssuesListProject", variables = { state = "opened" } }, response = { body = D.body({ nodes[1] }) } },
+    { request = { operation = "IssuesListProject", variables = { state = "closed" } }, response = { delay = 300, body = D.body({}) } },
+  })
   keys("R")
-  eq(v.status, "loading")
+  eq(v.refreshing, true)
   local title = vim.api.nvim_win_get_config(v.table_float.win).title
   eq(title[1][1], " Table · refreshing… ")
   eq(lines(v)[5]:find("#220", 1, true) ~= nil, true) -- rows kept
-  local task = v.task
+  -- the open stream finishes first: its issues are replaced, closed ones stay
+  H.wait_for(function()
+    return not v.pending.opened
+  end)
+  eq(v.model.counts, { opened = 1, closed = 3, all = 4 })
+  eq(v.refreshing, true)
+  local task = v.tasks.closed
   v:close()
   current = nil
   eq(task:is_cancelled(), true)
   H.flush(50)
 end
 
+T["the first page draws at once; later pages and the other state follow"] = function()
+  local nodes = D.nodes()
+  local open_nodes = vim.tbl_filter(function(n)
+    return n.state == "opened"
+  end, nodes)
+  local first, rest = { open_nodes[1], open_nodes[2] }, vim.list_slice(open_nodes, 3)
+  local fake = H.fake()
+  fake:add({
+    { request = { operation = "IssuesListProject", variables = { state = "opened" } }, response = { body = D.body(first, "c1") } },
+    { request = { operation = "IssuesListProject", variables = { state = "opened", after = "c1" } }, response = { delay = 200, body = D.body(rest) } },
+    { request = { operation = "IssuesListProject", variables = { state = "closed" } }, response = { delay = 400, body = D.body(vim.tbl_filter(function(n)
+      return n.state == "closed"
+    end, nodes)) } },
+  })
+  current = view.open({ host = D.HOST, project = D.PROJECT, today = D.TODAY, config = config.get() })
+  local v = current
+  H.wait_for(function()
+    return v.status == "ready"
+  end)
+  -- page one only: two open issues, both tabs still loading
+  eq(v.pending, { opened = true, closed = true })
+  eq(lines(v)[1], "    Open 2…     Closed 0…     All 2…  ")
+  eq(vim.api.nvim_win_get_config(v.table_float.win).title[1][1], " Table · loading… 2 ")
+  eq(v.selected_iid, 220)
+  -- the Closed tab says it is still loading instead of "No issues match"
+  keys("L")
+  eq(lines(v)[5], "  Loading issues…")
+  keys("H")
+  H.wait_for(function()
+    return not v.pending.opened
+  end)
+  eq(lines(v)[1], "    Open 9     Closed 0…     All 9…  ")
+  -- the selection stays on the first row while untouched
+  eq(cursor(v), 5)
+  ready(v)
+  eq(lines(v)[1], "    Open 9     Closed 3     All 12  ")
+  eq(vim.api.nvim_win_get_config(v.table_float.win).title[1][1], " Table ")
+  -- the second open page asked for a full page after the cursor
+  local after
+  for _, rec in ipairs(fake:requests()) do
+    if rec.variables.after == "c1" then
+      after = rec.variables.first
+    end
+  end
+  eq(after, 100)
+end
+
+T["a moved selection follows its issue while pages arrive"] = function()
+  local nodes = D.nodes()
+  local fake = H.fake()
+  fake:add({
+    { request = { operation = "IssuesListProject", variables = { state = "opened" } }, response = { body = D.body({ nodes[3], nodes[4] }, "c1") } },
+    { request = { operation = "IssuesListProject", variables = { state = "opened", after = "c1" } }, response = { delay = 200, body = D.body({ nodes[1], nodes[2] }) } },
+    { request = { operation = "IssuesListProject", variables = { state = "closed" } }, response = { body = D.body({}) } },
+  })
+  current = view.open({ host = D.HOST, project = D.PROJECT, today = D.TODAY, config = config.get() })
+  local v = current
+  H.wait_for(function()
+    return v.status == "ready"
+  end)
+  keys("j") -- #214 (second issue of %2026.11)
+  eq(v.selected_iid, 214)
+  ready(v)
+  -- two top-level issues arrived above it; the cursor followed #214
+  eq(v.selected_iid, 214)
+  eq(lines(v)[cursor(v)]:find("#214", 1, true) ~= nil, true)
+end
+
+T["a limit stops each stream and marks the result truncated"] = function()
+  local nodes = D.nodes()
+  local fake = H.fake()
+  fake:add({
+    { request = { operation = "IssuesListProject", variables = { state = "opened" } }, response = { body = D.body({ nodes[1], nodes[2], nodes[3] }, "c1") } },
+    { request = { operation = "IssuesListProject", variables = { state = "closed" } }, response = { body = D.body({}) } },
+  })
+  local c = vim.tbl_deep_extend("force", config.get(), { limit = 3 })
+  current = view.open({ host = D.HOST, project = D.PROJECT, today = D.TODAY, config = c })
+  ready(current)
+  eq(current.truncated, true)
+  eq(#fake:requests(), 2) -- no request after the limit
+  eq(lines(current)[1], "    Open 3     Closed 0     All 3    (first 3)")
+end
+
 T["empty result and resize re-render"] = function()
-  local v = ready(open({}, D.response({})))
+  local v = ready(open({}, D.responses({})))
   eq(lines(v)[5], "  No issues match")
   eq(lines(v)[1], "    Open 0     Closed 0     All 0  ")
   vim.o.columns = 90 -- fires VimResized
@@ -297,7 +396,7 @@ T["empty result and resize re-render"] = function()
 end
 
 T["opens from a project argument (single configured host)"] = function()
-  H.fake():add(D.response())
+  H.fake():add(D.responses())
   local c = config.get()
   current = view.open({ arg = D.PROJECT, today = D.TODAY, config = c })
   ready(current)
@@ -325,7 +424,7 @@ T["closing either window closes both"] = function()
 end
 
 T["gg.ui.open with host + project"] = function()
-  H.fake():add(D.response())
+  H.fake():add(D.responses())
   current = require("gg.ui").open({ host = D.HOST, project = D.PROJECT })
   ready(current)
   eq(current.model.counts.all, 12)

@@ -15,13 +15,11 @@ M.LINKS = {
   { "GitlabTabActive", "PmenuSel" },
   { "GitlabColumnHeader", "Title" },
   { "GitlabTableBorder", "NonText" },
-  { "GitlabIssueTitle", "Normal" },
   { "GitlabSeparator", "NonText" },
   { "GitlabMilestoneEdge", "NonText" },
   { "GitlabMilestoneEdgeActive", "Function" },
   { "GitlabMilestoneName", "Special" },
   { "GitlabMilestoneTitle", "Bold" },
-  { "GitlabDue", "Normal" },
   { "GitlabDueSoon", "DiagnosticWarn" },
   { "GitlabDueOverdue", "DiagnosticError" },
   { "GitlabProgressDone", "DiagnosticOk" },
@@ -49,6 +47,10 @@ function M.define()
   for _, pair in ipairs(M.LINKS) do
     vim.api.nvim_set_hl(0, pair[1], { link = pair[2], default = true })
   end
+  -- Normal's text colour only: its background would cover the row highlight
+  local normal_fg = resolved("Normal").fg
+  vim.api.nvim_set_hl(0, "GitlabIssueTitle", { fg = normal_fg, default = true })
+  vim.api.nvim_set_hl(0, "GitlabDue", { fg = normal_fg, default = true })
   -- hints: the key ("[I]") in blue and bold, the description in plain gray
   local key = { fg = resolved("Function").fg, bold = true, default = true }
   vim.api.nvim_set_hl(0, "GitlabHintKey", key)

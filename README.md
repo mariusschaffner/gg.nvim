@@ -108,7 +108,7 @@ issues first, then each milestone with its due date and real progress). `:Gitlab
 
 ```lua
 require("gg.ui").setup({
-  limit = 2000,    -- issues fetched once per picker; tabs, filter and pages work locally
+  limit = 2000,    -- issues fetched per state; tabs, filter and pages work locally
   page_size = 50,  -- P cycles through the pages
   keymaps = { refresh = "R", close = "q" }, -- false disables a key
   on_inspect_issue = function(issue, ctx) ctx.close(); vim.ui.open(issue.web_url) end,

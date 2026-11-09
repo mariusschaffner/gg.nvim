@@ -1,8 +1,11 @@
 --- The issues picker: a filter prompt above a table of one project's issues,
 --- grouped by milestone, with Open/Closed/All tabs and client-side pages.
 ---
---- All issues are fetched once (`gg.issues.list_all`, every state) and then
---- tab, filter and paging work locally without requests. `R` reloads.
+--- Open and closed issues load in two parallel streams of pages
+--- (`gg.issues.list`). The table is drawn as soon as the first page arrives
+--- and grows while the rest loads; tabs still loading show "…" after their
+--- count. Tab, filter and paging then work locally without requests. `R`
+--- reloads and keeps the current rows until each stream has finished.
 local gg = require("gg")
 local config = require("gg.ui.config")
 local date = require("gg.ui.lib.date")
@@ -36,8 +39,12 @@ local M = {}
 ---@field query string
 ---@field page integer
 ---@field pages gg.ui.Page[]
----@field issues gg.Issue[]|nil
+---@field issues gg.Issue[]|nil every loaded issue (both states)
+---@field by_state { opened: gg.Issue[], closed: gg.Issue[] }|nil
+---@field pending { opened: boolean, closed: boolean } streams still loading
+---@field refreshing boolean old rows stay until each stream has finished
 ---@field truncated boolean
+---@field touched boolean the user moved the selection (else it stays on the first row)
 ---@field selected_iid integer|nil
 ---@field rendered gg.ui.Rendered|nil
 ---@field group gg.ui.FloatGroup
@@ -87,6 +94,11 @@ function M.open(opts)
     page = 1,
     pages = { { blocks = {}, count = 0 } },
     truncated = false,
+    truncated_by = {},
+    pending = { opened = false, closed = false },
+    refreshing = false,
+    tasks = {},
+    touched = false,
     loaded = 0,
     gen = 0,
     closed = false,
@@ -189,7 +201,20 @@ function View:_resolve()
   end)
 end
 
---- (Re)load every issue of the project from the API.
+-- Page sizes: a small first page draws the table quickly, then full pages.
+local FIRST_PAGE, PAGE = 20, 100
+local STATES = { "opened", "closed" }
+
+---@private
+function View:_cancel_streams()
+  for state, t in pairs(self.tasks) do
+    t:cancel()
+    self.tasks[state] = nil
+  end
+end
+
+--- (Re)load every issue of the project from the API: open and closed issues
+--- in two parallel streams, up to `limit` each.
 function View:load()
   if self.closed then
     return
@@ -197,45 +222,103 @@ function View:load()
   if not self.host then
     return self:_resolve()
   end
-  if self.task then
-    self.task:cancel()
-  end
+  self:_cancel_streams()
   self.gen = self.gen + 1
   local gen = self.gen
-  self.status, self.err_msg, self.loaded = "loading", nil, 0
+  self.err_msg, self.loaded, self.truncated_by = nil, 0, {}
+  self.refreshing = self.status == "ready" and self.issues ~= nil
+  if not self.refreshing then
+    self.status, self.issues = "loading", nil
+    self.by_state = { opened = {}, closed = {} }
+  end
+  local into = {}
+  for _, state in ipairs(STATES) do
+    self.pending[state] = true
+    -- first load: pages go straight into the shown list; refresh: into a
+    -- new list that replaces the old one when the stream is done
+    into[state] = self.refreshing and {} or self.by_state[state]
+  end
   self:render()
-  local task = gg.issues.list_all({
-    host = self.host,
-    project = self.project,
-    state = "all",
-    order_by = "milestone_due",
-    sort = "asc",
-  }, {
-    limit = self.cfg.limit,
-    per_page = math.min(100, self.cfg.limit),
-    on_page = function(items)
+  for _, state in ipairs(STATES) do
+    self:_stream(state, gen, into[state])
+  end
+end
+
+---@private
+function View:_stream(state, gen, into)
+  local limit = self.cfg.limit
+  local seen = {}
+  local function step(cursor)
+    local per_page = math.min(cursor and PAGE or FIRST_PAGE, limit - #into)
+    local t = gg.issues.list({
+      host = self.host,
+      project = self.project,
+      state = state,
+      -- recently updated first: the first pages are the most relevant ones,
+      -- and a limit cuts the stalest issues (the table sorts on its own)
+      order_by = "updated_at",
+      sort = "desc",
+    }, { per_page = per_page, cursor = cursor })
+    self.tasks[state] = t
+    t:on_done(function(page, err)
       if self.closed or gen ~= self.gen then
         return
       end
-      self.loaded = self.loaded + #items
-      if not self.issues then
-        self:render()
+      if err then
+        return self:_load_failed(err)
       end
-    end,
-  })
-  self.task = task
-  task:on_done(function(res, err)
-    if self.closed or gen ~= self.gen then
-      return
-    end
-    self.task = nil
-    if err then
-      self.status, self.err_msg = "error", err.message or tostring(err)
-    else
-      self.status, self.issues, self.truncated = "ready", res.items, res.truncated == true
-    end
-    self:render()
-  end)
+      local items = page.items or {}
+      local take = math.min(#items, limit - #into)
+      for i = 1, take do
+        into[#into + 1] = items[i]
+      end
+      self.loaded = self.loaded + take
+      local next_cursor = page.next_cursor
+      if next_cursor and seen[next_cursor] then
+        return self:_load_failed({ message = "pagination did not advance (the same cursor came back twice)" })
+      end
+      if next_cursor and #into < limit then
+        seen[next_cursor] = true
+        step(next_cursor)
+      else
+        self.tasks[state] = nil
+        self.pending[state] = false
+        self.truncated_by[state] = take < #items or next_cursor ~= nil
+        if self.refreshing then
+          self.by_state[state] = into
+        end
+      end
+      self:_loaded()
+    end)
+  end
+  step(nil)
+end
+
+-- a page arrived or a stream finished
+---@private
+function View:_loaded()
+  self.truncated = self.truncated_by.opened == true or self.truncated_by.closed == true
+  local was_refreshing = self.refreshing
+  if not self.pending.opened and not self.pending.closed then
+    self.refreshing = false
+  end
+  if was_refreshing and self.refreshing and self.pending.opened and self.pending.closed then
+    return -- refreshing and no stream finished yet: nothing new to show
+  end
+  local all = {}
+  vim.list_extend(all, self.by_state.opened)
+  vim.list_extend(all, self.by_state.closed)
+  self.issues, self.status = all, "ready"
+  self:render()
+end
+
+---@private
+function View:_load_failed(err)
+  self:_cancel_streams()
+  self.pending = { opened = false, closed = false }
+  self.refreshing = false
+  self.status, self.err_msg = "error", err.message or tostring(err)
+  self:render()
 end
 
 --- Redraw the table from the current state; the selection survives.
@@ -243,8 +326,12 @@ function View:render()
   if self.closed or not vim.api.nvim_win_is_valid(self.table_float.win) then
     return
   end
+  if not self.touched then
+    -- nothing chosen yet: stay on the first row while pages arrive
+    self.selected_iid, self.sel_row = nil, nil
+  end
   local mdl
-  if self.issues then
+  if self.issues and self.status ~= "error" then
     mdl = model.build(self.issues, {
       tab = self.tab,
       query = self.query,
@@ -256,13 +343,11 @@ function View:render()
     self.page = math.max(1, math.min(#self.pages, self.page))
   end
   self.model = mdl
-  local status = self.status
-  if status == "loading" and self.issues then
-    status = "ready" -- refreshing: keep the rows, the title says so
-  end
+  local pending = (self.status == "ready" and not self.refreshing) and self.pending or nil
   local r = render.render({
     width = vim.api.nvim_win_get_width(self.table_float.win),
-    status = status,
+    status = self.status,
+    pending = pending,
     tab = self.tab,
     model = mdl,
     page = self.pages[self.page],
@@ -286,13 +371,26 @@ function View:render()
       end
     end
   end
+  self._rendering = true
   self.list:select(target or self.sel_row)
+  self._rendering = false
 
   self.prompt:set_counter(mdl and mdl.filtered and ("%d / %d"):format(mdl.matching, mdl.total) or nil)
   float.set_text(self.table_float.win, {
-    title = (self.status == "loading" and self.issues) and " Table · refreshing… " or " Table ",
+    title = self:_title(),
     footer = self:_footer(),
   })
+end
+
+---@private
+function View:_title()
+  if self.refreshing then
+    return " Table · refreshing… "
+  end
+  if self.status == "ready" and (self.pending.opened or self.pending.closed) then
+    return (" Table · loading… %d "):format(self.loaded)
+  end
+  return " Table "
 end
 
 ---@private
@@ -335,6 +433,9 @@ function View:_on_select(lnum)
   if row and row.issue then
     self.selected_iid = row.issue.iid
     self.sel_row = lnum
+    if not self._rendering then
+      self.touched = true
+    end
   end
   self:_overlay(row and row.issue and lnum or nil)
 end
@@ -405,6 +506,7 @@ function View:next_page()
   end
   self.page = self.page % #self.pages + 1
   self.selected_iid, self.sel_row = nil, nil
+  self.touched = true
   self:render()
 end
 
@@ -537,6 +639,7 @@ function View:_teardown()
     self.task:cancel()
     self.task = nil
   end
+  self:_cancel_streams()
   pcall(vim.api.nvim_del_augroup_by_id, self.augroup)
   if self.prompt then
     self.prompt:destroy()

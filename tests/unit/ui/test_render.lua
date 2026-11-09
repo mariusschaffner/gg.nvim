@@ -205,4 +205,29 @@ T["bar_cells rounds halves up, clamps"] = function()
   eq(render.bar_cells(2685, 6247), 4)
 end
 
+T["no milestones: the Milestone column is left out"] = function()
+  local issues = D.issues()
+  for _, issue in ipairs(issues) do
+    issue.milestone = nil
+  end
+  local r, m = rendered({ issues = issues })
+  eq(m.has_milestones, false)
+  local c = r.columns
+  eq(c.milestone, nil)
+  eq({ c.edge.col, c.mark.col, c.iid.col, c.title.col, c.title.width }, { 0, 2, 4, 10, 85 })
+  eq(r.lines[3]:find("Milestone", 1, true), nil)
+  eq(vim.startswith(r.lines[3], "    Issue"), true)
+  eq(vim.startswith(r.lines[5], "    #220  Flaky backup"), true)
+  for _, lnum in ipairs(r.selectable) do
+    eq(r.rows[lnum].mark_col, 2)
+    eq(r.lines[lnum]:find("—", 1, true), nil)
+  end
+  -- every issue is top level: one rule after the last
+  eq(#r.virt_lines, 1)
+  eq(rendered({ issues = issues, query = "nothing-matches-this" }).lines[5], "  No issues match")
+  -- one issue with a milestone (in any tab) brings the column back
+  issues[1].milestone = D.issues()[3].milestone
+  eq(rendered({ issues = issues, tab = "closed" }).columns.milestone ~= nil, true)
+end
+
 return T

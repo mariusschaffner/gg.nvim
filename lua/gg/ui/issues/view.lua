@@ -68,7 +68,7 @@ function M.attach(shell, opts)
   local self = setmetatable({
     name = "issues",
     filetype = "gg_ui_issues",
-    placeholder = "filter",
+    placeholder = "Filter",
     shell = shell,
     cfg = shell.cfg,
     keys = shell.keys,

@@ -178,13 +178,15 @@ local function separator(out, _, row)
 end
 
 local function render_block(out, cols, block, bi, label_hl, next_block)
-  local cell_text = cols.milestone.width - columns.GAP
+  local cell_text = cols.milestone and (cols.milestone.width - columns.GAP) or 0
   local first
   if block.kind == "top" then
     local issue = block.issues[1]
     local l = line.new()
-    l:pad_to(cols.milestone.col)
-    l:cell(M.EMPTY, cell_text, "GitlabEmpty")
+    if cols.milestone then
+      l:pad_to(cols.milestone.col)
+      l:cell(M.EMPTY, cell_text, "GitlabEmpty")
+    end
     local mark_col = issue_part(l, cols, issue, label_hl)
     first = push(out, l, { kind = "issue", block = bi, issue = issue, mark_col = mark_col })
     table.insert(out.selectable, first)
@@ -225,7 +227,8 @@ end
 ---@param input gg.ui.RenderInput
 ---@return gg.ui.Rendered
 function M.render(input)
-  local cols = columns.layout(input.width)
+  -- no issue has a milestone: no Milestone column
+  local cols = columns.layout(input.width, { milestones = not input.model or input.model.has_milestones ~= false })
   local out = grid.new(cols)
   local label_hl = input.label_hl or function()
     return "GitlabLabelFallback"
@@ -237,7 +240,7 @@ function M.render(input)
   if grid.state(out, {
     status = input.status,
     noun = "issues",
-    col = cols.milestone.col,
+    col = (cols.milestone or cols.mark).col,
     has_model = input.model ~= nil,
     empty = not page or #page.blocks == 0,
     pending = M.tab_pending(input.pending, input.tab),

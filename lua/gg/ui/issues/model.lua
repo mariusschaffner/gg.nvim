@@ -31,6 +31,7 @@ M.TABS = { "opened", "closed", "all" }
 ---@field matching integer issues in the active tab that match the filter
 ---@field total integer issues in the active tab
 ---@field filtered boolean a filter is active
+---@field has_milestones boolean some loaded issue (any tab, any filter) has a milestone
 ---@field blocks gg.ui.Block[]
 
 ---@class gg.ui.ModelOpts
@@ -147,7 +148,9 @@ function M.build(issues, opts)
   local order = opts.order or {}
   local tokens = filter.parse(opts.query)
   local counts = { opened = 0, closed = 0, all = #issues }
+  local has_milestones = false
   for _, issue in ipairs(issues) do
+    has_milestones = has_milestones or issue.milestone ~= nil
     if M.is_closed(issue) then
       counts.closed = counts.closed + 1
     else
@@ -211,6 +214,7 @@ function M.build(issues, opts)
     matching = matching,
     total = total,
     filtered = #tokens > 0,
+    has_milestones = has_milestones,
     blocks = blocks,
   }
 end

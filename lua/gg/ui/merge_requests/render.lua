@@ -1,8 +1,7 @@
 --- Render the merge requests table into lines, highlights and row metadata.
 --- Pure.
 ---
---- One line per merge request, with a thin rule (a virtual line) below each.
---- Static content only: the cursor mark and row highlight are overlays the
+--- One line per merge request. Static content only: the cursor mark and row highlight are overlays the
 --- picker draws from `rows[*].mark_col`. Pipeline and diff cells show "·"
 --- until their summary has loaded.
 local cells = require("gg.ui.merge_requests.cells")
@@ -184,7 +183,6 @@ function M.render(input)
     local l, mark_col = mr_line(mr, cols, input)
     local lnum = grid.push(out, l, { kind = "mr", mr = mr, mark_col = mark_col })
     table.insert(out.selectable, lnum)
-    grid.separator(out, lnum)
   end
   return out
 end

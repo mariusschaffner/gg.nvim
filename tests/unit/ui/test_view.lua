@@ -430,4 +430,15 @@ T["gg.ui.open with host + project"] = function()
   eq(current.model.counts.all, 12)
 end
 
+T["the filter placeholder reads Filter"] = function()
+  local v = ready(open())
+  local texts = {}
+  for _, m in ipairs(vim.api.nvim_buf_get_extmarks(v.filter_float.buf, -1, 0, -1, { details = true })) do
+    if m[4].virt_text_pos == "eol" then
+      table.insert(texts, m[4].virt_text[1][1])
+    end
+  end
+  eq(texts, { "Filter" })
+end
+
 return T

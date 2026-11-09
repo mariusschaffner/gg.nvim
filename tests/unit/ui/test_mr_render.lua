@@ -213,8 +213,8 @@ T["render: head lines, every column lined up, drafts, missing data"] = function(
   eq({ col_of(h, "Reviewers"), col_of(h, "Assignee"), col_of(h, "Pipeline"), col_of(h, "Diff") }, { 95, 114, 129, 140 })
   eq(#r.lines[4], #"─" * 160)
   eq(r.selectable, { 5, 6, 7, 8, 9, 10 })
-  -- a thin rule below every row
-  eq(#r.virt_lines, 6)
+  -- no rules between the rows
+  eq(#r.virt_lines, 0)
   local c = r.columns
   for _, lnum in ipairs(r.selectable) do
     local s = r.lines[lnum]

@@ -683,7 +683,8 @@ Layout                                                          *gg-ui-layout*
       left column shows `%name title`, the due text and the milestone's
       real progress (closed/total, from GitLab, all projects of a group
       milestone). Issues inside are sorted by due date, then IID.
-    Labels and Assignee columns hide on narrow windows. Pages hold at most
+    Labels and Assignee columns hide on narrow windows. When no loaded
+    issue has a milestone, the milestone column is left out. Pages hold at most
     `page_size` issues; `P` cycles through them and the footer shows
     `[P] Page 2/5`.
     Open and closed issues load in two parallel streams of pages (up to

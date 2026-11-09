@@ -204,9 +204,9 @@ T["render: fallback counts replace the summary's; pending fallback shows placeho
   summaries[88].diff = { additions = 7, deletions = 2 }
   summaries[87].diff_loading = true
   local r = rendered({ summaries = summaries })
-  eq(r.lines[5]:find("   +7    −2 ", 1, true) ~= nil, true)
-  eq(r.lines[6]:find("    ·     · ········", 1, true) ~= nil, true)
-  eq(r.lines[6]:find("✓ ◐ ○ ○", 1, true) ~= nil, true) -- the pipeline is still shown
+  eq(r.lines[6]:find("   +7    −2 ", 1, true) ~= nil, true)
+  eq(r.lines[7]:find("    ·     · ········", 1, true) ~= nil, true)
+  eq(r.lines[7]:find("✓ ◐ ○ ○", 1, true) ~= nil, true) -- the pipeline is still shown
 end
 
 T["user colours: stable hash, overrides, current user bold"] = function()
@@ -225,13 +225,13 @@ end
 
 T["render: head lines, every column lined up, drafts, missing data"] = function()
   local r = rendered({ summaries = D.summaries() })
-  eq(r.lines[1], "  Open 6     Merged 2     Closed 1     All 9  ")
-  eq(r.lines[2], "")
-  local h = r.lines[3]
+  eq(r.lines[2], "    Open 6     Merged 2     Closed 1     All 9  ")
+  eq(r.lines[3], "")
+  local h = r.lines[4]
   eq({ col_of(h, "!"), col_of(h, "Title"), col_of(h, "Source"), col_of(h, "Target") }, { 2, 8, 59, 85 })
   eq({ col_of(h, "Reviewers"), col_of(h, "Assignee"), col_of(h, "Pipeline"), col_of(h, "Diff") }, { 95, 114, 129, 140 })
-  eq(#r.lines[4], #"─" * 160)
-  eq(r.selectable, { 5, 6, 7, 8, 9, 10 })
+  eq(#r.lines[5], #"─" * 160)
+  eq(r.selectable, { 6, 7, 8, 9, 10, 11 })
   -- no rules between the rows
   eq(#r.virt_lines, 0)
   local c = r.columns
@@ -246,17 +246,17 @@ T["render: head lines, every column lined up, drafts, missing data"] = function(
     -- the bar starts in the same column on every row
     eq(col_of(s, cells.BAR), c.diff.col + 12)
   end
-  local draft = r.lines[6]
+  local draft = r.lines[7]
   eq(col_of(draft, "[Draft] WinRM"), c.title.col)
-  eq(hl_of(r, 6, "[Draft] "), { "GitlabDraft" })
+  eq(hl_of(r, 7, "[Draft] "), { "GitlabDraft" })
   -- no reviewers: "—"; no assignee: "unassigned"
   eq(col_of(draft, "—"), c.reviewers.col)
-  eq(hl_of(r, 10, "unassigned"), { "GitlabUnassigned" })
-  eq(col_of(r.lines[10], "unassigned"), c.assignee.col)
+  eq(hl_of(r, 11, "unassigned"), { "GitlabUnassigned" })
+  eq(col_of(r.lines[11], "unassigned"), c.assignee.col)
   -- pipeline and diff
-  eq(r.lines[5]:find("✓ ✓ ✓ ▸", 1, true) ~= nil, true)
-  eq(r.lines[5]:find(" +120   −34 ", 1, true) ~= nil, true)
-  eq(hl_of(r, 7, "✗"), { "GitlabPipelineFailed" })
+  eq(r.lines[6]:find("✓ ✓ ✓ ▸", 1, true) ~= nil, true)
+  eq(r.lines[6]:find(" +120   −34 ", 1, true) ~= nil, true)
+  eq(hl_of(r, 8, "✗"), { "GitlabPipelineFailed" })
 end
 
 T["render: cells show placeholders until their summary loads"] = function()
@@ -280,11 +280,11 @@ T["render: cells show placeholders until their summary loads"] = function()
     end
     return table.concat(chars)
   end
-  eq(cell(6, c.pipeline.col, c.pipeline.width), "·        ")
-  eq(cell(6, c.diff.col, c.diff.width), "    ·     · ········")
-  eq(cell(7, c.pipeline.col, 1), "·")
-  eq(cell(8, c.pipeline.col, 7), "✓ ✓ ✓ ▸") -- the pipeline loaded
-  eq(cell(8, c.diff.col, 11), "    ·     ·") -- its diff stats failed
+  eq(cell(7, c.pipeline.col, c.pipeline.width), "·        ")
+  eq(cell(7, c.diff.col, c.diff.width), "    ·     · ········")
+  eq(cell(8, c.pipeline.col, 1), "·")
+  eq(cell(9, c.pipeline.col, 7), "✓ ✓ ✓ ▸") -- the pipeline loaded
+  eq(cell(9, c.diff.col, 11), "    ·     ·") -- its diff stats failed
   -- nothing loaded yet: every row still lines up
   r = rendered({})
   for _, lnum in ipairs(r.selectable) do
@@ -304,20 +304,20 @@ T["render: user colours, current user bold, truncation with wide glyphs"] = func
   local r = rendered({ mrs = mrs, summaries = D.summaries(), me = "user-ma", user_colors = { ["user-sf"] = "GitlabUser1" } })
   local c = r.columns
   -- the same user gets the same colour everywhere; pinned users their pin
-  eq(hl_of(r, 5, "@user-ma"), { user_hl.group("user-ma"), "GitlabCurrentUser" })
-  eq(hl_of(r, 8, "@user-ma"), { user_hl.group("user-ma"), "GitlabCurrentUser" })
-  eq(hl_of(r, 5, "@user-sf"), { "GitlabUser1" })
-  eq(hl_of(r, 8, "@user-sf"), { "GitlabUser1" })
+  eq(hl_of(r, 6, "@user-ma"), { user_hl.group("user-ma"), "GitlabCurrentUser" })
+  eq(hl_of(r, 9, "@user-ma"), { user_hl.group("user-ma"), "GitlabCurrentUser" })
+  eq(hl_of(r, 6, "@user-sf"), { "GitlabUser1" })
+  eq(hl_of(r, 9, "@user-sf"), { "GitlabUser1" })
   -- assignee "+N"
-  eq(r.lines[8]:find("@user-sf +2", 1, true) ~= nil, true)
+  eq(r.lines[9]:find("@user-sf +2", 1, true) ~= nil, true)
   -- wide title and long branch cut with "…", the rest stays aligned
-  local s = r.lines[5]
+  local s = r.lines[6]
   eq(s:find("…", 1, true) ~= nil, true)
   eq(col_of(s, "feat/an-extremely"), c.source.col)
   eq(col_of(s, "main"), c.target.col)
   eq(col_of(s, "✓"), c.pipeline.col)
   -- a wide reviewer name is cut inside its column
-  local row = r.lines[7]
+  local row = r.lines[8]
   eq(col_of(row, "@ユーザー"), c.reviewers.col)
   eq(col_of(row, "@user-ma"), c.assignee.col)
 end
@@ -326,24 +326,24 @@ T["render: narrow width keeps the diff numbers, drops the bar"] = function()
   local r = rendered({ width = 101, summaries = D.summaries() })
   local c = r.columns
   eq({ c.target, c.reviewers, c.diff.width }, { nil, nil, 11 })
-  local h = r.lines[3]
+  local h = r.lines[4]
   eq(h:find("Target", 1, true), nil)
   eq(h:find("Reviewers", 1, true), nil)
-  eq(r.lines[5]:find(cells.BAR, 1, true), nil)
-  eq(vim.endswith(r.lines[5], " +120   −34"), true)
+  eq(r.lines[6]:find(cells.BAR, 1, true), nil)
+  eq(vim.endswith(r.lines[6], " +120   −34"), true)
 end
 
 T["render: states"] = function()
   local loading = render.render({ width = 140, status = "loading", tab = "opened", loaded = 3 })
-  eq(loading.lines[1], "  Open …     Merged …     Closed …     All …  ")
-  eq(loading.lines[5], "  Loading merge requests… (3)")
+  eq(loading.lines[2], "    Open …     Merged …     Closed …     All …  ")
+  eq(loading.lines[6], "  Loading merge requests… (3)")
   local err = render.render({ width = 140, status = "error", tab = "opened", error = "boom", retry_key = "R" })
-  eq({ err.lines[5], err.lines[6] }, { "  Failed to load merge requests: boom", "  [R] Retry" })
+  eq({ err.lines[6], err.lines[7] }, { "  Failed to load merge requests: boom", "  [R] Retry" })
   local empty = rendered({ query = "no-such-thing" })
-  eq(empty.lines[5], "  No merge requests match")
+  eq(empty.lines[6], "  No merge requests match")
   local m = model.build(D.mrs(), { tab = "merged" })
   local pend = render.render({ width = 140, status = "ready", tab = "closed", model = model.build({}, { tab = "closed" }), page = model.pages({}, 5)[1], pending = { opened = false, merged = false, closed = true } })
-  eq(pend.lines[5], "  Loading merge requests…")
+  eq(pend.lines[6], "  Loading merge requests…")
   eq(m.counts.merged, 2)
 end
 

@@ -85,7 +85,7 @@ end
 
 T["opens, loads three states, rows first, cells fill in later"] = function()
   local v, fake = open(nil, D.all({ delay = 300 }))
-  eq(lines(v)[5], "  Loading merge requests…")
+  eq(lines(v)[6], "  Loading merge requests…")
   ready(v)
   local states = {}
   for _, rec in ipairs(fake:requests()) do
@@ -96,12 +96,12 @@ T["opens, loads three states, rows first, cells fill in later"] = function()
   end
   eq(states, { opened = true, merged = true, closed = true })
   local l = lines(v)
-  eq(l[1], "  Open 6     Merged 2     Closed 1     All 9  ")
-  eq(vim.startswith(l[5], "  !88   Rotate Terraform state backend credentials"), true)
+  eq(l[2], "    Open 6     Merged 2     Closed 1     All 9  ")
+  eq(vim.startswith(l[6], "  !88   Rotate Terraform state backend credentials"), true)
   -- rows are there, the cells are still placeholders
-  eq(l[5]:find("✓", 1, true), nil)
-  eq(l[5]:find("·", 1, true) ~= nil, true)
-  eq(cursor(v), 5)
+  eq(l[6]:find("✓", 1, true), nil)
+  eq(l[6]:find("·", 1, true) ~= nil, true)
+  eq(cursor(v), 6)
   eq(v.selected_iid, 88)
   -- chrome
   eq(footer_text(v), " [i] Merge Request ")
@@ -117,9 +117,9 @@ T["opens, loads three states, rows first, cells fill in later"] = function()
   eq(#reqs, 1)
   eq(reqs[1].variables.iids, { "88", "87", "86", "85", "84", "83" })
   l = lines(v)
-  eq(l[5]:find("✓ ✓ ✓ ▸", 1, true) ~= nil, true)
-  eq(l[5]:find("+120   −34", 1, true) ~= nil, true)
-  eq(l[7]:find("✓ ✗ ○ ○", 1, true) ~= nil, true)
+  eq(l[6]:find("✓ ✓ ✓ ▸", 1, true) ~= nil, true)
+  eq(l[6]:find("+120   −34", 1, true) ~= nil, true)
+  eq(l[8]:find("✓ ✗ ○ ○", 1, true) ~= nil, true)
 end
 
 T["filling cells never moves the cursor"] = function()
@@ -133,7 +133,7 @@ T["filling cells never moves the cursor"] = function()
   -- the overlay is still on the selected row
   local marks = vim.api.nvim_buf_get_extmarks(v.table_float.buf, v.shell.ns, 0, -1, { details = true })
   eq(#marks, 2)
-  eq(marks[1][2], 6)
+  eq(marks[1][2], 7)
 end
 
 T["at most four summary requests run at a time"] = function()
@@ -190,7 +190,7 @@ T["a changed updated_at refetches that merge request"] = function()
   end
   table.sort(asked)
   eq(asked, { "84", "87" })
-  eq(vim.startswith(lines(v)[5], "  !84"), true)
+  eq(vim.startswith(lines(v)[6], "  !84"), true)
 end
 
 T["GitLab's 0 / 0 'no stats' falls back to counting the stored diffs"] = function()
@@ -207,9 +207,9 @@ T["GitLab's 0 / 0 'no stats' falls back to counting the stored diffs"] = functio
   end)
   eq(v.cache[85].diff, { additions = 3, deletions = 1 })
   local l = lines(v)
-  eq(l[8]:find("   +3    −1", 1, true) ~= nil, true) -- !85 from the diffs
-  eq(l[8]:find("✓ ✓ ✓ ▸", 1, true) ~= nil, true) -- its pipeline from the summary
-  eq(l[9]:find("+0", 1, true), nil) -- !84: the fallback failed, placeholders
+  eq(l[9]:find("   +3    −1", 1, true) ~= nil, true) -- !85 from the diffs
+  eq(l[9]:find("✓ ✓ ✓ ▸", 1, true) ~= nil, true) -- its pipeline from the summary
+  eq(l[10]:find("+0", 1, true), nil) -- !84: the fallback failed, placeholders
   eq(v.cache[84].diff_error, true)
   -- R retries the failed fallback; a cached one is not fetched again
   fake:add(D.diffs_response(84))
@@ -262,7 +262,7 @@ T["tabs, filter, paging"] = function()
   eq(v.tab, "merged")
   keys("LL")
   eq(v.tab, "all")
-  eq(lines(v)[1]:find("All 9", 1, true) ~= nil, true)
+  eq(lines(v)[2]:find("All 9", 1, true) ~= nil, true)
   keys("L")
   eq(v.tab, "opened")
   v.prompt:set_text("draft")
@@ -283,8 +283,8 @@ T["error state with retry, then R reloads"] = function()
   H.wait_for(function()
     return v.status == "error"
   end)
-  eq(vim.startswith(lines(v)[5], "  Failed to load merge requests:"), true)
-  eq(lines(v)[6], "  [R] Retry")
+  eq(vim.startswith(lines(v)[6], "  Failed to load merge requests:"), true)
+  eq(lines(v)[7], "  [R] Retry")
   fake:reset():add(D.all())
   keys("R")
   ready(v)
@@ -299,7 +299,7 @@ T["a failed summary request leaves placeholders until R"] = function()
   current = mr_view.open({ host = D.HOST, project = D.PROJECT, config = config.get() })
   local v = filled(ready(current))
   eq(v.cache[88].error, true)
-  eq(lines(v)[5]:find("✓", 1, true), nil)
+  eq(lines(v)[6]:find("✓", 1, true), nil)
   -- re-rendering does not retry
   v.prompt:set_text("x")
   v.prompt:set_text("")
@@ -309,7 +309,7 @@ T["a failed summary request leaves placeholders until R"] = function()
   keys("R")
   ready(v)
   filled(v)
-  eq(lines(v)[5]:find("✓", 1, true) ~= nil, true)
+  eq(lines(v)[6]:find("✓", 1, true) ~= nil, true)
 end
 
 T["<Tab> cycles issues <-> merge requests in the same windows, keeping each view's state"] = function()
@@ -336,7 +336,7 @@ T["<Tab> cycles issues <-> merge requests in the same windows, keeping each view
   eq(mrs.table_float.win, win) -- same windows
   ready(mrs)
   eq(issues.prompt:text(), "") -- the MR view's own (empty) filter
-  eq(lines(mrs)[1], "  Open 6     Merged 2     Closed 1     All 9  ")
+  eq(lines(mrs)[2], "    Open 6     Merged 2     Closed 1     All 9  ")
   eq(vim.bo[mrs.table_float.buf].filetype, "gg_ui_merge_requests")
   keys("jj")
   eq(mrs.selected_iid, 86)
@@ -350,7 +350,7 @@ T["<Tab> cycles issues <-> merge requests in the same windows, keeping each view
   eq(issues.query, "rotate")
   eq(issues.prompt:text(), "rotate")
   eq(vim.bo[issues.table_float.buf].filetype, "gg_ui_issues")
-  eq(lines(issues)[1], "    Open 9     Closed 3     All 12  ")
+  eq(lines(issues)[2], "    Open 9     Closed 3     All 12  ")
   eq(vim.fn.maparg("]m", "n", false, true).buffer, 1)
 
   local list_requests = #vim.tbl_filter(function(r)

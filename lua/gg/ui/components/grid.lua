@@ -2,15 +2,19 @@
 --- highlights, separators and row metadata, plus the tabs line, the column
 --- header, the rule and the loading / error / empty messages. Pure.
 ---
---- Every table starts with the same four lines (tabs, blank, column header,
---- rule); the view-specific renderers add their rows with `push`.
+--- Every table starts with the same five lines (blank, tabs, blank, column
+--- header, rule); the view-specific renderers add their rows with `push`.
+--- The tabs line is laid out the same in every table: its first tab starts
+--- TABS_INDENT cells in (where the column header and the rows start).
 local line = require("gg.ui.lib.line")
 local tabs = require("gg.ui.components.tabs")
 local text = require("gg.ui.lib.text")
 
 local M = {}
 
-M.HEADER_LINES = 4 -- tabs, blank, column header, rule
+M.HEADER_LINES = 5 -- blank, tabs, blank, column header, rule
+M.TABS_INDENT = 2
+M.TABS_PAD = 2
 M.RULE = "─"
 
 ---@class gg.ui.Rendered
@@ -85,11 +89,11 @@ end
 ---@field counts? table<string, integer> nil while nothing is loaded ("…")
 ---@field pending? table<string, boolean> loading states: their counts get "…"
 ---@field members? table<string, string[]> see `tab_pending`
----@field indent? integer default 2
----@field pad? integer default 2
+---@field indent? integer default TABS_INDENT
+---@field pad? integer default TABS_PAD
 ---@field truncated? integer the fetch limit, when it was hit
 
---- The tabs line: "  Open 9   Closed 3   All 12" with the active tab highlighted.
+--- The tabs line: "    Open 9     Closed 3     All 12  " with the active tab highlighted.
 ---@param o gg.ui.TabsLineOpts
 ---@return gg.ui.Line
 function M.tabs_line(o)
@@ -101,8 +105,8 @@ function M.tabs_line(o)
     end
     table.insert(items, { key = t.key, label = t.label, count = count })
   end
-  local l = line.new():add(text.rep(" ", o.indent or 2))
-  for _, seg in ipairs(tabs.segments(items, o.active, { pad = o.pad or 2 })) do
+  local l = line.new():add(text.rep(" ", o.indent or M.TABS_INDENT))
+  for _, seg in ipairs(tabs.segments(items, o.active, { pad = o.pad or M.TABS_PAD })) do
     l:add(seg[1], seg[2])
   end
   if o.truncated then
@@ -125,11 +129,12 @@ function M.header_line(labels)
   return l
 end
 
---- Push the four head lines: tabs, blank, header, rule.
+--- Push the five head lines: blank, tabs, blank, header, rule.
 ---@param out gg.ui.Rendered
 ---@param tabs_l gg.ui.Line
 ---@param header_l gg.ui.Line
 function M.head(out, tabs_l, header_l)
+  M.push(out, line.new(), { kind = "blank" })
   M.push(out, tabs_l, { kind = "tabs" })
   M.push(out, line.new(), { kind = "blank" })
   M.push(out, header_l, { kind = "header" })

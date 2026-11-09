@@ -83,29 +83,29 @@ T["rows show at once; the MR column and the ref colour fill in without moving th
   local v = open(nil, D.all({ now = os.time(), mr_delay = 300, project_delay = 300 }))
   ready(v)
   local l = lines(v)
-  eq(l[1], "  All 8     Running 1     Failed 2     Passed 3  ")
-  eq(l[5]:find("◐ running", 1, true) ~= nil, true)
-  eq(l[5]:find("a1f3c9e0", 1, true) ~= nil, true)
-  eq(l[5]:find("Add HTTPS", 1, true), nil) -- SHA only
-  eq(l[5]:find("✓ ◐ ○ ○", 1, true) ~= nil, true)
-  eq(l[5]:sub(-#"2m ago"), "2m ago")
+  eq(l[2], "    All 8     Running 1     Failed 2     Passed 3  ")
+  eq(l[6]:find("◐ running", 1, true) ~= nil, true)
+  eq(l[6]:find("a1f3c9e0", 1, true) ~= nil, true)
+  eq(l[6]:find("Add HTTPS", 1, true), nil) -- SHA only
+  eq(l[6]:find("✓ ◐ ○ ○", 1, true) ~= nil, true)
+  eq(l[6]:sub(-#"2m ago"), "2m ago")
   -- still loading: "·" in the MR column of branch pipelines; MR pipelines know theirs
-  eq(l[5]:find("·", 1, true) ~= nil, true)
+  eq(l[6]:find("·", 1, true) ~= nil, true)
   eq(select(2, line_of(v, 4815)):find("!85", 1, true) ~= nil, true)
   eq(footer_text(v), " [i] Pipeline ")
   keys("jj")
-  eq(cursor(v), 7)
+  eq(cursor(v), 8)
   eq(v.selected_id, 4817)
   local before = #l
   filled(v)
   H.flush(20)
   l = lines(v)
   eq(#l, before)
-  eq(cursor(v), 7) -- the cursor did not move
+  eq(cursor(v), 8) -- the cursor did not move
   eq(v.selected_id, 4817)
-  eq(l[5]:find("!87", 1, true) ~= nil, true)
-  eq(l[7]:find("!88", 1, true) ~= nil, true)
-  eq(l[5]:find("·", 1, true), nil)
+  eq(l[6]:find("!87", 1, true) ~= nil, true)
+  eq(l[8]:find("!88", 1, true) ~= nil, true)
+  eq(l[6]:find("·", 1, true), nil)
   -- main is the default branch now
   local main_row = select(1, line_of(v, 4812)) - 1
   local hls = {}
@@ -124,7 +124,7 @@ T["P appends the next page and keeps the selection"] = function()
   local v, fake = open(nil, D.all({ now = os.time(), next_cursor = "c1" }))
   ready(v)
   eq(footer_text(v), " [i] Pipeline ") -- no hint for P, the key still works
-  eq(lines(v)[1]:find("(first", 1, true), nil)
+  eq(lines(v)[2]:find("(first", 1, true), nil)
   keys("jjj")
   local at = cursor(v)
   eq(v.selected_id, 4815)
@@ -136,7 +136,7 @@ T["P appends the next page and keeps the selection"] = function()
   eq(cursor(v), at)
   eq(v.selected_id, 4815)
   eq(#v.rendered.selectable, 10)
-  eq(lines(v)[1], "  All 10     Running 1     Failed 2     Passed 5  ")
+  eq(lines(v)[2], "    All 10     Running 1     Failed 2     Passed 5  ")
   eq(footer_text(v), " [i] Pipeline ")
   local last = fake:last()
   eq({ last.operation, last.variables.after }, { "PipelinesListProject", "c1" })
@@ -166,7 +166,7 @@ T["active pipelines refresh live, update their line in place, then the timer sto
   eq(v.selected_id, 4817)
   local _, l = line_of(v, 4821)
   eq(l:find("✓ ✓ ✓ ✓", 1, true) ~= nil, true)
-  eq(lines(v)[1], "  All 8     Running 0     Failed 2     Passed 4  ")
+  eq(lines(v)[2], "    All 8     Running 0     Failed 2     Passed 4  ")
   -- nothing shown is active any more
   H.wait_for(function()
     return v.refresh_timer == nil
@@ -196,7 +196,7 @@ T["a pipeline leaving the active tab redraws and keeps the selection"] = functio
     return v.model and v.model.counts.running == 0
   end)
   eq(#v.rendered.selectable, 0)
-  eq(lines(v)[5]:find("No pipelines match", 1, true) ~= nil, true)
+  eq(lines(v)[6]:find("No pipelines match", 1, true) ~= nil, true)
 end
 
 T["the timers stop when the picker closes or the view is switched away"] = function()
@@ -225,14 +225,14 @@ T["the Started column is redrawn by its own clock"] = function()
   pl_view.STARTED_MS = 30
   local v = open(nil, D.all({ now = os.time() - 61 }))
   ready(v)
-  eq(lines(v)[5]:sub(-#"3m ago"), "3m ago")
+  eq(lines(v)[6]:sub(-#"3m ago"), "3m ago")
   -- pretend a minute passed: the next tick rewrites the line
   local real = os.time
   os.time = function(t)
     return t and real(t) or real() + 60
   end
   H.wait_for(function()
-    return lines(v)[5]:sub(-#"4m ago") == "4m ago"
+    return lines(v)[6]:sub(-#"4m ago") == "4m ago"
   end)
   os.time = real
 end
@@ -275,7 +275,7 @@ T["error state, then R reloads"] = function()
   H.wait_for(function()
     return v.status == "error"
   end)
-  eq(lines(v)[5]:find("Failed to load pipelines", 1, true) ~= nil, true)
+  eq(lines(v)[6]:find("Failed to load pipelines", 1, true) ~= nil, true)
   fake:add(D.list_responses({ now = os.time() }))
   keys("R")
   ready(v)

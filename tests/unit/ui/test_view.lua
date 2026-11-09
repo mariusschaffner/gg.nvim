@@ -65,7 +65,7 @@ end
 T["opens two floats, loads every state once, renders the table"] = function()
   local v, fake = open()
   -- synchronous first frame: loading state
-  eq(lines(v)[5], "  Loading issues…")
+  eq(lines(v)[6], "  Loading issues…")
   ready(v)
   -- two streams, one per state, each starting with a small page
   local seen = {}
@@ -75,13 +75,13 @@ T["opens two floats, loads every state once, renders the table"] = function()
     seen[rec.variables.state] = true
   end
   eq(seen, { opened = true, closed = true })
-  eq(lines(v)[1], "    Open 9     Closed 3     All 12  ")
-  eq(vim.startswith(lines(v)[7], "▎ %2026.11 Patch cycle"), true)
+  eq(lines(v)[2], "    Open 9     Closed 3     All 12  ")
+  eq(vim.startswith(lines(v)[8], "▎ %2026.11 Patch cycle"), true)
   -- the cursor starts on the first issue, not on the header
-  eq(cursor(v), 5)
+  eq(cursor(v), 6)
   eq(v.selected_iid, 220)
   -- the cursor rests on the cursor-mark column, not on the milestone edge
-  eq(vim.api.nvim_win_get_cursor(v.table_float.win)[2], v.rendered.rows[5].mark_col)
+  eq(vim.api.nvim_win_get_cursor(v.table_float.win)[2], v.rendered.rows[6].mark_col)
   eq(vim.api.nvim_get_current_win(), v.table_float.win)
   -- windows: full width, filter on top, table below
   local fc, tc = vim.api.nvim_win_get_config(v.filter_float.win), vim.api.nvim_win_get_config(v.table_float.win)
@@ -115,7 +115,7 @@ T["overlay: cursor mark, row highlight, active milestone edge"] = function()
   end
   eq(edges, 4) -- every line of the block
   eq(mark[4].virt_text, { { "▌", "GitlabCursorMark" } })
-  eq(mark[2], 6) -- 0-based row of line 7
+  eq(mark[2], 7) -- 0-based row of line 8
 end
 
 T["the cursor is hidden in the table only and restored on close"] = function()
@@ -131,7 +131,7 @@ T["the cursor is hidden in the table only and restored on close"] = function()
   -- moving sideways snaps back onto the mark column
   keys("jjl")
   vim.api.nvim_exec_autocmds("CursorMoved", { buffer = v.table_float.buf })
-  eq(vim.api.nvim_win_get_cursor(v.table_float.win), { 7, v.rendered.rows[7].mark_col })
+  eq(vim.api.nvim_win_get_cursor(v.table_float.win), { 8, v.rendered.rows[8].mark_col })
   v:close()
   current = nil
   eq(vim.o.guicursor, before)
@@ -141,14 +141,14 @@ T["L / H switch tabs; the counts stay"] = function()
   local v = ready(open())
   keys("L")
   eq(v.tab, "closed")
-  eq(lines(v)[5]:find("#190", 1, true) ~= nil, true)
+  eq(lines(v)[6]:find("#190", 1, true) ~= nil, true)
   keys("L")
   eq(v.tab, "all")
   keys("L")
   eq(v.tab, "opened")
   keys("H")
   eq(v.tab, "all")
-  eq(lines(v)[1], "    Open 9     Closed 3     All 12  ")
+  eq(lines(v)[2], "    Open 9     Closed 3     All 12  ")
 end
 
 T["the selection survives filtering and re-renders"] = function()
@@ -268,8 +268,8 @@ T["error state with retry, then R reloads"] = function()
     return v.status == "error"
   end)
   local l = lines(v)
-  eq(vim.startswith(l[5], "  Failed to load issues:"), true)
-  eq(l[6], "  [R] Retry")
+  eq(vim.startswith(l[6], "  Failed to load issues:"), true)
+  eq(l[7], "  [R] Retry")
   eq(cursor(v) >= 1, true)
   fake:reset():add(D.responses())
   keys("R")
@@ -289,7 +289,7 @@ T["refresh keeps the rows until each stream is done; close cancels the requests"
   eq(v.refreshing, true)
   local title = vim.api.nvim_win_get_config(v.table_float.win).title
   eq(title[1][1], " Table · refreshing… ")
-  eq(lines(v)[5]:find("#220", 1, true) ~= nil, true) -- rows kept
+  eq(lines(v)[6]:find("#220", 1, true) ~= nil, true) -- rows kept
   -- the open stream finishes first: its issues are replaced, closed ones stay
   H.wait_for(function()
     return not v.pending.opened
@@ -324,21 +324,21 @@ T["the first page draws at once; later pages and the other state follow"] = func
   end)
   -- page one only: two open issues, both tabs still loading
   eq(v.pending, { opened = true, closed = true })
-  eq(lines(v)[1], "    Open 2…     Closed 0…     All 2…  ")
+  eq(lines(v)[2], "    Open 2…     Closed 0…     All 2…  ")
   eq(vim.api.nvim_win_get_config(v.table_float.win).title[1][1], " Table · loading… 2 ")
   eq(v.selected_iid, 220)
   -- the Closed tab says it is still loading instead of "No issues match"
   keys("L")
-  eq(lines(v)[5], "  Loading issues…")
+  eq(lines(v)[6], "  Loading issues…")
   keys("H")
   H.wait_for(function()
     return not v.pending.opened
   end)
-  eq(lines(v)[1], "    Open 9     Closed 0…     All 9…  ")
+  eq(lines(v)[2], "    Open 9     Closed 0…     All 9…  ")
   -- the selection stays on the first row while untouched
-  eq(cursor(v), 5)
+  eq(cursor(v), 6)
   ready(v)
-  eq(lines(v)[1], "    Open 9     Closed 3     All 12  ")
+  eq(lines(v)[2], "    Open 9     Closed 3     All 12  ")
   eq(vim.api.nvim_win_get_config(v.table_float.win).title[1][1], " Table ")
   -- the second open page asked for a full page after the cursor
   local after
@@ -383,16 +383,16 @@ T["a limit stops each stream and marks the result truncated"] = function()
   ready(current)
   eq(current.truncated, true)
   eq(#fake:requests(), 2) -- no request after the limit
-  eq(lines(current)[1], "    Open 3     Closed 0     All 3    (first 3)")
+  eq(lines(current)[2], "    Open 3     Closed 0     All 3    (first 3)")
 end
 
 T["empty result and resize re-render"] = function()
   local v = ready(open({}, D.responses({})))
-  eq(lines(v)[5], "  No issues match")
-  eq(lines(v)[1], "    Open 0     Closed 0     All 0  ")
+  eq(lines(v)[6], "  No issues match")
+  eq(lines(v)[2], "    Open 0     Closed 0     All 0  ")
   vim.o.columns = 90 -- fires VimResized
   H.flush(20)
-  eq(#lines(v)[4], #"─" * 88)
+  eq(#lines(v)[5], #"─" * 88)
 end
 
 T["opens from a project argument (single configured host)"] = function()
@@ -409,7 +409,7 @@ T["a bad project argument shows the error state"] = function()
   H.wait_for(function()
     return current.status == "error"
   end)
-  eq(lines(current)[5]:find("several hosts", 1, true) ~= nil, true)
+  eq(lines(current)[6]:find("several hosts", 1, true) ~= nil, true)
 end
 
 T["closing either window closes both"] = function()

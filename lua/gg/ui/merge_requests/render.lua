@@ -14,8 +14,6 @@ local user_hl = require("gg.ui.lib.user_hl")
 
 local M = {}
 
-M.TABS_INDENT = 0
-M.TABS_PAD = 2
 M.DRAFT = "[Draft] "
 M.EMPTY = "—"
 
@@ -152,8 +150,6 @@ function M.render(input)
     active = input.tab,
     counts = input.model and input.model.counts or nil,
     pending = input.pending,
-    indent = M.TABS_INDENT,
-    pad = M.TABS_PAD,
     truncated = input.truncated,
   }), header_line(cols))
 

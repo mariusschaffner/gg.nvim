@@ -209,8 +209,8 @@ end
 
 T["render: tabs, header, rows like the mockup"] = function()
   local r = rendered()
-  eq(r.lines[1], "  All 8     Running 1     Failed 2     Passed 3  ")
-  local header = r.lines[3]
+  eq(r.lines[2], "    All 8     Running 1     Failed 2     Passed 3  ")
+  local header = r.lines[4]
   local c = r.columns
   for name, label in pairs({ status = "Status", id = "#", ref = "Ref", mr = "MR", commit = "Commit", source = "Source", stages = "Stages" }) do
     eq(header:sub(c[name].col + 1, c[name].col + #label), label)
@@ -242,7 +242,7 @@ end
 T["render: tags, warnings, the MR placeholder and more pages"] = function()
   local list = D.pipelines(D.specs_page2())
   local r = rendered({ pipelines = list, ctx = { default_branch = "main" }, more = true })
-  eq(r.lines[1]:find("(first", 1, true), nil) -- no "(first N)" note
+  eq(r.lines[2]:find("(first", 1, true), nil) -- no "(first N)" note
   local tag = marks_on(r, r.selectable[1])
   eq(tag["v1.4.0"], "GitlabRefTag")
   eq(r.lines[r.selectable[2]]:find("✓ passed !", 1, true) ~= nil, true)
@@ -278,12 +278,12 @@ end
 
 T["render: loading, error and empty states"] = function()
   local r = render.render({ width = 120, status = "loading", tab = "all", now = D.NOW })
-  eq(r.lines[5]:find("Loading pipelines…", 1, true) ~= nil, true)
-  eq(r.lines[1]:find("All …", 1, true) ~= nil, true)
+  eq(r.lines[6]:find("Loading pipelines…", 1, true) ~= nil, true)
+  eq(r.lines[2]:find("All …", 1, true) ~= nil, true)
   r = render.render({ width = 120, status = "error", tab = "all", now = D.NOW, error = "boom", retry_key = "R" })
-  eq(r.lines[5]:find("Failed to load pipelines: boom", 1, true) ~= nil, true)
+  eq(r.lines[6]:find("Failed to load pipelines: boom", 1, true) ~= nil, true)
   r = rendered({ query = "nothing-matches-this" })
-  eq(r.lines[5]:find("No pipelines match", 1, true) ~= nil, true)
+  eq(r.lines[6]:find("No pipelines match", 1, true) ~= nil, true)
   eq(#r.selectable, 0)
 end
 

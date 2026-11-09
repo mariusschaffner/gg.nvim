@@ -14,8 +14,6 @@ local text = require("gg.ui.lib.text")
 
 local M = {}
 
-M.TABS_INDENT = 0
-M.TABS_PAD = 2
 M.SHA = 8
 
 local TABS = {
@@ -134,8 +132,6 @@ function M.render(input)
     tabs = TABS,
     active = input.tab,
     counts = input.model and input.model.counts or nil,
-    indent = M.TABS_INDENT,
-    pad = M.TABS_PAD,
   }), header_line(cols))
 
   local mdl = input.model

@@ -11,9 +11,7 @@ local text = require("gg.ui.lib.text")
 
 local M = {}
 
-M.HEADER_LINES = grid.HEADER_LINES -- tabs, blank, column header, rule
-M.TABS_INDENT = 2
-M.TABS_PAD = 2
+M.HEADER_LINES = grid.HEADER_LINES -- blank, tabs, blank, column header, rule
 M.MIN_BLOCK_LINES = 4 -- a milestone block is at least this tall
 M.BAR_CELLS = 10
 
@@ -66,14 +64,11 @@ function M.tab_pending(pending, tab)
 end
 
 local function tabs_line(input)
-  -- indented like the column header, with roomier tabs
   return grid.tabs_line({
     tabs = TABS,
     active = input.tab,
     counts = input.model and input.model.counts or nil,
     pending = input.pending,
-    indent = M.TABS_INDENT,
-    pad = M.TABS_PAD,
     truncated = input.truncated,
   })
 end

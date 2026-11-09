@@ -1,7 +1,7 @@
 --- Display-width text helpers. Pure.
 ---
 --- Everything is measured in display cells (`strdisplaywidth`), never bytes:
---- the UI uses multi-byte glyphs (▰ ▱ ● ✓ … ▎ ▌ ─ ❯) and titles can hold
+--- the UI uses multi-byte glyphs (━ ● ✓ … ▎ ▌ ─ ❯) and titles can hold
 --- wide characters.
 local M = {}
 

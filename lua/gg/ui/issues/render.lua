@@ -20,8 +20,8 @@ M.EDGE = "▎"
 M.CURSOR_MARK = "▌"
 M.EMPTY = "—"
 M.RULE = "─"
-M.DONE = "▰"
-M.TODO = "▱"
+M.DONE = "━"
+M.TODO = "━" -- same glyph; GitlabProgressDone / Todo tell them apart
 
 local TAB_LABELS = { opened = "Open", closed = "Closed", all = "All" }
 local TONE_HL = { normal = "GitlabDue", soon = "GitlabDueSoon", overdue = "GitlabDueOverdue", none = "GitlabEmpty" }
@@ -216,7 +216,7 @@ local function separator(out, cols, row)
   table.insert(out.virt_lines, { row = row - 1, chunks = { { text.rep(M.RULE, cols.width), "GitlabSeparator" } } })
 end
 
-local function render_block(out, cols, block, bi, label_hl)
+local function render_block(out, cols, block, bi, label_hl, next_block)
   local cell_text = cols.milestone.width - columns.GAP
   local first
   if block.kind == "top" then
@@ -228,7 +228,10 @@ local function render_block(out, cols, block, bi, label_hl)
     first = push(out, l, { kind = "issue", block = bi, issue = issue, mark_col = mark_col })
     table.insert(out.selectable, first)
     table.insert(out.blocks, { first = first, last = first, kind = "top", key = block.key })
-    separator(out, cols, first)
+    -- top-level issues sit together; one rule after the last of them
+    if not (next_block and next_block.kind == "top") then
+      separator(out, cols, first)
+    end
     return
   end
   local n = math.max(#block.issues, M.MIN_BLOCK_LINES)
@@ -304,7 +307,7 @@ function M.render(input)
     return out
   end
   for bi, block in ipairs(page.blocks) do
-    render_block(out, cols, block, bi, label_hl)
+    render_block(out, cols, block, bi, label_hl, page.blocks[bi + 1])
   end
   return out
 end

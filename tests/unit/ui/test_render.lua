@@ -69,11 +69,11 @@ T["golden: the mockup at width 160"] = function()
     "  —                             #198  Clean up unused container registry tags                    ~chore                            unassigned         ● Open",
     "▎ %2026.11 Patch cycle          #211  WinRM over HTTPS for newly joined hosts                    ~ansible ~windows                 @user-ma           ● Open",
     "▎ due Nov 20 · in 12d           #214  Rotate Terraform state backend credentials                 ~security ~terraform              @user-ma           ● Open",
-    "▎ ▰▰▰▱▱▱▱▱▱▱ 2/6                #209  Monitoring sensor for pending-reboot state                 ~monitoring                       @user-lh           ● Open",
+    "▎ ━━━━━━━━━━ 2/6                #209  Monitoring sensor for pending-reboot state                 ~monitoring                       @user-lh           ● Open",
     "▎                               #205  Document patch-window rollback procedure                   ~docs                             unassigned         ● Open",
     "▎ %2026.12 Cloud migration      #219  Migrate nginx gateway to OCI load balancer                 ~oci ~network                     @user-ma           ● Open",
     "▎ due Dec 18 · in 40d           #218  Wildcard cert renewal via DNS-01 challenge                 ~oci ~dns                         @user-sf           ● Open",
-    "▎ ▰▰▰▱▱▱▱▱▱▱ 1/4                #216  Terraform module for object storage buckets                ~terraform                        @user-ma           ● Open",
+    "▎ ━━━━━━━━━━ 1/4                #216  Terraform module for object storage buckets                ~terraform                        @user-ma           ● Open",
     "▎",
   })
   eq(r.selectable, { 5, 6, 7, 8, 9, 10, 11, 12, 13 })
@@ -84,11 +84,12 @@ T["golden: the mockup at width 160"] = function()
   end, r.blocks), { { 5, 5, "top" }, { 6, 6, "top" }, { 7, 10, "milestone" }, { 11, 14, "milestone" } })
 end
 
-T["separators are virt_lines after every block"] = function()
+T["separators are virt_lines after every milestone and after the top-level group"] = function()
   local r = rendered()
+  -- none between the two top-level issues (rows 4 and 5, 0-based)
   eq(vim.tbl_map(function(v)
     return v.row
-  end, r.virt_lines), { 4, 5, 9, 13 })
+  end, r.virt_lines), { 5, 9, 13 })
   eq(r.virt_lines[1].chunks, { { string.rep("─", 160), "GitlabSeparator" } })
 end
 
@@ -96,13 +97,13 @@ T["golden: narrow width hides columns and truncates titles"] = function()
   local r = rendered({ width = 70 })
   eq(r.lines[3], "  Milestone                     Issue                       State")
   eq(r.lines[5], "  —                             #220  Flaky backup job on…  ● Open")
-  eq(r.lines[9], "▎ ▰▰▰▱▱▱▱▱▱▱ 2/6                #209  Monitoring sensor f…  ● Open")
+  eq(r.lines[9], "▎ ━━━━━━━━━━ 2/6                #209  Monitoring sensor f…  ● Open")
 end
 
 T["short milestone blocks are padded to 4 lines with non-selectable fillers"] = function()
   local r = rendered({ tab = "closed", width = 120 })
   eq(r.lines[6], "▎ %2026.11 Patch cycle          #201  Patch hypervisors                                    @user-ma           ✓ Closed")
-  eq(r.lines[8], "▎ ▰▰▰▱▱▱▱▱▱▱ 2/6")
+  eq(r.lines[8], "▎ ━━━━━━━━━━ 2/6")
   eq(r.lines[9], "▎")
   eq({ r.rows[8].kind, r.rows[9].kind }, { "filler", "filler" })
   eq(r.selectable, { 5, 6, 7 })
@@ -125,8 +126,8 @@ T["highlights are byte ranges over the right text (multi-byte safe)"] = function
   eq(marks_on(r, 7, "GitlabMilestoneName"), { "%2026.11" })
   eq(marks_on(r, 7, "GitlabMilestoneTitle"), { "Patch cycle" })
   eq(marks_on(r, 8, "GitlabDue"), { "due Nov 20 · in 12d" })
-  eq(marks_on(r, 9, "GitlabProgressDone"), { "▰▰▰" })
-  eq(marks_on(r, 9, "GitlabProgressTodo"), { "▱▱▱▱▱▱▱" })
+  eq(marks_on(r, 9, "GitlabProgressDone"), { "━━━" })
+  eq(marks_on(r, 9, "GitlabProgressTodo"), { "━━━━━━━" })
   eq(marks_on(r, 9, "GitlabProgressText"), { " 2/6" })
   eq(marks_on(r, 9, "GitlabStateOpened"), { "● Open" })
   -- every mark sits on UTF-8 character boundaries

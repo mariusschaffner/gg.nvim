@@ -25,11 +25,13 @@ local M = {}
 ---@field project string|nil full path
 ---@field status string "created", "pending", "running", "success", "failed", "canceled", "skipped", "manual", "scheduled", ...
 ---@field ref string|nil
+---@field tag boolean|nil the ref is a tag; nil when GitLab did not say
+---@field ref_path string|nil "refs/heads/<branch>" or "refs/tags/<tag>" (project lists); for a merge request pipeline the source branch
 ---@field sha string|nil
 ---@field short_sha string|nil
 ---@field source string|nil "push", "merge_request_event", "schedule", ...
 ---@field user gg.User|nil
----@field merge_request { iid: integer, title: string }|nil only from `graph`
+---@field merge_request { iid: integer, title: string|nil }|nil the MR the pipeline ran for (`graph` and project lists; lists have no title)
 ---@field created_at string|nil
 ---@field started_at string|nil
 ---@field finished_at string|nil
@@ -40,6 +42,7 @@ local M = {}
 ---@field total_jobs integer|nil
 ---@field retryable boolean|nil
 ---@field cancelable boolean|nil
+---@field warnings boolean|nil passed with allowed failures
 ---@field stages gg.PipelineStage[]|nil
 ---@field truncated gg.Truncated|nil
 
@@ -88,12 +91,19 @@ function M.from_graphql(node, ctx)
   local stages = stages_from_graphql(util.value(node.graph) or node.stages, ctx, truncated)
   local mr = util.value(node.mergeRequest)
   local commit = util.value(node.commit)
+  local ref_path = util.value(node.refPath)
+  local tag = nil
+  if type(ref_path) == "string" then
+    tag = ref_path:match("^refs/tags/") ~= nil
+  end
   return {
     id = gid.tail(util.value(node.id)),
     iid = tonumber(util.value(node.iid)),
     project = ctx.project,
     status = util.lower(node.status),
     ref = util.value(node.ref),
+    tag = tag,
+    ref_path = ref_path,
     sha = util.value(node.sha),
     short_sha = util.value(node.shortSha),
     source = util.value(node.source),
@@ -109,6 +119,7 @@ function M.from_graphql(node, ctx)
     total_jobs = tonumber(util.value(node.totalJobs)),
     retryable = util.value(node.retryable),
     cancelable = util.value(node.cancelable),
+    warnings = util.value(node.warnings),
     stages = stages,
     truncated = next(truncated) and truncated or nil,
   }
@@ -131,6 +142,7 @@ function M.from_rest(raw, ctx)
     project = ctx.project,
     status = util.value(raw.status),
     ref = util.value(raw.ref),
+    tag = util.value(raw.tag),
     sha = sha,
     short_sha = type(sha) == "string" and sha:sub(1, 8) or nil,
     source = util.value(raw.source),

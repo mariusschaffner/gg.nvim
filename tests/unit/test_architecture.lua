@@ -144,7 +144,9 @@ T["pure UI modules do not touch vim.api"] = function()
     "lua/gg/ui/issues/paginate.lua", "lua/gg/ui/issues/columns.lua", "lua/gg/ui/issues/render.lua",
     "lua/gg/ui/components/tabs.lua", "lua/gg/ui/components/columns.lua", "lua/gg/ui/components/grid.lua",
     "lua/gg/ui/components/queue.lua", "lua/gg/ui/merge_requests/filter.lua", "lua/gg/ui/merge_requests/model.lua",
-    "lua/gg/ui/merge_requests/columns.lua", "lua/gg/ui/merge_requests/cells.lua", "lua/gg/ui/merge_requests/render.lua" }
+    "lua/gg/ui/merge_requests/columns.lua", "lua/gg/ui/merge_requests/cells.lua", "lua/gg/ui/merge_requests/render.lua",
+    "lua/gg/ui/pipelines/filter.lua", "lua/gg/ui/pipelines/model.lua", "lua/gg/ui/pipelines/columns.lua",
+    "lua/gg/ui/pipelines/render.lua" }
   local bad = {}
   for _, file in ipairs(sources()) do
     for _, prefix in ipairs(pure) do

@@ -48,6 +48,12 @@ M.LINKS = {
   -- bar's "━" cells are drawn in that colour (Diff* groups carry a background)
   { "GitlabDiffAdd", "GitlabPipelineSuccess" },
   { "GitlabDiffDelete", "GitlabPipelineFailed" },
+  -- pipelines
+  { "GitlabRefDefault", "Special" },
+  { "GitlabRefTag", "Constant" },
+  { "GitlabSha", "DiagnosticWarn" },
+  { "GitlabPipelineSource", "Comment" },
+  { "GitlabPipelineSourceSchedule", "DiagnosticWarn" },
   -- one colour per user (a stable hash picks the group), see gg.ui.lib.user_hl
   { "GitlabUser1", "Function" },
   { "GitlabUser2", "Special" },

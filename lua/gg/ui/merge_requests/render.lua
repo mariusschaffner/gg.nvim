@@ -8,6 +8,7 @@ local cells = require("gg.ui.merge_requests.cells")
 local columns = require("gg.ui.merge_requests.columns")
 local grid = require("gg.ui.components.grid")
 local line = require("gg.ui.lib.line")
+local pipeline_status = require("gg.ui.lib.pipeline_status")
 local text = require("gg.ui.lib.text")
 local user_hl = require("gg.ui.lib.user_hl")
 
@@ -102,18 +103,6 @@ local function assignee_cell(l, users, width, input)
   l:items(items, width)
 end
 
-local function segments(l, segs, width)
-  local start = l.cells
-  for _, s in ipairs(segs) do
-    local room = start + width - l.cells
-    if room <= 0 then
-      break
-    end
-    l:add(text.width(s[1]) > room and text.truncate(s[1], room) or s[1], s[2])
-  end
-  l:pad_to(start + width)
-end
-
 local function mr_line(mr, cols, input)
   local l = line.new()
   l:pad_to(cols.mark.col)
@@ -140,12 +129,12 @@ local function mr_line(mr, cols, input)
   local summary = entry and entry.summary
   local failed = summary and summary.failed or {}
   l:pad_to(cols.pipeline.col)
-  segments(l, cells.pipeline(summary and summary.head_pipeline, {
+  l:segments(pipeline_status.stages(summary and summary.head_pipeline, {
     loading = entry == nil,
     failed = (entry and entry.error) or failed.head_pipeline,
   }), cols.pipeline.width)
   l:pad_to(cols.diff.col)
-  segments(l, cells.diff(entry and entry.diff or (summary and summary.diff_stats), {
+  l:segments(cells.diff(entry and entry.diff or (summary and summary.diff_stats), {
     loading = entry == nil or entry.diff_loading,
     failed = (entry and (entry.error or entry.diff_error)) or failed.diff_stats or (entry ~= nil and summary == nil),
   }, cols.diff.width >= columns.DIFF), cols.diff.width)

@@ -1,4 +1,6 @@
 #import "pipeline"
+# `refPath` (refs/heads/... or refs/tags/...) gives the tag flag; see
+# pipelines_list_project_base for GitLab versions without it or `mergeRequest`.
 query PipelinesListProject(
   $fullPath: ID!
   $first: Int
@@ -9,6 +11,7 @@ query PipelinesListProject(
   $sha: String
   $source: String
   $username: String
+  $ids: [ID!]
 ) {
   project(fullPath: $fullPath) {
     pipelines(
@@ -20,9 +23,14 @@ query PipelinesListProject(
       sha: $sha
       source: $source
       username: $username
+      ids: $ids
     ) {
       nodes {
         ...PipelineFields
+        refPath
+        mergeRequest {
+          iid
+        }
       }
       pageInfo {
         hasNextPage

@@ -17,6 +17,7 @@ fragment PipelineFields on Pipeline {
   totalJobs
   retryable
   cancelable
+  warnings
   user {
     ...UserFields
   }

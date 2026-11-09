@@ -40,6 +40,58 @@ T["list_all (project): two pages, truncated"] = function()
   eq(#fake:requests(), 2)
 end
 
+T["list (project): tag flag, warnings and merge request"] = function()
+  H.fake({ "graphql/pipelines/list_project_fields.json" })
+  local page = H.await(pipelines.list({ host = HOST, project = P }, { per_page = 2 }))
+  local mr, branch = page.items[1], page.items[2]
+  eq({ mr.ref, mr.tag, mr.source, mr.merge_request, mr.warnings }, { "refs/merge-requests/4348/merge", false, "merge_request_event", { iid = 4348 }, false })
+  eq(mr.ref_path, "refs/heads/bl-1781-rumdl-md055-md056")
+  eq({ branch.tag, branch.merge_request }, { false, nil })
+  eq(page.next_cursor ~= nil, true)
+  local tags = H.await(pipelines.list({ host = HOST, project = P, scope = "tags" }))
+  eq({ tags.items[1].ref, tags.items[1].tag }, { "v1.128.0", true })
+end
+
+T["list (project): ids select pipelines by global ID"] = function()
+  local fake = H.fake()
+  fake:add(fake_backend.read(H.path("tests/fixtures/graphql/pipelines/list_project_fields.json"))[3])
+  local page = H.await(pipelines.list({ host = HOST, project = P, ids = { 3046451100, 3046428384 } }))
+  eq(vim.tbl_map(function(p)
+    return p.status
+  end, page.items), { "running", "success" })
+  eq(fake:last().variables.ids, { "gid://gitlab/Ci::Pipeline/3046451100", "gid://gitlab/Ci::Pipeline/3046428384" })
+  local many = {}
+  for i = 1, pipelines.MAX_IDS + 1 do
+    many[i] = i
+  end
+  eq(select(2, H.await(pipelines.list({ host = HOST, project = P, ids = many }))).kind, "validation")
+  eq(select(2, H.await(pipelines.list({ host = HOST, project = P, ids = {} }))).kind, "validation")
+  eq(select(2, H.await(pipelines.list({ host = HOST, project = P, ids = { "x" } }))).kind, "validation")
+  eq(select(2, H.await(pipelines.list({ host = HOST, project = P, mr_iid = 1, ids = { 1 } }))).kind, "validation")
+end
+
+T["list (project): drops refPath and mergeRequest on a schema error, per call"] = function()
+  local fake = H.fake()
+  local fx = fake_backend.read(H.path("tests/fixtures/graphql/pipelines/list_project.json"))[1]
+  fake:add({
+    meta = { source = "test" },
+    request = { operation = "PipelinesListProject" },
+    response = { body = { errors = { { message = "Field 'refPath' doesn't exist on type 'Pipeline'" } } } },
+    ["repeat"] = true,
+  })
+  fx.request.operation = "PipelinesListProjectBase"
+  fx["repeat"] = true
+  fake:add(fx)
+  local page = H.await(pipelines.list({ host = HOST, project = P, ref = "main" }, { per_page = 2 }))
+  eq(#page.items, 2)
+  eq({ page.items[1].tag, page.items[1].merge_request }, { nil, nil })
+  eq(vim.tbl_map(function(r)
+    return r.operation
+  end, fake:requests()), { "PipelinesListProject", "PipelinesListProjectBase" })
+  H.await(pipelines.list({ host = HOST, project = P, ref = "main" }, { per_page = 2 }))
+  eq(fake:requests()[3].operation, "PipelinesListProject")
+end
+
 T["list (merge request)"] = function()
   local fake = H.fake({ "graphql/pipelines/list_mr.json" })
   local page = H.await(pipelines.list({ host = HOST, project = P, mr_iid = 4338 }, { per_page = 2 }))

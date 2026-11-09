@@ -1,0 +1,339 @@
+[
+  {
+    "meta": {
+      "sanitized": true,
+      "source": "gitlab.com public (gitlab-org/cli), 2026-11-09"
+    },
+    "request": {
+      "operation": "PipelinesListProject",
+      "variables": {
+        "first": 2,
+        "fullPath": "gitlab-org/cli"
+      }
+    },
+    "response": {
+      "body": {
+        "data": {
+          "project": {
+            "pipelines": {
+              "nodes": [
+                {
+                  "cancelable": true,
+                  "commit": {
+                    "title": "Merge branch 'bl-1781-rumdl-md055-md056' into 'main'"
+                  },
+                  "createdAt": "2026-11-09T18:20:55Z",
+                  "duration": null,
+                  "finishedAt": null,
+                  "id": "gid://gitlab/Ci::Pipeline/3046451100",
+                  "iid": "17118",
+                  "mergeRequest": {
+                    "iid": "4348"
+                  },
+                  "path": "/gitlab-org/cli/-/pipelines/3046451100",
+                  "queuedDuration": 1.0,
+                  "ref": "refs/merge-requests/4348/merge",
+                  "refPath": "refs/heads/bl-1781-rumdl-md055-md056",
+                  "retryable": false,
+                  "sha": "c33ed6c57154a293bc691e0d772cdb7ad09159e7",
+                  "shortSha": "c33ed6c5",
+                  "source": "merge_request_event",
+                  "stages": {
+                    "nodes": [
+                      {
+                        "name": "application-security-testing",
+                        "status": "running"
+                      },
+                      {
+                        "name": "checks",
+                        "status": "success"
+                      },
+                      {
+                        "name": "documentation",
+                        "status": "running"
+                      }
+                    ],
+                    "pageInfo": {
+                      "hasNextPage": false
+                    }
+                  },
+                  "startedAt": "2026-11-09T18:20:56Z",
+                  "status": "RUNNING",
+                  "totalJobs": 10,
+                  "user": {
+                    "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                    "id": "gid://gitlab/User/15455058",
+                    "name": "Test User 1",
+                    "state": "active",
+                    "username": "user-1",
+                    "webUrl": "https://gitlab.example.com/user-1"
+                  },
+                  "warnings": false
+                },
+                {
+                  "cancelable": false,
+                  "commit": {
+                    "title": "chore(duo): install ruby in Duo agent sessions"
+                  },
+                  "createdAt": "2026-11-09T18:13:53Z",
+                  "duration": 79,
+                  "finishedAt": "2026-11-09T18:15:15Z",
+                  "id": "gid://gitlab/Ci::Pipeline/3046428384",
+                  "iid": "17117",
+                  "mergeRequest": null,
+                  "path": "/gitlab-org/cli/-/pipelines/3046428384",
+                  "queuedDuration": null,
+                  "ref": "refs/workloads/b535482d487",
+                  "refPath": "refs/workloads/b535482d487",
+                  "retryable": false,
+                  "sha": "d4d78e3a1db57afd1df06858f57698ee4160018d",
+                  "shortSha": "d4d78e3a",
+                  "source": "duo_workflow",
+                  "stages": {
+                    "nodes": [
+                      {
+                        "name": "build",
+                        "status": "success"
+                      }
+                    ],
+                    "pageInfo": {
+                      "hasNextPage": false
+                    }
+                  },
+                  "startedAt": "2026-11-09T18:13:54Z",
+                  "status": "SUCCESS",
+                  "totalJobs": 1,
+                  "user": {
+                    "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                    "id": "gid://gitlab/User/39353959",
+                    "name": "Test User 2",
+                    "state": "active",
+                    "username": "user-2",
+                    "webUrl": "https://gitlab.example.com/user-2"
+                  },
+                  "warnings": false
+                }
+              ],
+              "pageInfo": {
+                "endCursor": "eyJpZCI6IjMwNDYxNTY2MDkifQ",
+                "hasNextPage": true
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "meta": {
+      "sanitized": true,
+      "source": "gitlab.com public (gitlab-org/cli), 2026-11-09"
+    },
+    "request": {
+      "operation": "PipelinesListProject",
+      "variables": {
+        "fullPath": "gitlab-org/cli",
+        "scope": "TAGS"
+      }
+    },
+    "response": {
+      "body": {
+        "data": {
+          "project": {
+            "pipelines": {
+              "nodes": [
+                {
+                  "cancelable": false,
+                  "commit": {
+                    "title": "Merge branch 'df-upstream-failure-warning' into 'main'"
+                  },
+                  "createdAt": "2026-11-03T12:07:39Z",
+                  "duration": 1286,
+                  "finishedAt": "2026-11-03T12:29:12Z",
+                  "id": "gid://gitlab/Ci::Pipeline/3022211464",
+                  "iid": "16641",
+                  "mergeRequest": null,
+                  "path": "/gitlab-org/cli/-/pipelines/3022211464",
+                  "queuedDuration": 1.0,
+                  "ref": "v1.128.0",
+                  "refPath": "refs/tags/v1.128.0",
+                  "retryable": false,
+                  "sha": "519ea19f7d3e9c701a4063f277ae27254bbafdad",
+                  "shortSha": "519ea19f",
+                  "source": "push",
+                  "stages": {
+                    "nodes": [
+                      {
+                        "name": "checks",
+                        "status": "success"
+                      },
+                      {
+                        "name": "test",
+                        "status": "success"
+                      },
+                      {
+                        "name": "build",
+                        "status": "success"
+                      },
+                      {
+                        "name": "release",
+                        "status": "success"
+                      }
+                    ],
+                    "pageInfo": {
+                      "hasNextPage": false
+                    }
+                  },
+                  "startedAt": "2026-11-03T12:07:41Z",
+                  "status": "SUCCESS",
+                  "totalJobs": 23,
+                  "user": {
+                    "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                    "id": "gid://gitlab/User/40269453",
+                    "name": "Test User 3",
+                    "state": "active",
+                    "username": "user-3",
+                    "webUrl": "https://gitlab.example.com/user-3"
+                  },
+                  "warnings": false
+                }
+              ],
+              "pageInfo": {
+                "endCursor": null,
+                "hasNextPage": false
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "meta": {
+      "sanitized": true,
+      "source": "gitlab.com public (gitlab-org/cli), 2026-11-09"
+    },
+    "request": {
+      "operation": "PipelinesListProject",
+      "variables": {
+        "fullPath": "gitlab-org/cli",
+        "ids": [
+          "gid://gitlab/Ci::Pipeline/3046451100",
+          "gid://gitlab/Ci::Pipeline/3046428384"
+        ]
+      }
+    },
+    "response": {
+      "body": {
+        "data": {
+          "project": {
+            "pipelines": {
+              "nodes": [
+                {
+                  "cancelable": true,
+                  "commit": {
+                    "title": "Merge branch 'bl-1781-rumdl-md055-md056' into 'main'"
+                  },
+                  "createdAt": "2026-11-09T18:20:55Z",
+                  "duration": null,
+                  "finishedAt": null,
+                  "id": "gid://gitlab/Ci::Pipeline/3046451100",
+                  "iid": "17118",
+                  "mergeRequest": {
+                    "iid": "4348"
+                  },
+                  "path": "/gitlab-org/cli/-/pipelines/3046451100",
+                  "queuedDuration": 1.0,
+                  "ref": "refs/merge-requests/4348/merge",
+                  "refPath": "refs/heads/bl-1781-rumdl-md055-md056",
+                  "retryable": false,
+                  "sha": "c33ed6c57154a293bc691e0d772cdb7ad09159e7",
+                  "shortSha": "c33ed6c5",
+                  "source": "merge_request_event",
+                  "stages": {
+                    "nodes": [
+                      {
+                        "name": "application-security-testing",
+                        "status": "running"
+                      },
+                      {
+                        "name": "checks",
+                        "status": "success"
+                      },
+                      {
+                        "name": "documentation",
+                        "status": "running"
+                      }
+                    ],
+                    "pageInfo": {
+                      "hasNextPage": false
+                    }
+                  },
+                  "startedAt": "2026-11-09T18:20:56Z",
+                  "status": "RUNNING",
+                  "totalJobs": 10,
+                  "user": {
+                    "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                    "id": "gid://gitlab/User/15455058",
+                    "name": "Test User 1",
+                    "state": "active",
+                    "username": "user-1",
+                    "webUrl": "https://gitlab.example.com/user-1"
+                  },
+                  "warnings": false
+                },
+                {
+                  "cancelable": false,
+                  "commit": {
+                    "title": "chore(duo): install ruby in Duo agent sessions"
+                  },
+                  "createdAt": "2026-11-09T18:13:53Z",
+                  "duration": 79,
+                  "finishedAt": "2026-11-09T18:15:15Z",
+                  "id": "gid://gitlab/Ci::Pipeline/3046428384",
+                  "iid": "17117",
+                  "mergeRequest": null,
+                  "path": "/gitlab-org/cli/-/pipelines/3046428384",
+                  "queuedDuration": null,
+                  "ref": "refs/workloads/b535482d487",
+                  "refPath": "refs/workloads/b535482d487",
+                  "retryable": false,
+                  "sha": "d4d78e3a1db57afd1df06858f57698ee4160018d",
+                  "shortSha": "d4d78e3a",
+                  "source": "duo_workflow",
+                  "stages": {
+                    "nodes": [
+                      {
+                        "name": "build",
+                        "status": "success"
+                      }
+                    ],
+                    "pageInfo": {
+                      "hasNextPage": false
+                    }
+                  },
+                  "startedAt": "2026-11-09T18:13:54Z",
+                  "status": "SUCCESS",
+                  "totalJobs": 1,
+                  "user": {
+                    "avatarUrl": "https://gitlab.example.com/uploads/avatar.png",
+                    "id": "gid://gitlab/User/39353959",
+                    "name": "Test User 2",
+                    "state": "active",
+                    "username": "user-2",
+                    "webUrl": "https://gitlab.example.com/user-2"
+                  },
+                  "warnings": false
+                }
+              ],
+              "pageInfo": {
+                "endCursor": null,
+                "hasNextPage": false
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+]

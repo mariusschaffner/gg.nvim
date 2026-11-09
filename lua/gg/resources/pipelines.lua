@@ -3,6 +3,9 @@
 --- Backends:
 ---   * list (project or merge request), get, graph: GraphQL. `get` and
 ---     `graph` look the pipeline up by its ID, so no REST lookup comes first.
+---   * Project lists ask for `refPath` (the tag flag) and the pipeline's
+---     merge request; on a GitLab version without those fields (a schema
+---     error) they retry without them (`tag` and `merge_request` stay nil).
 ---   * `graph` asks for the pipeline's merge request; on a GitLab version
 ---     without that field (a schema error) it retries without it. This is
 ---     decided per call; nothing is remembered.
@@ -17,6 +20,7 @@ local task = require("gg.core.task")
 local M = {}
 
 M.DEFAULT_PER_PAGE = 50
+M.MAX_IDS = 20 -- GitLab's limit for `pipelines(ids:)`
 
 local STATUSES = {
   "created",
@@ -44,6 +48,7 @@ local STATUSES = {
 ---@field sha? string project lists only
 ---@field source? string project lists only ("push", "schedule", ...)
 ---@field username? string project lists only
+---@field ids? integer[] project lists only: just these pipelines (1 to 20 IDs)
 
 local LIST_SPEC = {
   host = "host",
@@ -55,14 +60,18 @@ local LIST_SPEC = {
   sha = "string?",
   source = "string?",
   username = "string?",
+  ids = "ids?",
 }
 
-local PROJECT_ONLY = { "scope", "ref", "sha", "source", "username" }
+local PROJECT_ONLY = { "scope", "ref", "sha", "source", "username", "ids" }
 
 local function fetch_page(args, o)
   local err = common.check(args, LIST_SPEC)
   if err then
     return task.failed(err)
+  end
+  if args.ids and (#args.ids == 0 or #args.ids > M.MAX_IDS) then
+    return task.failed(common.invalid("ids", ("must hold 1 to %d pipeline IDs"):format(M.MAX_IDS)))
   end
   if args.mr_iid then
     for _, k in ipairs(PROJECT_ONLY) do
@@ -78,21 +87,32 @@ local function fetch_page(args, o)
       return nil, perr
     end
     local vars = { fullPath = path, status = args.status and args.status:upper() or nil }
-    local name, conn, what
+    local names, conn, what
     if args.mr_iid then
       vars.iid = tostring(args.mr_iid)
-      name, conn, what = "pipelines_list_mr", "project.mergeRequest.pipelines", ("merge request %s!%d"):format(path, common.int(args.mr_iid))
+      names, conn, what = { "pipelines_list_mr" }, "project.mergeRequest.pipelines", ("merge request %s!%d"):format(path, common.int(args.mr_iid))
     else
       vars.scope = args.scope and args.scope:upper() or nil
       vars.ref, vars.sha, vars.source, vars.username = args.ref, args.sha, args.source, args.username
-      name, conn, what = "pipelines_list_project", "project.pipelines", "project " .. path
+      if args.ids then
+        vars.ids = vim.tbl_map(function(id)
+          return gid.build("Ci::Pipeline", common.int(id))
+        end, args.ids)
+      end
+      names, conn, what = { "pipelines_list_project", "pipelines_list_project_base" }, "project.pipelines", "project " .. path
     end
-    local page, gerr = graphql.page(args.host, name, vars, conn, {
-      cursor = o.cursor,
-      per_page = o.per_page,
-      default_per_page = M.DEFAULT_PER_PAGE,
-      what = what,
-    }):await()
+    local page, gerr
+    for i, name in ipairs(names) do
+      page, gerr = graphql.page(args.host, name, vars, conn, {
+        cursor = o.cursor,
+        per_page = o.per_page,
+        default_per_page = M.DEFAULT_PER_PAGE,
+        what = what,
+      }):await()
+      if not (gerr and i < #names and graphql.is_schema_error(gerr)) then
+        break
+      end
+    end
     if not page then
       return nil, gerr
     end

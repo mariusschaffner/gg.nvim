@@ -104,6 +104,23 @@ function Line:items(items, width)
   return self:pad_to(start + width)
 end
 
+--- Append segments `{ text, hl }` into exactly `width` cells; a segment
+--- that does not fit is cut with "…" and the rest are dropped.
+---@param segs { [1]: string, [2]: string|nil }[]
+---@param width integer
+---@return gg.ui.Line self
+function Line:segments(segs, width)
+  local start = self.cells
+  for _, s in ipairs(segs) do
+    local room = start + width - self.cells
+    if room <= 0 then
+      break
+    end
+    self:add(text.width(s[1]) > room and text.truncate(s[1], room) or s[1], s[2])
+  end
+  return self:pad_to(start + width)
+end
+
 --- The finished string and its highlights. Trailing padding is removed, but
 --- never inside a highlight (a highlighted " All 12 " keeps its space).
 ---@return string

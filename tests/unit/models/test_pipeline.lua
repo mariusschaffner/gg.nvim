@@ -19,6 +19,18 @@ T["pipeline from_graphql: summary stages, truncation"] = function()
   eq(p.truncated, { stages = true })
 end
 
+T["pipeline: tag flag from refPath (GraphQL) and tag (REST), warnings"] = function()
+  local function g(ref_path, warnings)
+    return pipeline.from_graphql({ id = "gid://gitlab/Ci::Pipeline/1", status = "SUCCESS", refPath = ref_path, warnings = warnings })
+  end
+  eq({ g("refs/tags/v1.0").tag, g("refs/heads/main").tag, g(nil).tag, g(vim.NIL).tag }, { true, false, nil, nil })
+  eq({ g(nil, true).warnings, g(nil, false).warnings, g(nil, nil).warnings }, { true, false, nil })
+  -- a list node: the merge request has no title
+  eq(pipeline.from_graphql({ id = "gid://gitlab/Ci::Pipeline/1", mergeRequest = { iid = "7" } }).merge_request, { iid = 7 })
+  eq(pipeline.from_graphql({ id = "gid://gitlab/Ci::Pipeline/1", mergeRequest = vim.NIL }).merge_request, nil)
+  eq({ pipeline.from_rest({ id = 1, tag = true }).tag, pipeline.from_rest({ id = 1, tag = false }).tag, pipeline.from_rest({ id = 1 }).tag }, { true, false, nil })
+end
+
 T["job from_rest: manual, artifacts, pipeline id"] = function()
   local j = job.from_rest({
     id = 7,

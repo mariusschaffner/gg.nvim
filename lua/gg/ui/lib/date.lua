@@ -57,6 +57,92 @@ function M.short(d, today)
   return s
 end
 
+-- days since 1970-01-01 of a proleptic Gregorian date (no os.time: that
+-- is local time and platform dependent)
+local function days_from_civil(y, m, d)
+  y = m <= 2 and y - 1 or y
+  local era = math.floor(y / 400)
+  local yoe = y - era * 400
+  local doy = math.floor((153 * (m + (m > 2 and -3 or 9)) + 2) / 5) + d - 1
+  local doe = yoe * 365 + math.floor(yoe / 4) - math.floor(yoe / 100) + doy
+  return era * 146097 + doe - 719468
+end
+
+-- the inverse: days since 1970-01-01 -> year, month, day
+local function civil_from_days(z)
+  z = z + 719468
+  local era = math.floor(z / 146097)
+  local doe = z - era * 146097
+  local yoe = math.floor((doe - math.floor(doe / 1460) + math.floor(doe / 36524) - math.floor(doe / 146096)) / 365)
+  local doy = doe - (365 * yoe + math.floor(yoe / 4) - math.floor(yoe / 100))
+  local mp = math.floor((5 * doy + 2) / 153)
+  local d = doy - math.floor((153 * mp + 2) / 5) + 1
+  local m = mp < 10 and mp + 3 or mp - 9
+  return yoe + era * 400 + (m <= 2 and 1 or 0), m, d
+end
+
+--- An ISO 8601 timestamp ("2026-11-06T05:30:45Z", "…45.123+01:00") as
+--- seconds since the epoch (UTC). A bare date is midnight UTC.
+---@param s string|nil
+---@return integer|nil
+function M.parse_time(s)
+  if type(s) ~= "string" then
+    return nil
+  end
+  local y, mo, d, rest = s:match("^(%d%d%d%d)%-(%d%d)%-(%d%d)(.*)$")
+  if not y then
+    return nil
+  end
+  local h, mi, sec, tz = rest:match("^[T ](%d%d):(%d%d):(%d%d)%.?%d*(.*)$")
+  local t = days_from_civil(tonumber(y), tonumber(mo), tonumber(d)) * 86400
+  if h then
+    t = t + tonumber(h) * 3600 + tonumber(mi) * 60 + tonumber(sec)
+    local sign, oh, om = tz:match("^([+-])(%d%d):?(%d%d)$")
+    if sign then
+      local off = tonumber(oh) * 3600 + tonumber(om) * 60
+      t = sign == "+" and t - off or t + off
+    end
+  end
+  return t
+end
+
+--- The local time's offset from UTC in seconds, now (for `relative`).
+---@return integer
+function M.utc_offset()
+  local now = os.time()
+  local utc = os.time(os.date("!*t", now) --[[@as osdateparam]])
+  return os.difftime(now, utc)
+end
+
+--- Relative time from timestamp `iso` to `now` (epoch seconds): "now",
+--- "12s ago", "2m ago", "3h ago", "2d ago"; older than 7 days the date
+--- ("Nov 02", in the zone `utc_offset` seconds east of UTC). "" without a
+--- timestamp.
+---@param iso string|nil
+---@param now integer
+---@param utc_offset? integer default 0
+---@return string
+function M.relative(iso, now, utc_offset)
+  local t = M.parse_time(iso)
+  if not t then
+    return ""
+  end
+  local d = math.max(0, now - t)
+  if d < 5 then
+    return "now"
+  elseif d < 60 then
+    return ("%ds ago"):format(d)
+  elseif d < 3600 then
+    return ("%dm ago"):format(math.floor(d / 60))
+  elseif d < 86400 then
+    return ("%dh ago"):format(math.floor(d / 3600))
+  elseif d <= 7 * 86400 then
+    return ("%dd ago"):format(math.floor(d / 86400))
+  end
+  local _, m, day = civil_from_days(math.floor((t + (utc_offset or 0)) / 86400))
+  return ("%s %02d"):format(MONTHS[m], day)
+end
+
 ---@alias gg.ui.DueTone "normal"|"soon"|"overdue"|"none"
 
 --- Due text for a milestone:

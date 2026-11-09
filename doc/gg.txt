@@ -528,7 +528,11 @@ PIPELINES AND JOBS                                      *gg-pipelines* *gg-jobs*
 gg.pipelines.list({args}, {opts})                         *gg.pipelines.list()*
 gg.pipelines.list_all({args}, {opts})                 *gg.pipelines.list_all()*
     `{ host, project, mr_iid?, status?, scope?, ref?, sha?, source?,
-    username? }`. Newest first, with summary stages.
+    username?, ids? }`. Newest first, with summary stages, the commit title
+    and `warnings`. `ids` (1 to 20 pipeline IDs, project lists only) lists
+    just those pipelines. Project lists also fill `tag` (from the ref path)
+    and `merge_request` (`{ iid }`); on a GitLab version without those
+    fields they stay nil.
 
 gg.pipelines.get({args})                                   *gg.pipelines.get()*
 gg.pipelines.graph({args})                               *gg.pipelines.graph()*
@@ -634,7 +638,8 @@ It needs the hosts from |gg-setup|; its own options are separate.
                                                                      *:Gitlab*
 :Gitlab [project]
     Open the picker over the whole editor, on the issues view (`<Tab>`
-    switches to merge requests, see |gg-ui-mrs|). [project] is
+    switches to merge requests and pipelines, see |gg-ui-mrs| and
+    |gg-ui-pipelines|). [project] is
     `group/project`, `host/group/project` or a remote URL. Without it, the
     `origin` remote of the current directory is used (`git remote get-url
     origin`, run asynchronously; the only place gg runs git). With several
@@ -643,8 +648,8 @@ It needs the hosts from |gg-setup|; its own options are separate.
 gg.ui.open({opts})                                               *gg.ui.open()*
     Open the picker from Lua. `{ project?, host?, cwd?, view? }`: `project`
     as for |:Gitlab|; `host` + `project` open that target directly; `cwd` is
-    where to look for the git remote; `view` is "issues" (default) or
-    "merge_requests". Returns the view (`:close()` closes it).
+    where to look for the git remote; `view` is "issues" (default),
+    "merge_requests" or "pipelines". Returns the view (`:close()` closes it).
 
 gg.ui.setup({opts})                                             *gg.ui.setup()*
     Returns `true`, or `false, err` (the previous options stay). Defaults:
@@ -661,16 +666,19 @@ gg.ui.setup({opts})                                             *gg.ui.setup()*
         refresh = "R", close = "q",
         next_view = "<Tab>", prev_view = "<S-Tab>",
         inspect_mr = { "i", "<CR>" }, -- a key or a list of keys
+        inspect_pipeline = "i",
       },
       order = {},            -- { top?, milestones?, issues? } comparators
       on_inspect_issue = function(issue, ctx) end,         -- default: notify
       on_inspect_milestone = function(milestone, ctx) end, -- default: notify
       on_inspect_mr = function(mr, ctx) end,               -- default: notify
+      on_inspect_pipeline = function(pipeline, ctx) end,   -- default: notify
+      pipeline_refresh_ms = 10000, -- live refresh of active pipelines; 0 = off
       user_colors = {},      -- { ["username"] = "GitlabUser1" } pins a colour
     })
 <
     The inspect callbacks get a mapped |gg-issues| model, the issue's
-    milestone or a |gg-merge_requests| model, and `ctx = { host, project, close }` (`close()` closes the
+    milestone, a |gg-merge_requests| model or a |gg-pipelines| model, and `ctx = { host, project, close }` (`close()` closes the
     picker first, e.g. before opening a detail window).
 
 Layout                                                          *gg-ui-layout*
@@ -710,8 +718,8 @@ Keys                                                              *gg-ui-keys*
     Table: `j` `k` `<Down>` `<Up>` `gg` `G` move between rows only,
     `/` filter, `L` / `H` next / previous tab, `P` next page, `]m` / `[m`
     next / previous milestone, `i` / `I` inspect the issue / its milestone,
-    `R` reload, `q` close, `<Tab>` / `<S-Tab>` switch between the issues
-    and merge requests views. Filter: `<CR>` back to the table,
+    `R` reload, `q` close, `<Tab>` / `<S-Tab>` switch between the issues,
+    merge requests and pipelines views. Filter: `<CR>` back to the table,
     `<Esc><Esc>` clear and go back. Closing either window closes both.
 
 Merge requests                                                   *gg-ui-mrs*
@@ -742,6 +750,37 @@ Merge requests                                                   *gg-ui-mrs*
     reviewer or the author (`@none`: unassigned), `~label`, `%milestone`
     (`%none`), `draft`, other text: the title or the source branch.
 
+Pipelines                                                  *gg-ui-pipelines*
+    The third view of the picker (`<Tab>` twice). One line per pipeline,
+    newest first: the status (icon and word: `✓ passed`, `✗ failed`,
+    `◐ running`, `○ pending`, `▸ waiting` for a manual job, `○ scheduled`,
+    `⊘ canceled`, `– skipped`; `!` after `✓ passed` when it has warnings),
+    `#id`, the ref (the default branch, other branches and tags in their own
+    colours; a merge request pipeline shows its source branch), the merge
+    request (`!iid` for merge request pipelines and branches with an open
+    merge request), the short SHA and commit title, the source (`push`,
+    `MR`, `schedule`, `manual`, `api`, `trigger`, `child`), the stages (the
+    same icons as the merge requests view) and when it started (`2m ago`,
+    `3h ago`, `2d ago`, a date after a week). Tabs: All / Running (running,
+    pending, created, preparing, waiting for a resource) / Failed /
+    Passed. Narrow windows hide MR, then Source, then shorten and hide
+    Ref, then Started.
+
+    The first 50 pipelines load in one request with everything but the MR
+    of branch pipelines; the open merge requests and the default branch
+    load next to it and fill in without moving the cursor (`·` until
+    then). `P` loads the next 50 and appends them; the counts and the
+    `(first N)` note cover the loaded pipelines. While the view is shown,
+    the active pipelines among the rows are fetched again every
+    `pipeline_refresh_ms` (one request per 20) and only their lines change;
+    this stops once none is active. The "Started" times are redrawn every
+    30 seconds. `i` calls `on_inspect_pipeline`.
+
+    Filter tokens: `status:failed` (GitLab's status or the shown word,
+    e.g. `status:waiting`), `source:schedule`, `ref:main`, `@user` (who
+    triggered it), `#4821` or `4821` (the id), `!87` (the merge request),
+    other text: the ref, the commit title or the SHA.
+
 Highlights                                                  *gg-ui-highlights*
     All groups are defined with `default = true` and link to standard
     groups, so colourschemes can override them:
@@ -763,6 +802,9 @@ Highlights                                                  *gg-ui-highlights*
     `GitlabPipelinePending` `GitlabPipelineManual` `GitlabPipelineCanceled`
     `GitlabPipelineSkipped` `GitlabDiffAdd` (links `GitlabPipelineSuccess`)
     `GitlabDiffDelete` (links `GitlabPipelineFailed`).
+    Pipelines: `GitlabRefDefault` (Special) `GitlabRefTag` (Constant)
+    `GitlabSha` (DiagnosticWarn) `GitlabPipelineSource` (Comment)
+    `GitlabPipelineSourceSchedule` (DiagnosticWarn).
     `GitlabIssueTitle` and `GitlabDue` take only the foreground of
     `Normal`, so the row highlight shows behind them.
     Key hints use `GitlabHintKey` (the `Function` colour, bold) for the

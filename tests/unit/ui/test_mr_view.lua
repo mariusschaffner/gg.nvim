@@ -344,7 +344,7 @@ T["<Tab> cycles issues <-> merge requests in the same windows, keeping each view
   eq(vim.fn.maparg("<CR>", "n", false, true).buffer, 1)
   eq(vim.fn.maparg("]m", "n", false, true).buffer, nil)
 
-  keys("<Tab>")
+  keys("<S-Tab>") -- back: merge requests -> issues (<Tab> goes on to pipelines)
   eq(issues.shell.active, issues)
   eq(issues.tab, "closed")
   eq(issues.query, "rotate")
@@ -356,7 +356,7 @@ T["<Tab> cycles issues <-> merge requests in the same windows, keeping each view
   local list_requests = #vim.tbl_filter(function(r)
     return r.operation == "MergeRequestsListProject"
   end, fake:requests())
-  keys("<S-Tab>")
+  keys("<Tab>")
   eq(issues.shell.active, mrs)
   eq(mrs.selected_iid, 86)
   eq(lines(mrs)[cursor(mrs)]:find("!86", 1, true) ~= nil, true)

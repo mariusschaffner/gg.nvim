@@ -16,7 +16,7 @@ local M = {}
 ---@field inspect_milestone gg.ui.Keymap Table: inspect its milestone (default "I")
 ---@field next_tab gg.ui.Keymap Table: Open -> Closed -> All (default "L")
 ---@field prev_tab gg.ui.Keymap Table: All -> Closed -> Open (default "H")
----@field next_page gg.ui.Keymap Table: next page, wraps to the first (default "P")
+---@field next_page gg.ui.Keymap Table: next page, wraps to the first; pipelines: load the next page (default "P")
 ---@field next_milestone gg.ui.Keymap Table: next milestone block (default "]m")
 ---@field prev_milestone gg.ui.Keymap Table: previous milestone block (default "[m")
 ---@field refresh gg.ui.Keymap Table: reload from the API (default "R")
@@ -24,6 +24,7 @@ local M = {}
 ---@field next_view gg.ui.Keymap Table: next view, issues -> merge requests (default "<Tab>")
 ---@field prev_view gg.ui.Keymap Table: previous view (default "<S-Tab>")
 ---@field inspect_mr gg.ui.Keymap Table: inspect the merge request under the cursor (default { "i", "<CR>" })
+---@field inspect_pipeline gg.ui.Keymap Table: inspect the pipeline under the cursor (default "i")
 
 ---@class gg.ui.InspectContext
 ---@field host string
@@ -44,6 +45,8 @@ local M = {}
 ---@field on_inspect_issue fun(issue: gg.Issue, ctx: gg.ui.InspectContext)
 ---@field on_inspect_milestone fun(milestone: gg.MilestoneRef, ctx: gg.ui.InspectContext)
 ---@field on_inspect_mr fun(mr: gg.MergeRequest, ctx: gg.ui.InspectContext)
+---@field on_inspect_pipeline fun(pipeline: gg.Pipeline, ctx: gg.ui.InspectContext)
+---@field pipeline_refresh_ms integer refresh interval of active pipelines in the pipelines view; 0 = off
 ---@field user_colors table<string, string> username -> highlight group (e.g. "GitlabUser1")
 
 local function default_inspect_issue(issue)
@@ -56,6 +59,10 @@ end
 
 local function default_inspect_mr(mr)
   vim.notify(("!%d %s\n%s"):format(mr.iid, mr.title or "", mr.web_url or ""), vim.log.levels.INFO)
+end
+
+local function default_inspect_pipeline(pipeline)
+  vim.notify(("#%d %s\n%s"):format(pipeline.id, pipeline.ref or "", pipeline.web_url or ""), vim.log.levels.INFO)
 end
 
 local function defaults()
@@ -79,11 +86,14 @@ local function defaults()
       next_view = "<Tab>",
       prev_view = "<S-Tab>",
       inspect_mr = { "i", "<CR>" },
+      inspect_pipeline = "i",
     },
     order = {},
     on_inspect_issue = default_inspect_issue,
     on_inspect_milestone = default_inspect_milestone,
     on_inspect_mr = default_inspect_mr,
+    on_inspect_pipeline = default_inspect_pipeline,
+    pipeline_refresh_ms = 10000,
     user_colors = {},
   }
 end
@@ -115,6 +125,8 @@ local TOP = {
   on_inspect_issue = true,
   on_inspect_milestone = true,
   on_inspect_mr = true,
+  on_inspect_pipeline = true,
+  pipeline_refresh_ms = true,
   user_colors = true,
 }
 
@@ -159,6 +171,8 @@ function M.validate(opts)
     or check_fn(opts.on_inspect_issue, "on_inspect_issue")
     or check_fn(opts.on_inspect_milestone, "on_inspect_milestone")
     or check_fn(opts.on_inspect_mr, "on_inspect_mr")
+    or check_fn(opts.on_inspect_pipeline, "on_inspect_pipeline")
+    or check_int(opts.pipeline_refresh_ms, "pipeline_refresh_ms", 0, 600000)
   if err then
     return err
   end

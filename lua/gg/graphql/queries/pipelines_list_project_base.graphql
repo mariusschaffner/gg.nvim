@@ -1,0 +1,37 @@
+#import "pipeline"
+# PipelinesListProject without `refPath` and `mergeRequest`, for GitLab
+# versions that lack those fields.
+query PipelinesListProjectBase(
+  $fullPath: ID!
+  $first: Int
+  $after: String
+  $status: PipelineStatusEnum
+  $scope: PipelineScopeEnum
+  $ref: String
+  $sha: String
+  $source: String
+  $username: String
+  $ids: [ID!]
+) {
+  project(fullPath: $fullPath) {
+    pipelines(
+      first: $first
+      after: $after
+      status: $status
+      scope: $scope
+      ref: $ref
+      sha: $sha
+      source: $source
+      username: $username
+      ids: $ids
+    ) {
+      nodes {
+        ...PipelineFields
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+    }
+  }
+}

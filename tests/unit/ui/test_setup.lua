@@ -18,6 +18,8 @@ T["config: defaults and merge"] = function()
   local c = config.get()
   eq({ c.limit, c.page_size, c.keymaps.next_tab, c.keymaps.next_page, c.keymaps.close }, { 2000, 50, "L", "P", "q" })
   eq(type(c.on_inspect_issue), "function")
+  eq({ type(c.on_inspect_pipeline), c.pipeline_refresh_ms, c.keymaps.inspect_pipeline }, { "function", 10000, "i" })
+  eq(config.setup({ pipeline_refresh_ms = 0 }), true) -- 0 turns the live refresh off
   eq({ config.setup({ page_size = 10, keymaps = { close = false, refresh = "r" } }) }, { true, nil })
   c = config.get()
   eq({ c.page_size, c.keymaps.close, c.keymaps.refresh, c.keymaps.next_tab }, { 10, false, "r", "L" })
@@ -35,6 +37,10 @@ T["config: validation keeps the previous options"] = function()
     { { order = { top = "x" } }, "ui.order.top" },
     { { order = { other = function() end } }, "ui.order.other" },
     { { on_inspect_issue = 1 }, "ui.on_inspect_issue" },
+    { { on_inspect_pipeline = "x" }, "ui.on_inspect_pipeline" },
+    { { pipeline_refresh_ms = -1 }, "ui.pipeline_refresh_ms" },
+    { { pipeline_refresh_ms = 1.5 }, "ui.pipeline_refresh_ms" },
+    { { pipeline_refresh_ms = 600001 }, "ui.pipeline_refresh_ms" },
     { "string", "ui.opts" },
   }
   for _, case in ipairs(bad) do

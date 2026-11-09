@@ -4,7 +4,7 @@ A standalone GitLab API layer for Neovim, with an optional issues picker on top.
 
 gg talks to GitLab's GraphQL and REST APIs, and returns plain Lua tables with GitLab's own field names. The API layer
 has no UI and no user commands; plugins build their interface on top of it. The optional UI layer (`gg.ui`) adds
-`:Gitlab`, an issues picker grouped by milestone, with a merge requests view one `<Tab>` away (see
+`:Gitlab`, an issues picker grouped by milestone, with merge requests and pipelines views one `<Tab>` away (see
 [below](#issues-picker-gitlab)).
 
 - **Async.** Every call returns a Task. Use it with a callback, await it in a coroutine, or cancel it.
@@ -123,6 +123,10 @@ Keys: `/` filter (`~label %milestone @user #iid text`), `L`/`H` Open/Closed/All,
 the head pipeline's stages and the diff size. The rows show at once; pipeline and diff cells fill in afterwards
 (batched, cached while the picker is open). `i`/`<CR>` calls `on_inspect_mr(mr, ctx)`;
 `require("gg.ui").open({ view = "merge_requests" })` starts there. See `:help gg-ui-mrs`.
+
+`<Tab>` again shows the pipelines: status, id, ref, linked MR, SHA and commit title, source, stages and start time,
+with All/Running/Failed/Passed tabs. Active pipelines update in place every 10 s (`pipeline_refresh_ms`, `0` = off);
+`P` loads the next 50. `i` calls `on_inspect_pipeline(pipeline, ctx)`. See `:help gg-ui-pipelines`.
 
 ## Pagination
 

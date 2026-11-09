@@ -4,7 +4,9 @@
 ---
 --- A token starting with a known prefix (e.g. `~`) has that prefix's kind; a
 --- lone prefix matches everything, so typing never empties the table halfway
---- through a token. Everything else is a "text" token.
+--- through a token. A `key:value` token whose key is in `spec.keys` has that
+--- key's kind (a bare `key:` matches everything too). Everything else is a
+--- "text" token.
 local M = {}
 
 ---@class gg.ui.FilterToken
@@ -14,6 +16,7 @@ local M = {}
 
 ---@class gg.ui.FilterSpec
 ---@field prefixes table<string, string> one-character prefix -> kind
+---@field keys? table<string, string> `key:value` tokens: lowercase key -> kind
 ---@field none? table<string, boolean> kinds where "none" means "has none"
 
 --- Parse a query into tokens.
@@ -25,8 +28,14 @@ function M.parse(query, spec)
   local none = spec.none or {}
   for word in (query or ""):gmatch("%S+") do
     word = word:lower()
+    local key, key_value = word:match("^(%a+):(.*)$")
+    local key_kind = key and spec.keys and spec.keys[key]
     local kind = spec.prefixes[word:sub(1, 1)]
-    if kind then
+    if key_kind then
+      if key_value ~= "" then
+        table.insert(tokens, { kind = key_kind, value = key_value })
+      end
+    elseif kind then
       local value = word:sub(2)
       if value ~= "" then
         table.insert(tokens, { kind = kind, value = value, none = none[kind] and value == "none" or nil })

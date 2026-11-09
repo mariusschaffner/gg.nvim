@@ -686,16 +686,22 @@ Highlights                                                  *gg-ui-highlights*
     All groups are defined with `default = true` and link to standard
     groups, so colourschemes can override them:
     `GitlabPickerBorder` `GitlabPickerBorderActive` `GitlabPickerTitle`
-    `GitlabPickerFooter` `GitlabPickerPrompt` `GitlabHintKey`
-    `GitlabHintText` `GitlabTab` `GitlabTabActive` `GitlabColumnHeader`
+    `GitlabPickerFooter` `GitlabPickerPrompt` `GitlabTableBorder`
+    `GitlabTab` `GitlabTabActive` `GitlabColumnHeader`
     `GitlabSeparator` `GitlabMilestoneEdge` `GitlabMilestoneEdgeActive`
     `GitlabMilestoneName` `GitlabMilestoneTitle` `GitlabDue`
     `GitlabDueSoon` `GitlabDueOverdue` `GitlabProgressDone`
     `GitlabProgressTodo` `GitlabProgressText` `GitlabIid`
-    `GitlabUnassigned` `GitlabEmpty` `GitlabStateOpened`
-    `GitlabStateClosed` `GitlabCursorMark` `GitlabCursorLine`
-    `GitlabLabelFallback`. Labels use their GitLab colour through
-    `GitlabLabel_<hex>` groups.
+    `GitlabIssueTitle` `GitlabUnassigned` `GitlabEmpty`
+    `GitlabStateOpened` `GitlabStateClosed` `GitlabCursorMark`
+    `GitlabCursorLine` `GitlabLabelFallback`. Labels use their GitLab
+    colour through `GitlabLabel_<hex>` groups.
+    Key hints use `GitlabHintKey` (the `Function` colour, bold) for the
+    key and `GitlabHintText` (the `Comment` colour, not italic) for the
+    description.
+    The table's border is always `GitlabTableBorder`; only the filter's
+    border changes colour with focus. Unassigned issues are drawn in
+    `GitlabUnassigned` from the IID to the state.
     While the table is focused, the cursor is hidden through 'guicursor'
     with `GitlabHiddenCursor` (`blend = 100`). The row's `▌` mark shows
     the selection instead, and 'guicursor' is restored when you leave.

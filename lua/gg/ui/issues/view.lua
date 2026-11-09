@@ -101,6 +101,9 @@ function M.open(opts)
     enter = true,
     title = " Table ",
     footer = self:_footer(),
+    -- always gray: the cursor mark shows when the table has focus
+    border_hl = "GitlabTableBorder",
+    border_active_hl = "GitlabTableBorder",
     filetype = "gg_ui_issues",
     win_opts = TABLE_WIN_OPTS,
   })

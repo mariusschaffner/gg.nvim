@@ -98,7 +98,13 @@ T["highlights: default links, label groups, re-defined on ColorScheme"] = functi
   for _, pair in ipairs(highlights.LINKS) do
     eq(vim.api.nvim_get_hl(0, { name = pair[1] }).link, pair[2])
   end
-  eq(vim.api.nvim_get_hl(0, { name = "GitlabHintKey" }).bold, true)
+  -- hints: blue bold key, gray description
+  vim.cmd("highlight clear") -- like a colourscheme switch
+  vim.api.nvim_set_hl(0, "Function", { fg = "#0000ff" })
+  vim.api.nvim_set_hl(0, "Comment", { fg = "#808080", italic = true })
+  highlights.define()
+  local key, desc = vim.api.nvim_get_hl(0, { name = "GitlabHintKey" }), vim.api.nvim_get_hl(0, { name = "GitlabHintText" })
+  eq({ key.fg, key.bold, desc.fg, desc.italic }, { 0x0000ff, true, 0x808080, nil })
   eq(highlights.label("#FF9E64"), "GitlabLabel_ff9e64")
   eq(vim.api.nvim_get_hl(0, { name = "GitlabLabel_ff9e64" }).fg, 0xff9e64)
   eq(highlights.label("#abc"), "GitlabLabel_aabbcc")

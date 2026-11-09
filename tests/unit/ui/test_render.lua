@@ -121,7 +121,10 @@ T["highlights are byte ranges over the right text (multi-byte safe)"] = function
   eq(marks_on(r, 5, "GitlabEmpty"), { "—" })
   eq(marks_on(r, 5, "GitlabIid"), { "#220" })
   eq(marks_on(r, 5, "L#f7768e"), { "~bug" })
-  eq(marks_on(r, 6, "GitlabUnassigned"), { "unassigned" })
+  eq(marks_on(r, 5, "GitlabIssueTitle"), { "Flaky backup job on weekend window" })
+  -- an unassigned issue is dimmed from the IID on
+  eq(marks_on(r, 6, "GitlabUnassigned"), { "#198", "Clean up unused container registry tags", "~chore", "unassigned", "● Open" })
+  eq(marks_on(r, 6, "GitlabIssueTitle"), {})
   eq(marks_on(r, 7, "GitlabMilestoneEdge"), { "▎" })
   eq(marks_on(r, 7, "GitlabMilestoneName"), { "%2026.11" })
   eq(marks_on(r, 7, "GitlabMilestoneTitle"), { "Patch cycle" })

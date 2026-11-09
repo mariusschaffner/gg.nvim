@@ -87,6 +87,23 @@ T["float_group: focus paints the active border, resize relayouts"] = function()
   g:close()
 end
 
+T["float_group: a member can have its own border groups"] = function()
+  local g = float_group.new({
+    layout = function()
+      local r = layout.stack({ { height = 1 }, { fill = true } })
+      return { a = r[1], b = r[2] }
+    end,
+  })
+  g:add({ name = "a" })
+  g:add({ name = "b", enter = true, border_hl = "GrayBorder", border_active_hl = "GrayBorder" })
+  g:focus("b")
+  eq(vim.wo[g.members.b.win].winhighlight:find("FloatBorder:GrayBorder,", 1, true) ~= nil, true)
+  g:focus("a")
+  eq(vim.wo[g.members.a.win].winhighlight:find("FloatBorder:GitlabPickerBorderActive", 1, true) ~= nil, true)
+  eq(vim.wo[g.members.b.win].winhighlight:find("FloatBorder:GrayBorder,", 1, true) ~= nil, true)
+  g:close()
+end
+
 T["float_group: leaving to an outside window closes the group there"] = function()
   local outside = vim.api.nvim_get_current_win()
   local g = group_with_two()

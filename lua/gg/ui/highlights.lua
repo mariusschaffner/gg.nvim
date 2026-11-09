@@ -9,11 +9,13 @@ M.LINKS = {
   { "GitlabPickerBorder", "FloatBorder" },
   { "GitlabPickerBorderActive", "Function" },
   { "GitlabPickerTitle", "FloatTitle" },
-  { "GitlabPickerFooter", "Function" },
+  { "GitlabPickerFooter", "Comment" },
   { "GitlabPickerPrompt", "Function" },
   { "GitlabTab", "Comment" },
   { "GitlabTabActive", "PmenuSel" },
   { "GitlabColumnHeader", "Title" },
+  { "GitlabTableBorder", "NonText" },
+  { "GitlabIssueTitle", "Normal" },
   { "GitlabSeparator", "NonText" },
   { "GitlabMilestoneEdge", "NonText" },
   { "GitlabMilestoneEdgeActive", "Function" },
@@ -33,7 +35,6 @@ M.LINKS = {
   { "GitlabCursorMark", "Function" },
   { "GitlabCursorLine", "CursorLine" },
   { "GitlabLabelFallback", "Comment" },
-  { "GitlabHintText", "GitlabPickerFooter" },
 }
 
 local function resolved(name)
@@ -48,10 +49,10 @@ function M.define()
   for _, pair in ipairs(M.LINKS) do
     vim.api.nvim_set_hl(0, pair[1], { link = pair[2], default = true })
   end
-  -- hint keys ("[I]") are the footer colour in bold
-  local key = vim.tbl_extend("force", resolved("GitlabPickerFooter"), { bold = true, default = true })
-  key.link = nil
+  -- hints: the key ("[I]") in blue and bold, the description in plain gray
+  local key = { fg = resolved("Function").fg, bold = true, default = true }
   vim.api.nvim_set_hl(0, "GitlabHintKey", key)
+  vim.api.nvim_set_hl(0, "GitlabHintText", { fg = resolved("Comment").fg, default = true })
   -- the table hides the cursor; blend = 100 makes it invisible
   vim.api.nvim_set_hl(0, "GitlabHiddenCursor", { blend = 100, nocombine = true, default = true })
 end

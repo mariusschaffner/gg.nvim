@@ -10,6 +10,8 @@ local M = {}
 
 ---@class gg.ui.GroupMemberSpec : gg.ui.FloatSpec
 ---@field name string
+---@field border_hl? string this member's border (default: the group's)
+---@field border_active_hl? string this member's border while focused
 
 ---@class gg.ui.FloatGroup
 ---@field members table<string, gg.ui.Float>
@@ -21,6 +23,7 @@ local M = {}
 ---@field private _on_close fun()[]
 ---@field private _on_resize fun()[]
 ---@field private _border { active: string, inactive: string }
+---@field private _borders table<integer, { active: string, inactive: string }> per member window
 local Group = {}
 Group.__index = Group
 
@@ -54,7 +57,12 @@ function Group:add(spec)
   local f = float.open(spec)
   self.members[spec.name] = f
   table.insert(self._order, spec.name)
-  vim.api.nvim_set_option_value("winhighlight", winhighlight(self._border.inactive), { win = f.win })
+  self._borders = self._borders or {}
+  self._borders[f.win] = {
+    active = spec.border_active_hl or self._border.active,
+    inactive = spec.border_hl or self._border.inactive,
+  }
+  vim.api.nvim_set_option_value("winhighlight", winhighlight(self._borders[f.win].inactive), { win = f.win })
   self:_watch(f)
   return f
 end
@@ -113,7 +121,8 @@ function Group:_paint()
   local cur = vim.api.nvim_get_current_win()
   for _, f in pairs(self.members) do
     if vim.api.nvim_win_is_valid(f.win) then
-      local hl = f.win == cur and self._border.active or self._border.inactive
+      local b = self._borders[f.win]
+      local hl = f.win == cur and b.active or b.inactive
       vim.api.nvim_set_option_value("winhighlight", winhighlight(hl), { win = f.win })
     end
   end

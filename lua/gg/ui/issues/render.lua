@@ -152,15 +152,19 @@ local function assignee_text(issue)
 end
 
 --- The issue part of a body line: mark slot, IID, title, labels, assignee, state.
+--- Unassigned issues are drawn dimmed (`GitlabUnassigned`) from the IID on.
 local function issue_part(l, cols, issue, label_hl)
+  local dim = #(issue.assignees or {}) == 0 and "GitlabUnassigned" or nil
   l:pad_to(cols.mark.col)
   local mark_col = l.bytes
   l:add(string.rep(" ", cols.mark.width))
-  l:cell("#" .. tostring(issue.iid), cols.iid.width, "GitlabIid")
-  l:cell(text.clean(issue.title), cols.title.width)
+  l:cell("#" .. tostring(issue.iid), cols.iid.width, dim or "GitlabIid")
+  l:cell(text.clean(issue.title), cols.title.width, dim or "GitlabIssueTitle")
   if cols.labels then
     l:pad_to(cols.labels.col)
-    labels_cell(l, issue.labels, cols.labels.width, label_hl)
+    labels_cell(l, issue.labels, cols.labels.width, dim and function()
+      return dim
+    end or label_hl)
   end
   if cols.assignee then
     l:pad_to(cols.assignee.col)
@@ -169,9 +173,9 @@ local function issue_part(l, cols, issue, label_hl)
   end
   l:pad_to(cols.state.col)
   if issue.state == "closed" then
-    l:cell("✓ Closed", cols.state.width, "GitlabStateClosed")
+    l:cell("✓ Closed", cols.state.width, dim or "GitlabStateClosed")
   else
-    l:cell("● Open", cols.state.width, "GitlabStateOpened")
+    l:cell("● Open", cols.state.width, dim or "GitlabStateOpened")
   end
   return mark_col
 end

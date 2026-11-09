@@ -90,6 +90,10 @@ T["split_title"] = function()
   eq({ model.split_title("2026.11 Patch cycle") }, { "%2026.11", "Patch cycle" })
   eq({ model.split_title("v1") }, { "%v1", "" })
   eq({ model.split_title(nil) }, { "%", "" })
+  -- no version-like first word: the whole title is the name
+  eq({ model.split_title("Entwicklung & Deployment") }, { "%Entwicklung & Deployment", "" })
+  eq({ model.split_title("  Sprint 12 ") }, { "%Sprint 12", "" })
+  eq({ model.split_title("v1.2 Release  candidate") }, { "%v1.2", "Release  candidate" })
 end
 
 T["filter: tokens"] = function()

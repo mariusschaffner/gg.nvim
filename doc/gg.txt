@@ -680,9 +680,11 @@ Layout                                                          *gg-ui-layout*
     - issues without a milestone come first, each in its own block,
       newest update first;
     - then one block per milestone (due date ascending, none last). The
-      left column shows `%name title`, the due text and the milestone's
-      real progress (closed/total, from GitLab, all projects of a group
-      milestone). Issues inside are sorted by due date, then IID.
+      left column shows the title (`%2026.11 Patch cycle`: a version-like
+      first word is the name, the rest a subtitle; other titles are one
+      name), the due text and the milestone's real progress (closed/total,
+      from GitLab, all projects of a group milestone). Issues inside are
+      sorted by due date, then IID.
     Labels and Assignee columns hide on narrow windows. When no loaded
     issue has a milestone, the milestone column is left out. Pages hold at most
     `page_size` issues; `P` cycles through them and the footer shows

@@ -110,13 +110,19 @@ local function milestone_key(ref)
   return ref.id and ("ms:" .. ref.id) or ("ms:" .. (ref.title or "?"))
 end
 
---- Split "2026.11 Patch cycle" into "%2026.11" and "Patch cycle".
+--- Split "2026.11 Patch cycle" into "%2026.11" and "Patch cycle". Only a
+--- first word with a digit (a version or date like "2026.11", "v1.2") is
+--- split off; any other title is one name ("%Entwicklung & Deployment").
 ---@param title string|nil
 ---@return string name
 ---@return string rest
 function M.split_title(title)
-  local first, rest = (title or ""):match("^%s*(%S+)%s*(.-)%s*$")
-  return "%" .. (first or ""), rest or ""
+  local trimmed = (title or ""):match("^%s*(.-)%s*$")
+  local first, rest = trimmed:match("^(%S+)%s*(.-)$")
+  if first and first:find("%d") then
+    return "%" .. first, rest
+  end
+  return "%" .. trimmed, ""
 end
 
 --- Closed/total of every milestone, counted from `issues` (all states).

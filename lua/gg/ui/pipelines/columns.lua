@@ -1,8 +1,8 @@
 --- Column layout of the pipelines table, in display cells. Pure.
 ---
---- Body line = <mark 2><status 11><2 # N><2 ref 27><2 mr 6><2 commit 8>
----             <fill …><2 source 10><2 stages 9><2 started 8>
---- `fill` is blank and takes the rest, so Source, Stages and Started sit at
+--- Body line = <mark 2><status 11><2 # N><2 ref 27><2 stages 9><2 mr 6>
+---             <fill …><2 source 10><2 commit 8><2 started 8>
+--- `fill` is blank and takes the rest, so Source, Commit and Started sit at
 --- the right edge. The `#` column is as wide as the longest loaded "#id"
 --- (at least ID_MIN; gitlab.com ids have 10 digits). Narrower windows hide
 --- MR, then Source, then shorten Ref, then hide Ref, then Started. The
@@ -46,11 +46,11 @@ function M.spec(id_width)
       { name = "status", width = M.STATUS },
       { name = "id", width = math.max(M.ID_MIN, id_width or 0), gap = M.GAP },
       { name = "ref", width = M.REF, gap = M.GAP },
+      { name = "stages", width = M.STAGES, gap = M.GAP },
       { name = "mr", width = M.MR, gap = M.GAP },
-      { name = "commit", width = M.COMMIT, gap = M.GAP },
       { name = "fill", flex = true, min = 0 },
       { name = "source", width = M.SOURCE, gap = M.GAP },
-      { name = "stages", width = M.STAGES, gap = M.GAP },
+      { name = "commit", width = M.COMMIT, gap = M.GAP },
       { name = "started", width = M.STARTED, gap = M.GAP },
     },
     steps = {

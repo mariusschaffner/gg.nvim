@@ -49,10 +49,10 @@ local function header_line(cols)
     { cols.status, "Status" },
     { cols.id, "#" },
     { cols.ref, "Ref" },
-    { cols.mr, "MR" },
-    { cols.commit, "Commit" },
-    { cols.source, "Source" },
     { cols.stages, "Stages" },
+    { cols.mr, "MR" },
+    { cols.source, "Source" },
+    { cols.commit, "Commit" },
     { started, "Started" },
   })
 end
@@ -98,6 +98,8 @@ local function pipeline_line(p, cols, input)
     l:pad_to(cols.ref.col)
     l:cell(text.clean(model.display_ref(p)), cols.ref.width, M.ref_hl(p, ctx))
   end
+  l:pad_to(cols.stages.col)
+  l:segments(pipeline_status.stages(p), cols.stages.width)
   if cols.mr then
     l:pad_to(cols.mr.col)
     local iid, loading = model.mr_of(p, ctx)
@@ -107,15 +109,13 @@ local function pipeline_line(p, cols, input)
       l:cell(pipeline_status.PLACEHOLDER, cols.mr.width, "Comment")
     end
   end
-  l:pad_to(cols.commit.col)
-  commit_cell(l, p, cols.commit.width)
   if cols.source then
     l:pad_to(cols.source.col)
     local label = model.source_label(p.source)
     l:cell(text.clean(label), cols.source.width, p.source == "schedule" and "GitlabPipelineSourceSchedule" or "GitlabPipelineSource")
   end
-  l:pad_to(cols.stages.col)
-  l:segments(pipeline_status.stages(p), cols.stages.width)
+  l:pad_to(cols.commit.col)
+  commit_cell(l, p, cols.commit.width)
   if cols.started then
     local s = text.truncate(M.started(p, input.now, input.utc_offset), cols.started.width)
     l:pad_to(cols.started.col + cols.started.width - text.width(s))

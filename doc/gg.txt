@@ -756,11 +756,11 @@ Pipelines                                                  *gg-ui-pipelines*
     `◐ running`, `○ pending`, `▸ waiting` for a manual job, `○ scheduled`,
     `⊘ canceled`, `– skipped`; `!` after `✓ passed` when it has warnings),
     `#id`, the ref (the default branch, other branches and tags in their own
-    colours; a merge request pipeline shows its source branch), the merge
-    request (`!iid` for merge request pipelines and branches with an open
-    merge request), the short SHA, the source (`push`,
-    `MR`, `schedule`, `manual`, `api`, `trigger`, `child`), the stages (the
-    same icons as the merge requests view) and when it started (`2m ago`,
+    colours; a merge request pipeline shows its source branch), the stages
+    (the same icons as the merge requests view), the merge request (`!iid`
+    for merge request pipelines and branches with an open merge request),
+    then at the right edge the source (`push`, `MR`, `schedule`, `manual`,
+    `api`, `trigger`, `child`), the short SHA and when it started (`2m ago`,
     `3h ago`, `2d ago`, a date after a week). Tabs: All / Running (running,
     pending, created, preparing, waiting for a resource) / Failed /
     Passed. Narrow windows hide MR, then Source, then shorten and hide

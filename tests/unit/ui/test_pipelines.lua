@@ -161,8 +161,9 @@ end
 
 T["columns: widths and the narrow-window hiding order"] = function()
   local c = columns.layout(170, 6)
-  eq({ c.mark.col, c.status.col, c.id.col, c.ref.col, c.mr.col, c.commit.col }, { 0, 2, 15, 23, 52, 60 })
-  eq({ c.commit.width, c.fill.width, c.source.col, c.stages.col, c.started.col }, { 8, 69, 139, 151, 162 })
+  -- Status, #, Ref, Stages, MR, (blank), Source, Commit, Started
+  eq({ c.mark.col, c.status.col, c.id.col, c.ref.col, c.stages.col, c.mr.col }, { 0, 2, 15, 23, 52, 63 })
+  eq({ c.fill.col, c.fill.width, c.source.col, c.commit.col, c.started.col }, { 69, 69, 140, 152, 162 })
   eq(c.started.col + c.started.width, 170)
   local function shown(w)
     local l = columns.layout(w, 6)

@@ -124,7 +124,7 @@ the head pipeline's stages and the diff size. The rows show at once; pipeline an
 (batched, cached while the picker is open). `i`/`<CR>` calls `on_inspect_mr(mr, ctx)`;
 `require("gg.ui").open({ view = "merge_requests" })` starts there. See `:help gg-ui-mrs`.
 
-`<Tab>` again shows the pipelines: status, id, ref, linked MR, short SHA, source, stages and start time,
+`<Tab>` again shows the pipelines: status, id, ref, stages, linked MR, source, short SHA and start time,
 with All/Running/Failed/Passed tabs. Active pipelines update in place every 10 s (`pipeline_refresh_ms`, `0` = off);
 `P` loads the next 50. `i` calls `on_inspect_pipeline(pipeline, ctx)`. See `:help gg-ui-pipelines`.
 

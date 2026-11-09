@@ -696,5 +696,8 @@ Highlights                                                  *gg-ui-highlights*
     `GitlabStateClosed` `GitlabCursorMark` `GitlabCursorLine`
     `GitlabLabelFallback`. Labels use their GitLab colour through
     `GitlabLabel_<hex>` groups.
+    While the table is focused, the cursor is hidden through 'guicursor'
+    with `GitlabHiddenCursor` (`blend = 100`). The row's `▌` mark shows
+    the selection instead, and 'guicursor' is restored when you leave.
 
  vim:tw=78:ts=8:ft=help:norl:

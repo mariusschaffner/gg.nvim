@@ -61,7 +61,7 @@ end
 T["golden: the mockup at width 160"] = function()
   local r = rendered()
   eq(r.lines, {
-    " Open 9   Closed 3   All 12 ",
+    "    Open 9     Closed 3     All 12  ",
     "",
     "  Milestone                     Issue                                                            Labels                            Assignee           State",
     string.rep("─", 160),
@@ -115,8 +115,8 @@ T["highlights are byte ranges over the right text (multi-byte safe)"] = function
       return "L" .. color
     end,
   })
-  eq(marks_on(r, 1, "GitlabTabActive"), { " Open 9 " })
-  eq(marks_on(r, 1, "GitlabTab"), { " Closed 3 ", " All 12 " })
+  eq(marks_on(r, 1, "GitlabTabActive"), { "  Open 9  " })
+  eq(marks_on(r, 1, "GitlabTab"), { "  Closed 3  ", "  All 12  " })
   eq(marks_on(r, 5, "GitlabEmpty"), { "—" })
   eq(marks_on(r, 5, "GitlabIid"), { "#220" })
   eq(marks_on(r, 5, "L#f7768e"), { "~bug" })
@@ -173,7 +173,7 @@ end
 
 T["states: loading, error, empty, truncated"] = function()
   local loading = render.render({ width = 100, status = "loading", tab = "opened", loaded = 120 })
-  eq(loading.lines[1], " Open …   Closed …   All … ")
+  eq(loading.lines[1], "    Open …     Closed …     All …  ")
   eq(loading.lines[5], "  Loading issues… (120)")
   eq(loading.selectable, {})
   local fresh = render.render({ width = 100, status = "loading", tab = "opened" })
@@ -184,7 +184,7 @@ T["states: loading, error, empty, truncated"] = function()
   eq(#no_retry.lines, 5)
   local empty = rendered({ query = "nothing-matches-this" })
   eq(empty.lines[5], "  No issues match")
-  eq(rendered({ truncated = 2000 }).lines[1], " Open 9   Closed 3   All 12   (first 2000)")
+  eq(rendered({ truncated = 2000 }).lines[1], "    Open 9     Closed 3     All 12    (first 2000)")
 end
 
 T["a block continued on the next page repeats the milestone cell"] = function()

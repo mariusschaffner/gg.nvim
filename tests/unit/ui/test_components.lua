@@ -35,6 +35,7 @@ T["tabs.segments"] = function()
     { " ", nil },
     { " All … ", "GitlabTab" },
   })
+  eq(tabs.segments({ { key = "a", label = "Open", count = 9 } }, "a", { pad = 2 }), { { "  Open 9  ", "GitlabTabActive" } })
 end
 
 local function group_with_two()

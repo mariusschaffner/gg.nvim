@@ -16,12 +16,15 @@ local M = {}
 ---@field private _is_sel table<integer, boolean>
 ---@field private _last integer last selected line
 ---@field private _on_select fun(lnum: integer|nil)|nil
+---@field private _cursor_col fun(lnum: integer): integer
 ---@field private _moving boolean
 local List = {}
 List.__index = List
 
 --- Wrap a buffer.
----@param opts { buf: integer, win?: integer, on_select?: fun(lnum: integer|nil) }
+--- `cursor_col` gives the byte column the cursor rests on in a line
+--- (default 0).
+---@param opts { buf: integer, win?: integer, on_select?: fun(lnum: integer|nil), cursor_col?: fun(lnum: integer): integer }
 ---@return gg.ui.ListBuffer
 function M.new(opts)
   local self = setmetatable({
@@ -32,6 +35,9 @@ function M.new(opts)
     _is_sel = {},
     _last = 0,
     _on_select = opts.on_select,
+    _cursor_col = opts.cursor_col or function()
+      return 0
+    end,
     _moving = false,
   }, List)
   vim.bo[self.buf].modifiable = false
@@ -125,7 +131,7 @@ function List:select(lnum)
   local target = lnum and self:nearest(lnum) or self.selectable[1]
   self._moving = true
   if target then
-    vim.api.nvim_win_set_cursor(self.win, { target, 0 })
+    vim.api.nvim_win_set_cursor(self.win, { target, self._cursor_col(target) })
   else
     vim.api.nvim_win_set_cursor(self.win, { 1, 0 })
   end
@@ -188,7 +194,7 @@ function List:attach_navigation()
       end
       local pos = vim.api.nvim_win_get_cursor(self.win)
       local lnum = pos[1]
-      if self._is_sel[lnum] and pos[2] == 0 then
+      if self._is_sel[lnum] and pos[2] == self._cursor_col(lnum) then
         if lnum ~= self._last then
           self._last = lnum
           if self._on_select then

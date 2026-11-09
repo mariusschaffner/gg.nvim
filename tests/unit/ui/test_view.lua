@@ -69,15 +69,18 @@ T["opens two floats, loads every state once, renders the table"] = function()
   local rec = fake:last()
   eq(rec.operation, "IssuesListProject")
   eq({ rec.variables.fullPath, rec.variables.state, rec.variables.sort, rec.variables.first }, { D.PROJECT, "all", "MILESTONE_DUE_ASC", 100 })
-  eq(lines(v)[1], " Open 9   Closed 3   All 12 ")
+  eq(lines(v)[1], "    Open 9     Closed 3     All 12  ")
   eq(vim.startswith(lines(v)[7], "▎ %2026.11 Patch cycle"), true)
   -- the cursor starts on the first issue, not on the header
   eq(cursor(v), 5)
   eq(v.selected_iid, 220)
+  -- the cursor rests on the cursor-mark column, not on the milestone edge
+  eq(vim.api.nvim_win_get_cursor(v.table_float.win)[2], v.rendered.rows[5].mark_col)
   eq(vim.api.nvim_get_current_win(), v.table_float.win)
   -- windows: full width, filter on top, table below
   local fc, tc = vim.api.nvim_win_get_config(v.filter_float.win), vim.api.nvim_win_get_config(v.table_float.win)
-  eq({ fc.width, fc.height, tc.width, tc.height }, { 168, 1, 168, 40 - 1 - 3 - 1 - 2 })
+  eq({ fc.width, fc.height, tc.width, tc.height }, { 168, 1, 168, 40 - 1 - 3 - 2 })
+  eq(tc.row, fc.row + 1 + 2) -- right below the filter box, no blank line
   eq(footer_text(v), " [I] Milestone • [i] Issue ")
   local title = table.concat(vim.tbl_map(function(c)
     return c[1]
@@ -108,6 +111,25 @@ T["overlay: cursor mark, row highlight, active milestone edge"] = function()
   eq(mark[2], 6) -- 0-based row of line 7
 end
 
+T["the cursor is hidden in the table only and restored on close"] = function()
+  local before = vim.o.guicursor
+  local v = ready(open())
+  eq(vim.endswith(vim.o.guicursor, "n-v-ve:GitlabHiddenCursor"), true)
+  eq(vim.api.nvim_get_hl(0, { name = "GitlabHiddenCursor" }).blend, 100)
+  keys("/")
+  eq(vim.o.guicursor, before)
+  vim.cmd("stopinsert")
+  v:focus_table()
+  eq(vim.endswith(vim.o.guicursor, "n-v-ve:GitlabHiddenCursor"), true)
+  -- moving sideways snaps back onto the mark column
+  keys("jjl")
+  vim.api.nvim_exec_autocmds("CursorMoved", { buffer = v.table_float.buf })
+  eq(vim.api.nvim_win_get_cursor(v.table_float.win), { 7, v.rendered.rows[7].mark_col })
+  v:close()
+  current = nil
+  eq(vim.o.guicursor, before)
+end
+
 T["L / H switch tabs; the counts stay"] = function()
   local v = ready(open())
   keys("L")
@@ -119,7 +141,7 @@ T["L / H switch tabs; the counts stay"] = function()
   eq(v.tab, "opened")
   keys("H")
   eq(v.tab, "all")
-  eq(lines(v)[1], " Open 9   Closed 3   All 12 ")
+  eq(lines(v)[1], "    Open 9     Closed 3     All 12  ")
 end
 
 T["the selection survives filtering and re-renders"] = function()
@@ -268,7 +290,7 @@ end
 T["empty result and resize re-render"] = function()
   local v = ready(open({}, D.response({})))
   eq(lines(v)[5], "  No issues match")
-  eq(lines(v)[1], " Open 0   Closed 0   All 0 ")
+  eq(lines(v)[1], "    Open 0     Closed 0     All 0  ")
   vim.o.columns = 90 -- fires VimResized
   H.flush(20)
   eq(#lines(v)[4], #"─" * 88)

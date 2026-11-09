@@ -11,6 +11,8 @@ local text = require("gg.ui.lib.text")
 local M = {}
 
 M.HEADER_LINES = 4 -- tabs, blank, column header, rule
+M.TABS_INDENT = 2
+M.TABS_PAD = 2
 M.MIN_BLOCK_LINES = 4 -- a milestone block is at least this tall
 M.BAR_CELLS = 10
 
@@ -80,8 +82,9 @@ local function tabs_line(input)
   for _, key in ipairs({ "opened", "closed", "all" }) do
     table.insert(items, { key = key, label = TAB_LABELS[key], count = counts and counts[key] or nil })
   end
-  local l = line.new()
-  for _, seg in ipairs(tabs.segments(items, input.tab)) do
+  -- indented like the column header, with roomier tabs
+  local l = line.new():add(text.rep(" ", M.TABS_INDENT))
+  for _, seg in ipairs(tabs.segments(items, input.tab, { pad = M.TABS_PAD })) do
     l:add(seg[1], seg[2])
   end
   if input.truncated then

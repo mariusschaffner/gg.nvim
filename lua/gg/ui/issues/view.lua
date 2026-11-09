@@ -59,7 +59,7 @@ local TABLE_WIN_OPTS = {
 }
 
 local function stack()
-  local r = layout.stack({ { height = 1 }, { fill = true } }, { gap = 1 })
+  local r = layout.stack({ { height = 1 }, { fill = true } }, { gap = 0 })
   return { filter = r[1], table = r[2] }
 end
 
@@ -119,6 +119,11 @@ function M.open(opts)
     on_select = function(lnum)
       self:_on_select(lnum)
     end,
+    -- the cursor rests on the cursor-mark column, not on the milestone edge
+    cursor_col = function(lnum)
+      local row = self.rendered and self.rendered.rows[lnum]
+      return row and row.mark_col or 0
+    end,
   })
   self.list:attach_navigation()
   self:_keymaps()
@@ -132,6 +137,14 @@ function M.open(opts)
       end)
     end,
   })
+  -- the table draws its own cursor mark, so the real cursor is hidden there
+  vim.api.nvim_create_autocmd({ "WinEnter", "WinLeave" }, {
+    group = self.augroup,
+    buffer = t.buf,
+    callback = function(ev)
+      self:_hide_cursor(ev.event == "WinEnter")
+    end,
+  })
   self.group:on_resize(function()
     self:render()
   end)
@@ -139,6 +152,7 @@ function M.open(opts)
     self:_teardown()
   end)
   self.group:focus("table")
+  self:_hide_cursor(vim.api.nvim_get_current_win() == t.win)
 
   if opts.host and opts.project then
     self.host, self.project = opts.host, opts.project
@@ -295,6 +309,20 @@ function View:_footer()
     return " "
   end
   return hint.chunks(hints)
+end
+
+-- Hide the cursor in Normal/Visual mode (guicursor with a blend = 100
+-- group), or restore the user's 'guicursor'.
+---@private
+function View:_hide_cursor(hide)
+  if hide and not self.saved_guicursor then
+    self.saved_guicursor = vim.o.guicursor
+    local base = self.saved_guicursor ~= "" and (self.saved_guicursor .. ",") or ""
+    vim.o.guicursor = base .. "n-v-ve:GitlabHiddenCursor"
+  elseif not hide and self.saved_guicursor then
+    vim.o.guicursor = self.saved_guicursor
+    self.saved_guicursor = nil
+  end
 end
 
 ---@private
@@ -501,6 +529,7 @@ function View:_teardown()
     return
   end
   self.closed = true
+  self:_hide_cursor(false)
   if self.task then
     self.task:cancel()
     self.task = nil

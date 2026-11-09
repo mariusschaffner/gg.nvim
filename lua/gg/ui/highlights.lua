@@ -14,8 +14,8 @@ M.LINKS = {
   { "GitlabTab", "Comment" },
   { "GitlabTabActive", "PmenuSel" },
   { "GitlabColumnHeader", "Title" },
-  { "GitlabSeparator", "WinSeparator" },
-  { "GitlabMilestoneEdge", "WinSeparator" },
+  { "GitlabSeparator", "NonText" },
+  { "GitlabMilestoneEdge", "NonText" },
   { "GitlabMilestoneEdgeActive", "Function" },
   { "GitlabMilestoneName", "Special" },
   { "GitlabMilestoneTitle", "Bold" },
@@ -52,6 +52,8 @@ function M.define()
   local key = vim.tbl_extend("force", resolved("GitlabPickerFooter"), { bold = true, default = true })
   key.link = nil
   vim.api.nvim_set_hl(0, "GitlabHintKey", key)
+  -- the table hides the cursor; blend = 100 makes it invisible
+  vim.api.nvim_set_hl(0, "GitlabHiddenCursor", { blend = 100, nocombine = true, default = true })
 end
 
 --- Define the groups now and again on every `ColorScheme`.

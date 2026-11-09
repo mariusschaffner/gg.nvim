@@ -193,6 +193,37 @@ T["a changed updated_at refetches that merge request"] = function()
   eq(vim.startswith(lines(v)[5], "  !84"), true)
 end
 
+T["GitLab's 0 / 0 'no stats' falls back to counting the stored diffs"] = function()
+  local fake = H.fake()
+  fake:add(D.list_responses(nil, { ["repeat"] = true }))
+  fake:add(D.summaries_response(nil, { nil_stats = { [85] = true, [84] = true } }))
+  fake:add(D.me_response())
+  fake:add(D.diffs_response(85))
+  fake:add(D.diffs_response(84, { status = 500 }))
+  current = mr_view.open({ host = D.HOST, project = D.PROJECT, config = config.get() })
+  local v = filled(ready(current))
+  H.wait_for(function()
+    return not v.cache[85].diff_loading and not v.cache[84].diff_loading
+  end)
+  eq(v.cache[85].diff, { additions = 3, deletions = 1 })
+  local l = lines(v)
+  eq(l[8]:find("   +3    −1", 1, true) ~= nil, true) -- !85 from the diffs
+  eq(l[8]:find("✓ ✓ ✓ ▸", 1, true) ~= nil, true) -- its pipeline from the summary
+  eq(l[9]:find("+0", 1, true), nil) -- !84: the fallback failed, placeholders
+  eq(v.cache[84].diff_error, true)
+  -- R retries the failed fallback; a cached one is not fetched again
+  fake:add(D.diffs_response(84))
+  keys("R")
+  ready(v)
+  H.wait_for(function()
+    return v.cache[84] and v.cache[84].diff ~= nil
+  end)
+  local diffs = vim.tbl_filter(function(r)
+    return r.path and r.path:find("/diffs$")
+  end, fake:requests())
+  eq(#diffs, 3)
+end
+
 T["the signed-in user is bold"] = function()
   local v = filled(ready(open()))
   H.wait_for(function()

@@ -190,6 +190,24 @@ T["cells: diff numbers, compact counts, bar maths"] = function()
   end
 end
 
+T["cells: GitLab's 'no stats' value and fallback sums"] = function()
+  eq(cells.is_nil_stats({ additions = 0, deletions = 0, file_count = 0 }), true)
+  eq(cells.is_nil_stats({ additions = 0, deletions = 0, file_count = 2 }), false) -- e.g. renames only
+  eq(cells.is_nil_stats({ additions = 1, deletions = 0, file_count = 0 }), false)
+  eq(cells.is_nil_stats(nil), false)
+  eq(cells.sum_stats({ { additions = 3, deletions = 1 }, { additions = nil, deletions = nil }, { additions = 2, deletions = 0 } }), { additions = 5, deletions = 1 })
+end
+
+T["render: fallback counts replace the summary's; pending fallback shows placeholders"] = function()
+  local summaries = D.summaries()
+  summaries[88].diff = { additions = 7, deletions = 2 }
+  summaries[87].diff_loading = true
+  local r = rendered({ summaries = summaries })
+  eq(r.lines[5]:find("   +7    −2 ", 1, true) ~= nil, true)
+  eq(r.lines[6]:find("    ·     · ········", 1, true) ~= nil, true)
+  eq(r.lines[6]:find("✓ ◐ ○ ○", 1, true) ~= nil, true) -- the pipeline is still shown
+end
+
 T["user colours: stable hash, overrides, current user bold"] = function()
   eq(user_hl.hash("abc"), 193485963)
   eq(user_hl.group("abc"), "GitlabUser4")

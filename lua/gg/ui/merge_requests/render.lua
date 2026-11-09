@@ -28,6 +28,9 @@ local TABS = {
 ---@class gg.ui.MrSummaryEntry
 ---@field summary? gg.MergeRequestSummary
 ---@field error? boolean the request failed
+---@field diff? { additions: integer, deletions: integer } counts from the fallback (replace the summary's)
+---@field diff_loading? boolean the fallback is still running
+---@field diff_error? boolean the fallback failed
 
 ---@class gg.ui.MrRenderInput
 ---@field width integer window width in cells
@@ -142,9 +145,9 @@ local function mr_line(mr, cols, input)
     failed = (entry and entry.error) or failed.head_pipeline,
   }), cols.pipeline.width)
   l:pad_to(cols.diff.col)
-  segments(l, cells.diff(summary and summary.diff_stats, {
-    loading = entry == nil,
-    failed = (entry and entry.error) or failed.diff_stats or (entry ~= nil and summary == nil),
+  segments(l, cells.diff(entry and entry.diff or (summary and summary.diff_stats), {
+    loading = entry == nil or entry.diff_loading,
+    failed = (entry and (entry.error or entry.diff_error)) or failed.diff_stats or (entry ~= nil and summary == nil),
   }, cols.diff.width >= columns.DIFF), cols.diff.width)
   return l, mark_col
 end

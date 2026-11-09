@@ -147,18 +147,43 @@ function D.list_responses(nodes, opts)
 end
 
 --- A repeating fake-backend entry answering every summaries request with
---- all of `nodes` (the view keeps only the IIDs it asked for).
+--- all of `nodes` (the view keeps only the IIDs it asked for). IIDs in
+--- `opts.nil_stats` get GitLab's "no line counts" value (0 / 0, 0 files).
 ---@param nodes? table[]
----@param opts? { delay?: integer }
+---@param opts? { delay?: integer, nil_stats?: table<integer, boolean> }
 function D.summaries_response(nodes, opts)
   local list = {}
   for _, n in ipairs(nodes or D.nodes()) do
-    table.insert(list, D.summary_node(tonumber(n.iid), n.updatedAt))
+    local s = D.summary_node(tonumber(n.iid), n.updatedAt)
+    if opts and opts.nil_stats and opts.nil_stats[tonumber(n.iid)] then
+      s.diffStatsSummary = { additions = 0, deletions = 0, changes = 0, fileCount = 0 }
+    end
+    table.insert(list, s)
   end
   return {
     ["repeat"] = true,
     request = { operation = "MergeRequestSummaries" },
     response = { delay = opts and opts.delay, body = { data = { project = { mergeRequests = { nodes = list } } } } },
+  }
+end
+
+--- A REST `/diffs` page for MR `iid`: two files, 3 additions and 1 deletion.
+---@param iid integer
+---@param opts? { status?: integer }
+function D.diffs_response(iid, opts)
+  local path = ("/api/v4/projects/%s/merge_requests/%d/diffs"):format(D.PROJECT:gsub("/", "%%2F"), iid)
+  if opts and opts.status then
+    return { request = { method = "GET", path = path }, response = { status = opts.status, body = { message = "boom" } } }
+  end
+  local function file(name, diff)
+    return { old_path = name, new_path = name, a_mode = "100644", b_mode = "100644", diff = diff, new_file = false, renamed_file = false, deleted_file = false }
+  end
+  return {
+    request = { method = "GET", path = path },
+    response = {
+      headers = { ["x-next-page"] = "" },
+      body = { file("a.tf", "@@ -1 +1,2 @@\n-x\n+y\n+z\n"), file("b.tf", "@@ -0,0 +1 @@\n+w\n") },
+    },
   }
 end
 

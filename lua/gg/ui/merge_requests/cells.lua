@@ -173,6 +173,28 @@ function M.bar_split(add, del, cells)
   return green
 end
 
+--- True for GitLab's "no stats" value: when it has no line counts for a
+--- merge request (no diff refs, nothing from Gitaly) `diffStatsSummary` is
+--- 0 / 0 with 0 files, the same as an empty diff.
+---@param stats gg.DiffStatsSummary|nil
+---@return boolean
+function M.is_nil_stats(stats)
+  return stats ~= nil and stats.additions == 0 and stats.deletions == 0 and (stats.file_count or 0) == 0
+end
+
+--- Line counts from per-file stats (`gg.mr_changes.diffstat`); files whose
+--- counts GitLab withheld (too large, collapsed) are left out.
+---@param files gg.DiffStat[]
+---@return { additions: integer, deletions: integer }
+function M.sum_stats(files)
+  local add, del = 0, 0
+  for _, f in ipairs(files) do
+    add = add + (f.additions or 0)
+    del = del + (f.deletions or 0)
+  end
+  return { additions = add, deletions = del }
+end
+
 local function right(s, width)
   local w = text.width(s)
   return w < width and string.rep(" ", width - w) .. s or s

@@ -729,6 +729,9 @@ Merge requests                                                   *gg-ui-mrs*
     Pipeline and Diff cells of the visible page fill in afterwards with
     |gg.merge_requests.summaries()| (10 merge requests per request, at most
     4 requests at a time) and show `·` until then; the cursor never moves.
+    When GitLab has no line counts for a merge request it reports 0 / 0
+    with 0 files; those diff cells are counted from the stored diffs
+    instead (|gg.mr_changes.diffstat()|, one more request per such MR).
     Results are cached while the picker is open and reused as long as the
     merge request's `updated_at` is unchanged. `R` also refreshes cells
     whose pipeline was still active and cells that failed to load.
@@ -756,8 +759,8 @@ Highlights                                                  *gg-ui-highlights*
     `GitlabCurrentUser` (bold, layered on the user's colour)
     `GitlabPipelineSuccess` `GitlabPipelineFailed` `GitlabPipelineRunning`
     `GitlabPipelinePending` `GitlabPipelineManual` `GitlabPipelineCanceled`
-    `GitlabPipelineSkipped` `GitlabDiffAdd` (links `Added`, else `DiffAdd`)
-    `GitlabDiffDelete` (links `Removed`, else `DiffDelete`).
+    `GitlabPipelineSkipped` `GitlabDiffAdd` (links `GitlabPipelineSuccess`)
+    `GitlabDiffDelete` (links `GitlabPipelineFailed`).
     `GitlabIssueTitle` and `GitlabDue` take only the foreground of
     `Normal`, so the row highlight shows behind them.
     Key hints use `GitlabHintKey` (the `Function` colour, bold) for the

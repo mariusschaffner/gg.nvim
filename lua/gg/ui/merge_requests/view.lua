@@ -11,7 +11,12 @@
 ---   * Summaries are cached per merge request for this picker, valid while
 ---     the MR's `updated_at` is unchanged. `R` also drops entries whose
 ---     pipeline was still active (running, pending, ...) and failed ones.
+---   * GitLab answers `diffStatsSummary` with 0 / 0 and 0 files when it has
+---     no line counts for an MR. Those diff cells fall back to
+---     `gg.mr_changes.diffstat` (counts from GitLab's stored diffs; one REST
+---     request per 100 files, up to `FALLBACK_FILES`), through the same queue.
 ---   * The signed-in user (`gg.users.current`) is drawn bold.
+local cells = require("gg.ui.merge_requests.cells")
 local gg = require("gg")
 local highlights = require("gg.ui.highlights")
 local hint = require("gg.ui.lib.hint")
@@ -26,6 +31,7 @@ local M = {}
 
 M.BATCH = 10
 M.CONCURRENCY = 4
+M.FALLBACK_FILES = 300
 
 -- pipeline statuses that can still change without the MR's updated_at changing
 local ACTIVE = {
@@ -44,6 +50,9 @@ local ACTIVE = {
 ---@field updated_at string|nil the MR's updated_at the entry was fetched for
 ---@field summary? gg.MergeRequestSummary nil when GitLab did not return the MR
 ---@field error? boolean the request failed
+---@field diff? { additions: integer, deletions: integer } from the diffstat fallback
+---@field diff_loading? boolean the summary had no line counts; the fallback is pending
+---@field diff_error? boolean the fallback failed
 
 ---@class gg.ui.MrView
 ---@field name "merge_requests"
@@ -88,6 +97,7 @@ function M.attach(shell)
     closed = false,
     cache = {},
     inflight = {},
+    inflight_diff = {},
     queue = queue.new({ concurrency = M.CONCURRENCY }),
     list = shell.list,
     prompt = shell.prompt,
@@ -159,7 +169,7 @@ end
 function View:_expire()
   for iid, e in pairs(self.cache) do
     local p = e.summary and e.summary.head_pipeline
-    if e.error or (p and ACTIVE[p.status]) then
+    if e.error or e.diff_error or (p and ACTIVE[p.status]) then
       self.cache[iid] = nil
     end
   end
@@ -328,17 +338,47 @@ function View:_fill()
       self:_arrived(iids, at, res, err)
     end)
   end
+  local fallbacks = {}
   for _, mr in ipairs(page.rows) do
     local e = self.cache[mr.iid]
-    if not (e and e.updated_at == mr.updated_at) and not self.inflight[mr.iid] then
-      table.insert(batch, mr.iid)
-      versions[mr.iid] = mr.updated_at
-      if #batch >= M.BATCH then
-        flush()
+    if not (e and e.updated_at == mr.updated_at) then
+      if not self.inflight[mr.iid] then
+        table.insert(batch, mr.iid)
+        versions[mr.iid] = mr.updated_at
+        if #batch >= M.BATCH then
+          flush()
+        end
       end
+    elseif e.diff_loading and not self.inflight_diff[mr.iid] then
+      table.insert(fallbacks, mr.iid)
     end
   end
   flush()
+  for _, iid in ipairs(fallbacks) do
+    self:_push_fallback(iid)
+  end
+end
+
+-- The summary had no line counts: count them from the stored diffs.
+---@private
+function View:_push_fallback(iid)
+  local entry = self.cache[iid]
+  self.queue:push("diff:" .. iid, function()
+    self.inflight_diff[iid] = true
+    return gg.mr_changes.diffstat({ host = self.host, project = self.project, iid = iid }, { limit = M.FALLBACK_FILES })
+  end, function(res, err)
+    self.inflight_diff[iid] = nil
+    if self.closed or self.cache[iid] ~= entry then
+      return -- refreshed meanwhile
+    end
+    entry.diff_loading = nil
+    if err then
+      entry.diff_error = true
+    else
+      entry.diff = cells.sum_stats(res.items or {})
+    end
+    self:_patch({ iid })
+  end)
 end
 
 ---@private
@@ -353,11 +393,21 @@ function View:_arrived(iids, at, res, err)
   for _, s in ipairs(res or {}) do
     by_iid[s.iid] = s
   end
+  local fallbacks = {}
   for _, iid in ipairs(iids) do
     -- keyed to the list version it was asked for, so a newer MR refetches
-    self.cache[iid] = { updated_at = at[iid], summary = by_iid[iid], error = err ~= nil or nil }
+    local s = by_iid[iid]
+    local entry = { updated_at = at[iid], summary = s, error = err ~= nil or nil }
+    if s and cells.is_nil_stats(s.diff_stats) then
+      entry.diff_loading = true
+      table.insert(fallbacks, iid)
+    end
+    self.cache[iid] = entry
   end
   self:_patch(iids)
+  for _, iid in ipairs(fallbacks) do
+    self:_push_fallback(iid)
+  end
 end
 
 ---@private

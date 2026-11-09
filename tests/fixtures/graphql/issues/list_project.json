@@ -695,6 +695,10 @@
                     "iid": "144",
                     "startDate": "2026-10-10",
                     "state": "active",
+                    "stats": {
+                      "closedIssuesCount": 2685,
+                      "totalIssuesCount": 6247
+                    },
                     "title": "19.6",
                     "webPath": "/groups/gitlab-org/-/milestones/144"
                   },

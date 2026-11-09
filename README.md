@@ -1,9 +1,10 @@
 # gg.nvim
 
-A standalone, UI-free GitLab API layer for Neovim.
+A standalone GitLab API layer for Neovim, with an optional issues picker on top.
 
-gg talks to GitLab's GraphQL and REST APIs, and returns plain Lua tables with GitLab's own field names. It has no
-UI and no user commands; `:checkhealth gg` is the only command. Plugins build their interface on top of it.
+gg talks to GitLab's GraphQL and REST APIs, and returns plain Lua tables with GitLab's own field names. The API layer
+has no UI and no user commands; plugins build their interface on top of it. The optional UI layer (`gg.ui`) adds
+`:Gitlab`, an issues picker grouped by milestone (see [below](#issues-picker-gitlab)).
 
 - **Async.** Every call returns a Task. Use it with a callback, await it in a coroutine, or cancel it.
 - **Never throws.** Failures are normalized errors with a `kind`: `auth`, `forbidden`, `not_found`, `validation`,
@@ -98,6 +99,24 @@ end)
 t:on_done(function(result, err) end)
 t:cancel() -- cancels the request in flight
 ```
+
+## Issues picker (`:Gitlab`)
+
+`:Gitlab` opens a full-editor picker with a live filter and the project's issues, grouped by milestone (top-level
+issues first, then each milestone with its due date and real progress). `:Gitlab group/project` (or
+`host/group/project`) picks the project; without an argument it uses the `origin` remote of the current directory.
+
+```lua
+require("gg.ui").setup({
+  limit = 2000,    -- issues fetched once per picker; tabs, filter and pages work locally
+  page_size = 50,  -- P cycles through the pages
+  keymaps = { refresh = "R", close = "q" }, -- false disables a key
+  on_inspect_issue = function(issue, ctx) ctx.close(); vim.ui.open(issue.web_url) end,
+})
+```
+
+Keys: `/` filter (`~label %milestone @user #iid text`), `L`/`H` Open/Closed/All, `P` next page, `]m`/`[m` milestones,
+`i`/`I` inspect issue/milestone, `R` reload, `q` close. `:help gg-ui` has the details and the highlight groups.
 
 ## Pagination
 

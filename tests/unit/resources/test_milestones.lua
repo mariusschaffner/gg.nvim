@@ -52,6 +52,7 @@ T["get: by global ID, web URL from the origin (no doubled root)"] = function()
     start_date = "2026-10-10",
     due_date = "2026-11-13",
     web_url = "https://gitlab.example.com/groups/gitlab-org/-/milestones/144",
+    issue_stats = { total = 6247, closed = 2685 },
     group = "gitlab-org",
     description = "",
     expired = false,

@@ -25,6 +25,10 @@
           "project": null,
           "startDate": "2026-10-10",
           "state": "active",
+          "stats": {
+            "closedIssuesCount": 2685,
+            "totalIssuesCount": 6247
+          },
           "title": "19.6",
           "updatedAt": "2026-03-03T22:58:31Z",
           "webPath": "/groups/gitlab-org/-/milestones/144"

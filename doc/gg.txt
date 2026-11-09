@@ -1,4 +1,4 @@
-*gg.txt*  A standalone, UI-free GitLab API layer for Neovim
+*gg.txt*  A standalone GitLab API layer for Neovim, with an optional UI
 
 ==============================================================================
 CONTENTS                                                         *gg-contents*
@@ -12,14 +12,16 @@ CONTENTS                                                         *gg-contents*
   7. Resources ............................................... |gg-resources|
   8. Testing with the fake backend ........................... |gg-testing|
   9. Security ................................................ |gg-security|
+ 10. UI: issues picker ....................................... |gg-ui|
 
 ==============================================================================
 1. INTRODUCTION                                                     *gg-intro*
 
 gg talks to the GitLab REST and GraphQL APIs and returns plain Lua tables
-("models") with GitLab's field names. It has no UI and no user commands
-(only |:checkhealth| `gg`). It never runs `git`: pass remote URLs in and use
-|gg.context.parse()|.
+("models") with GitLab's field names. The API layer has no UI and no user
+commands (only |:checkhealth| `gg`). It never runs `git`: pass remote URLs in
+and use |gg.context.parse()|. The optional UI layer, |gg-ui|, is built on top
+of it and adds |:Gitlab|.
 
 Requirements: Neovim 0.10 or newer, and `curl` on the `PATH`. There are no
 other dependencies.
@@ -448,6 +450,13 @@ gg.milestones.update({args})                           *gg.milestones.update()*
     Project milestones. `update` takes `title`, `description`, `start_date`,
     `due_date` and `state_event` ("close" or "activate").
 
+Milestone issue counts                               *gg-milestone-issue-stats*
+    Milestones read through GraphQL (`list`, `get`, and the `milestone` of
+    every issue and merge request) carry `issue_stats = { total, closed }`:
+    the issue counts of the whole milestone, across every project a group
+    milestone covers, in any state. It is nil when GitLab returns no stats,
+    and always nil from the REST calls (`create`, `update`).
+
 ------------------------------------------------------------------------------
 LABELS, USERS, BRANCHES, PROJECTS                     *gg-labels* *gg-users*
                                                     *gg-branches* *gg-projects*
@@ -598,5 +607,93 @@ unless it has `"repeat": true`.
   style query parameters, URL credentials, and the exact token of the
   request.
 - |:checkhealth| `gg` reports where a token comes from, never its value.
+
+==============================================================================
+10. UI: ISSUES PICKER                                                  *gg-ui*
+
+`gg.ui` is an optional UI built on the API above (it uses only `require("gg")`).
+It needs the hosts from |gg-setup|; its own options are separate.
+
+                                                                     *:Gitlab*
+:Gitlab [project]
+    Open the issues picker over the whole editor. [project] is
+    `group/project`, `host/group/project` or a remote URL. Without it, the
+    `origin` remote of the current directory is used (`git remote get-url
+    origin`, run asynchronously; the only place gg runs git). With several
+    configured hosts, name the host.
+
+gg.ui.open({opts})                                               *gg.ui.open()*
+    Open the picker from Lua. `{ project?, host?, cwd? }`: `project` as for
+    |:Gitlab|; `host` + `project` open that target directly; `cwd` is where
+    to look for the git remote. Returns the view (`:close()` closes it).
+
+gg.ui.setup({opts})                                             *gg.ui.setup()*
+    Returns `true`, or `false, err` (the previous options stay). Defaults:
+>lua
+    require("gg.ui").setup({
+      limit = 2000,          -- issues fetched per picker (all states)
+      page_size = 50,        -- issues per page
+      filter_debounce_ms = 50,
+      keymaps = {            -- buffer-local; false disables one
+        focus_filter = "/", filter_submit = "<CR>", filter_clear = "<Esc><Esc>",
+        inspect_issue = "i", inspect_milestone = "I",
+        next_tab = "L", prev_tab = "H", next_page = "P",
+        next_milestone = "]m", prev_milestone = "[m",
+        refresh = "R", close = "q",
+      },
+      order = {},            -- { top?, milestones?, issues? } comparators
+      on_inspect_issue = function(issue, ctx) end,         -- default: notify
+      on_inspect_milestone = function(milestone, ctx) end, -- default: notify
+    })
+<
+    The inspect callbacks get a mapped |gg-issues| model or the issue's
+    milestone, and `ctx = { host, project, close }` (`close()` closes the
+    picker first, e.g. before opening a detail window).
+
+Layout                                                          *gg-ui-layout*
+    Two floats: the filter prompt on top and the table below. The table
+    shows the tabs (Open / Closed / All with counts), a column header, and
+    the issues:
+    - issues without a milestone come first, each in its own block,
+      newest update first;
+    - then one block per milestone (due date ascending, none last). The
+      left column shows `%name title`, the due text and the milestone's
+      real progress (closed/total, from GitLab, all projects of a group
+      milestone). Issues inside are sorted by due date, then IID.
+    Labels and Assignee columns hide on narrow windows. Pages hold at most
+    `page_size` issues; `P` cycles through them and the footer shows
+    `[P] Page 2/5`. The whole project is fetched once (up to `limit`);
+    tabs, filter and pages work without further requests. `R` reloads.
+
+Filter                                                          *gg-ui-filter*
+    Space-separated tokens, all must match, case-insensitive:
+      `~name`    a label contains name
+      `%name`    the milestone title contains name (`%none`: no milestone)
+      `@user`    an assignee username contains user (`@none`: unassigned)
+      `#12`      the IID starts with 12
+      other      a substring of the title (a number also matches IIDs)
+    The prompt shows `matching / total` (in the active tab) while filtering.
+
+Keys                                                              *gg-ui-keys*
+    Table: `j` `k` `<Down>` `<Up>` `gg` `G` move between issues only,
+    `/` filter, `L` / `H` next / previous tab, `P` next page, `]m` / `[m`
+    next / previous milestone, `i` / `I` inspect the issue / its milestone,
+    `R` reload, `q` close. Filter: `<CR>` back to the table, `<Esc><Esc>`
+    clear and go back. Closing either window closes both.
+
+Highlights                                                  *gg-ui-highlights*
+    All groups are defined with `default = true` and link to standard
+    groups, so colourschemes can override them:
+    `GitlabPickerBorder` `GitlabPickerBorderActive` `GitlabPickerTitle`
+    `GitlabPickerFooter` `GitlabPickerPrompt` `GitlabHintKey`
+    `GitlabHintText` `GitlabTab` `GitlabTabActive` `GitlabColumnHeader`
+    `GitlabSeparator` `GitlabMilestoneEdge` `GitlabMilestoneEdgeActive`
+    `GitlabMilestoneName` `GitlabMilestoneTitle` `GitlabDue`
+    `GitlabDueSoon` `GitlabDueOverdue` `GitlabProgressDone`
+    `GitlabProgressTodo` `GitlabProgressText` `GitlabIid`
+    `GitlabUnassigned` `GitlabEmpty` `GitlabStateOpened`
+    `GitlabStateClosed` `GitlabCursorMark` `GitlabCursorLine`
+    `GitlabLabelFallback`. Labels use their GitLab colour through
+    `GitlabLabel_<hex>` groups.
 
  vim:tw=78:ts=8:ft=help:norl:

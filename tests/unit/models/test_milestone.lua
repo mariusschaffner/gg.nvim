@@ -32,6 +32,23 @@ T["from_graphql: project milestone"] = function()
   })
 end
 
+T["issue_stats: mapped from stats, nil when missing or partial"] = function()
+  local node = { id = "gid://gitlab/Milestone/5", title = "v2" }
+  node.stats = { totalIssuesCount = 6, closedIssuesCount = 2 }
+  eq(milestone.ref_from_graphql(node).issue_stats, { total = 6, closed = 2 })
+  eq(milestone.from_graphql(node).issue_stats, { total = 6, closed = 2 })
+  node.stats = { totalIssuesCount = 0, closedIssuesCount = 0 }
+  eq(milestone.ref_from_graphql(node).issue_stats, { total = 0, closed = 0 })
+  node.stats = vim.NIL
+  eq(milestone.ref_from_graphql(node).issue_stats, nil)
+  node.stats = { totalIssuesCount = 6, closedIssuesCount = vim.NIL }
+  eq(milestone.ref_from_graphql(node).issue_stats, nil)
+  node.stats = nil
+  eq(milestone.ref_from_graphql(node).issue_stats, nil)
+  -- REST has no stats on milestone objects
+  eq(milestone.ref_from_rest({ id = 1, title = "t" }).issue_stats, nil)
+end
+
 T["from_rest and ref_from_rest"] = function()
   local raw = { id = 1, iid = 1, project_id = 3, title = "t", description = "d", state = "active", due_date = "2026-02-01", start_date = vim.NIL, expired = false, web_url = "https://gitlab.example.com/g/r/-/milestones/1" }
   local m = milestone.from_rest(raw, { project = "g/r" })

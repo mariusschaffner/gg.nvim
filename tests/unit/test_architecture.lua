@@ -20,6 +20,8 @@ local function classify(mod)
   if top == "rest" or top == "graphql" then return { layer = 3 } end
   if top == "resources" then return { layer = 4 } end
   if top == "health" then return { layer = 5 } end
+  -- the UI sits above the facade and talks to the API only through `gg`
+  if top == "ui" then return { layer = 7, ui = true } end
   if top == "context" or top == "models" then return { pure = top } end
   return { unknown = true }
 end
@@ -62,7 +64,9 @@ T["no module requires a module above it"] = function()
       if dep:match("^gg$") or dep:match("^gg%.") then
         local other = classify(dep)
         local ok
-        if me.pure then
+        if me.ui then
+          ok = dep == "gg" or other.ui == true
+        elseif me.pure then
           ok = other.pure == me.pure
         elseif other.pure then
           ok = true
@@ -88,11 +92,13 @@ T["no blocking calls, shell-outs or git"] = function()
     { "os%.execute", "os.execute" },
     { "{%s*[\"']git[\"']", "git argv" },
   }
+  -- the UI resolves the project from the git remote (async), only here
+  local git_allowed = { ["lua/gg/ui/project.lua"] = true }
   local bad = {}
   for _, file in ipairs(sources()) do
     local src = code_only(H.read(file))
     for _, b in ipairs(banned) do
-      if src:find(b[1]) then
+      if src:find(b[1]) and not (b[2] == "git argv" and git_allowed[file]) then
         table.insert(bad, file .. ": " .. b[2])
       end
     end
@@ -126,6 +132,35 @@ T["gg is standalone: no references to the old plugin"] = function()
         -- built from parts so this test does not match itself
         if line:lower():find("at" .. "las", 1, true) then
           table.insert(bad, ("%s:%d"):format(file, n))
+        end
+      end
+    end
+  end
+  eq(bad, {})
+end
+
+T["pure UI modules do not touch vim.api"] = function()
+  local pure = { "lua/gg/ui/lib", "lua/gg/ui/issues/filter.lua", "lua/gg/ui/issues/model.lua",
+    "lua/gg/ui/issues/paginate.lua", "lua/gg/ui/issues/columns.lua", "lua/gg/ui/issues/render.lua",
+    "lua/gg/ui/components/tabs.lua" }
+  local bad = {}
+  for _, file in ipairs(sources()) do
+    for _, prefix in ipairs(pure) do
+      if file:sub(1, #prefix) == prefix and code_only(H.read(file)):find("vim%.api") then
+        table.insert(bad, file)
+      end
+    end
+  end
+  eq(bad, {})
+end
+
+T["only the UI requires gg.ui"] = function()
+  local bad = {}
+  for _, file in ipairs(sources()) do
+    if not file:find("^lua/gg/ui/") then
+      for _, dep in ipairs(requires(H.read(file))) do
+        if dep:match("^gg%.ui") then
+          table.insert(bad, file .. " -> " .. dep)
         end
       end
     end

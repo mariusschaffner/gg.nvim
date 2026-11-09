@@ -95,6 +95,7 @@ T["from_graphql: milestone web path joins the origin, not the base URL"] = funct
     due_date = "2026-11-13",
     start_date = "2026-10-10",
     web_url = "https://gitlab.com/groups/gitlab-org/-/milestones/144",
+    issue_stats = { total = 6247, closed = 2685 },
   })
   eq(#i.assignees > 0, true)
   eq(i.assignees[1].username:match("^user%-%d+$") ~= nil, true)

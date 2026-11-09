@@ -1,7 +1,8 @@
 # gg.nvim
 
-Standalone, UI-free GitLab API layer for Neovim. It has no user
-commands. The only exception is `:checkhealth`.
+Standalone GitLab API layer for Neovim, plus an optional UI layer (`gg.ui`)
+built on top of it. The API layer has no user commands and no UI; the only
+commands are `:checkhealth gg` and the UI's `:Gitlab` (in `plugin/gg.lua`).
 
 for any reference, the old plugin is at C:/Users/marius.schaffner/Documents/work/github/atlas.nvim/
 
@@ -36,6 +37,11 @@ lua/gg/
   models/             domain objects + mappers from raw JSON (pure)
   resources/          one module per resource (issues, merge_requests, milestones,
                       pipelines, jobs, artifacts, registry, labels, users, notes ...)
+  ui/                 optional UI layer (see "UI layer" below)
+    lib/              pure helpers: display-width text, line builder, dates, hints
+    components/       reusable UI pieces: layout, floats, prompt, list buffer, tabs
+    issues/           issues picker: filter, model, paginate, columns, render (pure) + view
+plugin/gg.lua         registers :Gitlab (lazy; loads gg.ui only when run)
 tests/
   fixtures/rest/      recorded, sanitized responses
   fixtures/graphql/
@@ -51,7 +57,24 @@ resources -> models          models and context are pure and depend on nothing
 ```
 
 Nothing may require a module above it. `init.lua` only re-exports.
-This plugin never shells out to `git`. Consumers pass in remote URLs.
+The API layer never shells out to `git`. Consumers pass in remote URLs.
+
+### UI layer
+
+```
+gg.ui.* -> gg (the facade) only        nothing outside gg.ui requires gg.ui
+```
+
+- `gg.ui` is a consumer of the API: it requires only `gg` and `gg.ui.*`, never
+  resources/graphql/transport directly. Consumers only see mapped models.
+- Its options live in `require("gg.ui").setup()`, separate from `gg.setup()`.
+- `lua/gg/ui/project.lua` is the one module allowed to run `git`
+  (`git remote get-url origin`, async via `vim.system`) to find the project.
+- `ui/lib`, the pure parts of `ui/issues` (filter, model, paginate, columns,
+  render) and `ui/components/tabs.lua` do not touch `vim.api`; they are tested
+  headless without windows.
+- Colours come only from highlight groups defined with `default = true`.
+- Key hints are always written `[<key>] <description>`.
 
 ## Conventions
 
@@ -83,8 +106,6 @@ This plugin never shells out to `git`. Consumers pass in remote URLs.
 
 ## Working rules
 
-- The plan lives in `docs/refactor/PLAN.md` as a checklist. Work through it in
-  order, tick items off, and commit once per item.
 - The old plugin is a reference for **required behavior**, not for implementation.
   Do not copy its code.
 - Check GitLab API behavior against the official docs (docs.gitlab.com),

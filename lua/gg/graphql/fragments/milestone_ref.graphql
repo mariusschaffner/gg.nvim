@@ -6,4 +6,9 @@ fragment MilestoneRefFields on Milestone {
   dueDate
   startDate
   webPath
+  # Issue counts across every project the milestone covers (group milestones too).
+  stats {
+    totalIssuesCount
+    closedIssuesCount
+  }
 }

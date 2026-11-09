@@ -5,6 +5,10 @@ local util = require("gg.models.util")
 
 local M = {}
 
+---@class gg.MilestoneIssueStats
+---@field total integer issues in the milestone, any state, across all its projects
+---@field closed integer closed issues in the milestone
+
 ---@class gg.MilestoneRef
 ---@field id integer
 ---@field iid integer|nil
@@ -13,6 +17,23 @@ local M = {}
 ---@field due_date string|nil YYYY-MM-DD
 ---@field start_date string|nil YYYY-MM-DD
 ---@field web_url string|nil
+---@field issue_stats gg.MilestoneIssueStats|nil GraphQL only; nil when GitLab returns no stats
+
+--- `stats { totalIssuesCount closedIssuesCount }` -> gg.MilestoneIssueStats.
+--- Both counts are nullable in the schema; nil unless both are present.
+---@param stats any
+---@return gg.MilestoneIssueStats|nil
+local function issue_stats(stats)
+  stats = util.value(stats)
+  if type(stats) ~= "table" then
+    return nil
+  end
+  local total, closed = tonumber(util.value(stats.totalIssuesCount)), tonumber(util.value(stats.closedIssuesCount))
+  if not total or not closed then
+    return nil
+  end
+  return { total = total, closed = closed }
+end
 
 --- Map a REST milestone object embedded in an issue/MR.
 ---@param raw table|nil
@@ -51,6 +72,7 @@ function M.ref_from_graphql(node, ctx)
     due_date = util.date(node.dueDate),
     start_date = util.date(node.startDate),
     web_url = util.web_url(node.webPath, ctx and ctx.origin),
+    issue_stats = issue_stats(node.stats),
   }
 end
 

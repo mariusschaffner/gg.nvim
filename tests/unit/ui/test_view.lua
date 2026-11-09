@@ -386,6 +386,20 @@ T["a limit stops each stream and marks the result truncated"] = function()
   eq(lines(current)[2], "    Open 3     Closed 0     All 3    (first 3)")
 end
 
+T["the [I] Milestone hint shows only when some issue has a milestone"] = function()
+  local nodes = D.nodes()
+  for _, n in ipairs(nodes) do
+    n.milestone = vim.NIL
+  end
+  local v = ready(open({}, D.responses(nodes)))
+  eq(footer_text(v), " [i] Issue ")
+  v:close()
+  current = nil
+  H.reset()
+  v = ready(open())
+  eq(footer_text(v), " [I] Milestone • [i] Issue ")
+end
+
 T["empty result and resize re-render"] = function()
   local v = ready(open({}, D.responses({})))
   eq(lines(v)[6], "  No issues match")

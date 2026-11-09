@@ -266,7 +266,8 @@ end
 function View:_footer()
   local hints = {}
   local k = picker.first_key
-  if k(self.keys.inspect_milestone) then
+  -- like the Milestone column: only when some loaded issue has a milestone
+  if k(self.keys.inspect_milestone) and self.model and self.model.has_milestones then
     table.insert(hints, { key = k(self.keys.inspect_milestone), desc = "Milestone" })
   end
   if k(self.keys.inspect_issue) then

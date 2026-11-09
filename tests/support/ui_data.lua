@@ -41,7 +41,6 @@ local function node(iid, title, labels, user, ms, due, updated, state)
     state = state or "opened",
     type = "ISSUE",
     confidential = false,
-    weight = vim.NIL,
     dueDate = due or vim.NIL,
     webUrl = ("https://%s/%s/-/issues/%d"):format(D.HOST, D.PROJECT, iid),
     userNotesCount = 0,

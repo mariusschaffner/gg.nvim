@@ -111,8 +111,7 @@
                   "type": "ISSUE",
                   "updatedAt": "2026-11-06T12:26:26Z",
                   "userNotesCount": 6,
-                  "webUrl": "https://gitlab.com/gitlab-org/cli/-/work_items/8666",
-                  "weight": null
+                  "webUrl": "https://gitlab.com/gitlab-org/cli/-/work_items/8666"
                 },
                 {
                   "assignees": {
@@ -208,8 +207,7 @@
                   "type": "ISSUE",
                   "updatedAt": "2026-11-06T07:28:57Z",
                   "userNotesCount": 1,
-                  "webUrl": "https://gitlab.com/gitlab-org/cli/-/work_items/8649",
-                  "weight": null
+                  "webUrl": "https://gitlab.com/gitlab-org/cli/-/work_items/8649"
                 },
                 {
                   "assignees": {
@@ -319,8 +317,7 @@
                   "type": "ISSUE",
                   "updatedAt": "2026-11-06T06:50:11Z",
                   "userNotesCount": 5,
-                  "webUrl": "https://gitlab.com/gitlab-org/cli/-/work_items/8565",
-                  "weight": null
+                  "webUrl": "https://gitlab.com/gitlab-org/cli/-/work_items/8565"
                 }
               ],
               "pageInfo": {
@@ -470,8 +467,7 @@
                   "type": "ISSUE",
                   "updatedAt": "2026-11-06T06:46:20Z",
                   "userNotesCount": 3,
-                  "webUrl": "https://gitlab.com/gitlab-org/cli/-/work_items/8700",
-                  "weight": null
+                  "webUrl": "https://gitlab.com/gitlab-org/cli/-/work_items/8700"
                 },
                 {
                   "assignees": {
@@ -579,8 +575,7 @@
                   "type": "ISSUE",
                   "updatedAt": "2026-11-06T03:14:15Z",
                   "userNotesCount": 4,
-                  "webUrl": "https://gitlab.com/gitlab-org/cli/-/work_items/6434",
-                  "weight": null
+                  "webUrl": "https://gitlab.com/gitlab-org/cli/-/work_items/6434"
                 },
                 {
                   "assignees": {
@@ -709,8 +704,7 @@
                   "type": "ISSUE",
                   "updatedAt": "2026-11-06T02:50:26Z",
                   "userNotesCount": 11,
-                  "webUrl": "https://gitlab.com/gitlab-org/cli/-/work_items/8279",
-                  "weight": null
+                  "webUrl": "https://gitlab.com/gitlab-org/cli/-/work_items/8279"
                 }
               ],
               "pageInfo": {

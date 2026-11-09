@@ -59,8 +59,7 @@
             "type": "ISSUE",
             "updatedAt": "2024-07-24T21:14:34Z",
             "userNotesCount": 0,
-            "webUrl": "https://gitlab.com/gitlab-org/cli/-/work_items/1",
-            "weight": null
+            "webUrl": "https://gitlab.com/gitlab-org/cli/-/work_items/1"
           }
         }
       }

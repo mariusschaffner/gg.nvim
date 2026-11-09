@@ -103,8 +103,7 @@
                 "type": "INCIDENT",
                 "updatedAt": "2026-11-06T20:00:33Z",
                 "userNotesCount": 5,
-                "webUrl": "https://gitlab.com/gitlab-org/quality/engineering-productivity/master-broken-incidents/-/issues/31893",
-                "weight": null
+                "webUrl": "https://gitlab.com/gitlab-org/quality/engineering-productivity/master-broken-incidents/-/issues/31893"
               },
               {
                 "assignees": {
@@ -163,8 +162,7 @@
                 "type": "INCIDENT",
                 "updatedAt": "2026-11-06T19:14:13Z",
                 "userNotesCount": 4,
-                "webUrl": "https://gitlab.com/gitlab-org/quality/engineering-productivity/master-broken-incidents/-/issues/31892",
-                "weight": null
+                "webUrl": "https://gitlab.com/gitlab-org/quality/engineering-productivity/master-broken-incidents/-/issues/31892"
               }
             ],
             "pageInfo": {

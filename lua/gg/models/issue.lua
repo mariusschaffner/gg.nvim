@@ -35,7 +35,7 @@ local M = {}
 ---@field assignees gg.User[]
 ---@field labels gg.Label[]
 ---@field milestone gg.MilestoneRef|nil
----@field weight integer|nil
+---@field weight integer|nil REST only; GraphQL leaves it nil (weights are a paid-tier field)
 ---@field due_date string|nil YYYY-MM-DD
 ---@field web_url string
 ---@field references gg.References
@@ -119,7 +119,6 @@ function M.from_graphql(node, ctx)
     end),
     labels = util.map(util.nodes(node.labels), label.from_graphql),
     milestone = milestone.ref_from_graphql(node.milestone, ctx),
-    weight = tonumber(util.value(node.weight)),
     due_date = util.date(node.dueDate),
     web_url = util.value(node.webUrl),
     references = { short = util.value(node.reference), full = full },

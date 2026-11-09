@@ -253,7 +253,8 @@ gg.issues.list_all({args}, {opts})                       *gg.issues.list_all()*
     "None" or "Any"), `author_username`, `search`, `iids`, `order_by`,
     `sort` ("asc" or "desc"), `confidential`, `types` and
     `include_subgroups` (groups only, default true). The default `per_page`
-    is 50. Items are `gg.Issue`.
+    is 50. Items are `gg.Issue`. Their `weight` is always nil: weights are a
+    paid-tier field, and GitLab Free has no such field in its schema.
 
 gg.issues.get({args})                                         *gg.issues.get()*
     `{ host, project, iid }`. Resolves with a `gg.Issue` that includes

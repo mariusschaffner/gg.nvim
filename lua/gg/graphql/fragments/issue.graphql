@@ -9,7 +9,6 @@ fragment IssueFields on Issue {
   state
   type
   confidential
-  weight
   dueDate
   webUrl
   userNotesCount

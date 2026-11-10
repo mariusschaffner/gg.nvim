@@ -17,23 +17,22 @@ Shared foundation: `docs/detail_views_design_spec.md`. Opened by `i` in the pipe
 
 - **Title:** the merge request's title, else the commit title, else `Pipeline #id`; then `#id`.
 - **Right side:** `3:05 elapsed · 4/7 jobs`, or `… total` once finished. The clock is in the status colour.
-- **Border:** `group / project › pipelines › #id` on the left; `⎇ ref · sha · !mr · user · started … ago` on the right. The bottom border holds the mode hints.
+- **Border:** `pipelines › #id` on the left; `⎇ ref · sha · !mr · user · started … ago` on the right. The bottom border holds the mode hints.
 - **Graph** (`detail/pipeline/graph.lua`):
   - **Stage columns:** one per stage with jobs, 28 cells wide, 6 apart. The header shows the name and a summary (`✓ 1:02`, `◐ running`, `manual`).
   - **Job pills:** 3 rows each, holding the icon, the name and the duration or a word.
   - **Pill styles:**
     - manual jobs have a dashed border (`╌` `╎`);
-    - the selected job has a thick border (`┏━┓`), in the accent colour while the graph has the keys.
+    - the selected job has a thick border (`┏━┓`), in the accent colour while the graph has the keys, and no fill.
   - **Connectors:** from stage to stage at each pill's middle row (`┬ ┴ ├ ┤ └ ┌`). `needs:` edges are not drawn.
   - **Overflow:**
     - stages that don't fit hide behind `‹ n more` / `n more ›`, and the window follows the selection;
     - job rows scroll to keep the selected job visible.
-- **`gz` (fullscreen):** hides the graph.
 
 ## Job log (the content window)
 
 - **Title:** `◐ job-name`, plus ` ● following ` while following a running job.
-- **Footer:** `[F] Follow • [/] Search • [za] Fold • [gz] Fullscreen`.
+- **Footer:** `[F] Follow • [/] Search • [za] Fold`.
 - **Parsing** (`detail/pipeline/log_model.lua`):
   - CRLF becomes LF. Inside a line, a `\r` keeps only the text after it (terminal redraw).
   - OSC, DCS and non-SGR CSI sequences and control bytes are removed. SGR colours become highlights (`GitlabAnsi*`; 256 and true colour are ignored).
@@ -52,7 +51,7 @@ Shared foundation: `docs/detail_views_design_spec.md`. Opened by `i` in the pipe
 |---|---|
 | graph | `h` / `l` stage (skips empty stages, keeps the job index), `j` / `k` job, `<CR>` into the log |
 | log | the usual motions and `/` search, `<Esc>` back to the graph |
-| both | `F` follow (to the end), `za` fold, `gz` hide or show the graph, `R` reload, `q` back |
+| both | `F` follow (to the end), `za` fold, `R` reload, `q` back |
 
 - **Default selection:** the first running job, else the first failed job that may not fail, else the first job.
 - **Following:** moving the cursor above the last line stops following.

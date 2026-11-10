@@ -53,6 +53,7 @@ M.SIDEBAR_WIDTH = 34 -- outer, border included
 M.SIDEBAR_GAP = 1
 M.NARROW = 100 -- below this many columns there is no sidebar
 M.HEADER_MAX = 0.55 -- the header takes at most this share of the height
+M.DETAIL_GAP = 1 -- empty rows between the header and the boxes below it
 
 --- True when a detail view has room for its sidebar.
 ---@param area? { columns: integer, lines: integer }
@@ -71,8 +72,8 @@ function M.header_max(area)
 end
 
 --- Rects for a detail view: the header across the top, the content below
---- it and, when `sidebar` is set and the editor is wide enough, a sidebar to
---- the right of the content. Pure given `area`.
+--- it (`DETAIL_GAP` rows apart) and, when `sidebar` is set and the editor is
+--- wide enough, a sidebar to the right of the content. Pure given `area`.
 ---@param opts { header_h: integer, sidebar?: boolean, area?: { columns: integer, lines: integer } }
 ---@return { header: gg.ui.Rect, content: gg.ui.Rect, sidebar?: gg.ui.Rect }
 function M.detail(opts)
@@ -80,7 +81,7 @@ function M.detail(opts)
   local border = 2
   local header_h = math.max(1, math.min(opts.header_h, M.header_max(area)))
   local full = math.max(1, area.columns - border)
-  local below = header_h + border
+  local below = header_h + border + M.DETAIL_GAP
   local content_h = math.max(1, area.lines - below - border)
   local out = {
     header = { row = 0, col = 0, width = full, height = header_h },

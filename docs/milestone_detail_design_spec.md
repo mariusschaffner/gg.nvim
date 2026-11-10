@@ -14,7 +14,7 @@ Shared foundation: `docs/detail_views_design_spec.md`. Opened by `I` in the issu
   | otherwise | Active |
 
 - **Title line:** the title, then `%id`.
-- **Border:** `group / project › milestones › %id` on the left; `project milestone · updated <age> ago` (or `group milestone …`) on the right.
+- **Border:** `milestones › %id` on the left; `project milestone · updated <age> ago` (or `group milestone …`) on the right.
 - **Date strip** (`detail/milestone/timeline.lua`), three lines:
 
   ```
@@ -40,9 +40,9 @@ Shared foundation: `docs/detail_views_design_spec.md`. Opened by `I` in the issu
 
 ## Tabs
 
-1. **Description:** markdown, as in the issue view.
-2. **Work items:** the issues table (`gg.ui.issues.render`) without the milestone column. Its own Open / Closed / All tabs switch with `L` / `H`. `i` / `<CR>` opens the issue. The tab label carries the count.
-3. **Merge requests:** the merge requests table (`gg.ui.merge_requests.render`), with pipeline and diff cells from `gg.merge_requests.summaries`. `L` / `H` switch its states; `i` / `<CR>` opens the merge request.
+1. **Description:** markdown, as in the issue view. Footer: `[i] Edit`.
+2. **Work items:** the issues table (`gg.ui.issues.render`) without the milestone column. One table of every issue (no Open / Closed / All line). `i` / `<CR>` opens the issue; footer `[i] Issue`. The tab label carries the count.
+3. **Merge requests:** the merge requests table (`gg.ui.merge_requests.render`), with pipeline and diff cells from `gg.merge_requests.summaries`. One table of every merge request (no state line); `i` / `<CR>` opens the merge request.
 
 ## Sidebar
 

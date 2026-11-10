@@ -54,24 +54,24 @@ M.LINKS = {
   { "GitlabSha", "DiagnosticWarn" },
   { "GitlabPipelineSource", "Comment" },
   { "GitlabPipelineSourceSchedule", "DiagnosticWarn" },
-  -- detail views
-  { "GitlabDetailBreadcrumb", "Comment" },
+  -- detail views; dimmed text is plain gray (Comment's colour, never italic)
+  { "GitlabDetailBorder", "GitlabTableBorder" },
+  { "GitlabDetailBreadcrumb", "GitlabDetailDim" },
   { "GitlabDetailRef", "DiagnosticWarn" },
-  { "GitlabDetailMeta", "Comment" },
-  { "GitlabDetailLabel", "Comment" },
-  { "GitlabDetailMuted", "Comment" },
+  { "GitlabDetailMeta", "GitlabDetailDim" },
+  { "GitlabDetailLabel", "GitlabDetailDim" },
+  { "GitlabDetailMuted", "GitlabDetailDim" },
   { "GitlabDetailDivider", "NonText" },
   { "GitlabDetailAccent", "Function" },
   { "GitlabDetailHashtag", "DiagnosticWarn" },
   { "GitlabDetailDate", "Constant" },
   { "GitlabDetailError", "DiagnosticError" },
   { "GitlabDetailPositive", "DiagnosticOk" },
-  { "GitlabDetailTab", "Comment" },
-  { "GitlabDetailTabActive", "Title" },
+  { "GitlabDetailTab", "GitlabDetailDim" },
   { "GitlabMilestoneRef", "Special" },
   { "GitlabTaskOpen", "DiagnosticWarn" },
   { "GitlabTaskDone", "DiagnosticOk" },
-  { "GitlabTaskDoneText", "Comment" },
+  { "GitlabTaskDoneText", "GitlabDetailDim" },
   { "GitlabProgressDoing", "Constant" },
   { "GitlabChipFallback", "Visual" },
   { "GitlabCard", "CursorLine" },
@@ -79,12 +79,12 @@ M.LINKS = {
   -- the activity timeline
   { "GitlabTimelineDay", "Title" },
   { "GitlabTimelineRule", "NonText" },
-  { "GitlabTimelineTime", "Comment" },
-  { "GitlabTimelineIcon", "Comment" },
-  { "GitlabTimelineVerb", "Comment" },
+  { "GitlabTimelineTime", "GitlabDetailDim" },
+  { "GitlabTimelineIcon", "GitlabDetailDim" },
+  { "GitlabTimelineVerb", "GitlabDetailDim" },
   { "GitlabTimelineRef", "Special" },
   { "GitlabTimelineGuide", "NonText" },
-  { "GitlabTimelineMore", "Comment" },
+  { "GitlabTimelineMore", "GitlabDetailDim" },
   { "GitlabCommentBg", "CursorLine" },
   { "GitlabCommentReplyBg", "CursorLine" },
   { "GitlabCommentBar", "Function" },
@@ -92,13 +92,13 @@ M.LINKS = {
   { "GitlabBadgeResolved", "DiagnosticOk" },
   { "GitlabBadgeUnresolved", "DiagnosticWarn" },
   { "GitlabBadgeContext", "Special" },
-  { "GitlabReaction", "Comment" },
+  { "GitlabReaction", "GitlabDetailDim" },
   -- strips (merge readiness, milestone dates)
   { "GitlabStripDone", "DiagnosticOk" },
   { "GitlabStripPending", "DiagnosticWarn" },
   { "GitlabStripFailed", "DiagnosticError" },
   { "GitlabStripRule", "NonText" },
-  { "GitlabStripMuted", "Comment" },
+  { "GitlabStripMuted", "GitlabDetailDim" },
   { "GitlabStripMerged", "Constant" },
   { "GitlabTimelineBar", "Special" },
   { "GitlabTimelineOverdue", "DiagnosticError" },
@@ -110,11 +110,11 @@ M.LINKS = {
   { "GitlabCommitDocs", "Function" },
   { "GitlabCommitRefactor", "Special" },
   { "GitlabCommitRevert", "DiagnosticError" },
-  { "GitlabCommitOther", "Comment" },
+  { "GitlabCommitOther", "GitlabDetailDim" },
   -- pipeline graph and job log
   { "GitlabGraphBorder", "NonText" },
   { "GitlabGraphSelected", "Function" },
-  { "GitlabGraphMore", "Comment" },
+  { "GitlabGraphMore", "GitlabDetailDim" },
   { "GitlabGraphStage", "Title" },
   { "GitlabLogError", "DiagnosticError" },
   { "GitlabLogWarn", "DiagnosticWarn" },
@@ -125,7 +125,7 @@ M.LINKS = {
   { "GitlabLogWarnLine", "DiffChange" },
   { "GitlabLogTail", "Special" },
   { "GitlabBadgeFollow", "DiagnosticOk" },
-  { "GitlabAnsiBlack", "Comment" },
+  { "GitlabAnsiBlack", "GitlabDetailDim" },
   { "GitlabAnsiRed", "DiagnosticError" },
   { "GitlabAnsiGreen", "DiagnosticOk" },
   { "GitlabAnsiYellow", "DiagnosticWarn" },
@@ -191,7 +191,9 @@ function M.define()
   vim.api.nvim_set_hl(0, "GitlabHintText", { fg = resolved("Comment").fg, default = true })
   -- layered over a GitlabUserN group for the signed-in user
   vim.api.nvim_set_hl(0, "GitlabCurrentUser", { bold = true, default = true })
-  -- detail views: bright text and bold names
+  -- detail views: plain gray for dimmed text, bright text and bold names
+  vim.api.nvim_set_hl(0, "GitlabDetailDim", { fg = resolved("Comment").fg, default = true })
+  vim.api.nvim_set_hl(0, "GitlabDetailTabActive", { fg = normal_fg, bold = true, default = true })
   vim.api.nvim_set_hl(0, "GitlabDetailTitle", { fg = normal_fg, bold = true, default = true })
   vim.api.nvim_set_hl(0, "GitlabDetailValue", { fg = normal_fg, default = true })
   vim.api.nvim_set_hl(0, "GitlabTimelineActor", { fg = normal_fg, bold = true, default = true })

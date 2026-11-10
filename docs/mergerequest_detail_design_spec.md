@@ -1,12 +1,12 @@
 # Merge request detail — UI spec
 
-Shared foundation: `docs/detail_views_design_spec.md`. Opened by `i` / `<CR>` in the merge requests table, by `gp` in the issue view and by `i` / `<CR>` on a milestone's merge request.
+Shared foundation: `docs/detail_views_design_spec.md`. The Activity tab has no footer hints. Opened by `i` / `<CR>` in the merge requests table, by `gp` in the issue view and by `i` / `<CR>` on a milestone's merge request.
 
 ## Header
 
 - **Pill:** ` ● Open `, ` ● Draft `, ` ● Merged ` or ` ● Closed `.
 - **Title line:** the title, then `!iid`.
-- **Border:** `group / project › merge requests › !iid` on the left; `opened by … · updated … ago` on the right.
+- **Border:** `merge requests › !iid` on the left; `opened by … · updated … ago` on the right.
 - **Readiness strip** (`detail/merge_request/readiness.lua`, `gg.ui.lib.strip`), three lines:
 
   ```
@@ -39,7 +39,7 @@ Shared foundation: `docs/detail_views_design_spec.md`. Opened by `i` / `<CR>` in
 
 ## Tabs
 
-1. **Description:** markdown. Every line that closes issues (`Closes #12`, `fixes group/x#3 and #4`, `resolves issue #5`, …) is followed by one card per issue: `● #22  Title  WF:…`, with a dot green for open, purple for closed, dim while loading. Fenced code is skipped. `i` / `<CR>` on a card opens the issue.
+1. **Description:** markdown. Footer: `[i] Edit`. Every line that closes issues (`Closes #12`, `fixes group/x#3 and #4`, `resolves issue #5`, …) is followed by one card per issue: `● #22  Title  WF:…`, with a dot green for open, purple for closed, dim while loading. Fenced code is skipped. `i` / `<CR>` on a card opens the issue (`i` is the edit key in this tab).
 2. **Activity:** as in the issue view. Diff threads are shown, with `⎇ path:line`.
 3. **Changes:**
    - **Header:** `FILE  ADD  DEL  CHANGE`.
@@ -54,7 +54,7 @@ Shared foundation: `docs/detail_views_design_spec.md`. Opened by `i` / `<CR>` in
    - The subject sits on the next row along a `│` guide. Merge commits read `source → target`.
    - The footer adds a tally, `3 feat · 1 fix`.
 5. **Pipelines:** the pipelines table (`gg.ui.pipelines.view` mounted with `mr_iid`).
-   - Its own All / Running / Failed / Passed tabs switch with `L` / `H`; `P` loads more; `i` / `<CR>` opens the pipeline.
+   - One table of every pipeline of the merge request (no All / Running / Failed / Passed line); `P` loads more; `i` / `<CR>` opens the pipeline. Footer: `[i] Pipeline • [P] More`.
    - Live refresh runs only while the tab is visible.
 
 ## Sidebar

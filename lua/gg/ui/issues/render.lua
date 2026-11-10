@@ -38,6 +38,7 @@ local TONE_HL = { normal = "GitlabDue", soon = "GitlabDueSoon", overdue = "Gitla
 ---  tab counts get a "…" and an empty result says "Loading issues…"
 ---@field retry_key? string|false key shown as "[R] Retry"
 ---@field label_hl? fun(color: string|nil): string highlight group for a label colour
+---@field no_tabs? boolean leave out the tabs line (one table of every state)
 
 ---@class gg.ui.RowInfo
 ---@field kind "tabs"|"blank"|"header"|"rule"|"issue"|"filler"|"message"
@@ -229,7 +230,7 @@ function M.render(input)
     return "GitlabLabelFallback"
   end
 
-  grid.head(out, tabs_line(input), header_line(cols))
+  grid.head(out, not input.no_tabs and tabs_line(input) or nil, header_line(cols))
 
   local page = input.page
   if grid.state(out, {

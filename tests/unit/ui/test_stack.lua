@@ -127,12 +127,13 @@ T["host: tabs swap buffers, R reloads, the sidebar follows the width"] = functio
   eq(h:has_sidebar(), true)
   eq(h:sidebar_width(), 32)
   local title = vim.api.nvim_win_get_config(h.content_float.win).title
-  eq(title[2], { " One ", "GitlabTabActive" })
+  eq(title[2], { " One ", "GitlabDetailTabActive" })
   local d = doc.new()
   d:text("hello", "X", { kind = "greeting" })
   d:text("world")
   h:set_content("a", d)
-  eq(vim.api.nvim_buf_get_lines(h:buf("a"), 0, -1, false), { "hello", "world" })
+  eq(vim.api.nvim_buf_get_lines(h:buf("a"), 0, -1, false), { "", "hello", "world" }) -- an empty first line
+  h:set_cursor(2)
   eq(h:current(), { kind = "greeting" })
   keys("<Tab>")
   eq(h.active, "b")
@@ -148,7 +149,7 @@ T["host: tabs swap buffers, R reloads, the sidebar follows the width"] = functio
   end
   h:set_header(hd, { { " crumb ", "X" } })
   eq(vim.api.nvim_win_get_height(h.header_float.win), 5)
-  eq(vim.api.nvim_win_get_config(h.content_float.win).row, 7)
+  eq(vim.api.nvim_win_get_config(h.content_float.win).row, 8) -- 5 + border + gap
   -- narrow: the sidebar goes, wide again: it comes back
   vim.o.columns = 90
   vim.api.nvim_exec_autocmds("VimResized", {})

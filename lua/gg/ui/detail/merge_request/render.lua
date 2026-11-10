@@ -96,7 +96,7 @@ function M.header(data, width, narrow)
     local age = date.age(mr.updated_at, data.now)
     table.insert(meta, { (#meta > 0 and " · " or "") .. "updated " .. (age == "now" and "just now" or (age .. " ago")) })
   end
-  local title = header.border_title(width, header.crumb(mr.project or data.project, "merge requests"), "!" .. tostring(mr.iid), meta)
+  local title = header.border_title(width, header.crumb("merge requests"), "!" .. tostring(mr.iid), meta)
   return body, title
 end
 
@@ -170,7 +170,7 @@ function M.sidebar(data, width)
       label = "Branches",
       lines = {
         { { M.BRANCH .. " " .. (mr.source_branch or "?"), "GitlabBranchSource" } },
-        { { "↳ ", "GitlabDetailMuted" }, { M.BRANCH .. " " .. (mr.target_branch or "?"), "GitlabBranchTarget" } },
+        { { "↳ ", "GitlabDetailMuted" }, { M.BRANCH .. " " .. (mr.target_branch or "?"), "GitlabDetailMuted" } },
       },
     },
     { label = "Assignee", lines = assignees, empty = "unassigned" },
@@ -205,7 +205,7 @@ function M.card(ref, issue, width, chip_hl)
   if issue then
     dot_hl = issue.state == "closed" and "GitlabStateClosed" or "GitlabStateOpened"
   end
-  l:add(dot, dot_hl):add(" "):add(ref.key, "GitlabIid"):add("  ")
+  l:add(dot, dot_hl):add(" "):add(ref.key, "GitlabDetailMuted"):add("  ")
   local right = issue and wf_label(issue)
   local right_seg = right and chip.label(right, chip_hl) or nil
   local right_w = right_seg and text.width(right_seg[1]) + 1 or 0

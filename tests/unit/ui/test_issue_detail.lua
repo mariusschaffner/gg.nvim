@@ -75,7 +75,7 @@ local function loaded()
   H.wait_for(function()
     local _, content = wins()
     local l = buf_lines(content.buf)
-    return #l > 2 and l[1]:find("Rotate the credentials", 1, true) ~= nil
+    return #l > 2 and l[2]:find("Rotate the credentials", 1, true) ~= nil
   end)
   H.wait_for(function()
     local header, _, side = wins()
@@ -89,31 +89,44 @@ T["opens on top, loads the issue, renders header, description and sidebar"] = fu
   open()
   local header, content, side = wins()
   -- first frame: what the caller passed, loading placeholders
-  eq(buf_lines(content.buf), { " Loading…" })
+  eq(buf_lines(content.buf), { "", " Loading…" }) -- below an empty first line
   eq(vim.api.nvim_get_current_win(), content.win)
   loaded()
   local hl = buf_lines(header.buf)
-  eq(vim.startswith(hl[1], "  ● Open  Rotate Terraform state backend credentials #214"), true)
-  eq(hl[2], "")
-  eq(hl[3]:find(" security   terraform   ◆ 2026.11 Patch cycle  │  ● ○ 1/2 criteria", 1, true) ~= nil, true)
+  eq(hl[1], "")
+  eq(vim.startswith(hl[2], "  ● Open  Rotate Terraform state backend credentials #214"), true)
+  eq(hl[3], "")
+  eq(hl[4]:find(" security   terraform   ◆ 2026.11 Patch cycle  │  ● ○ 1/2 criteria", 1, true) ~= nil, true)
+  eq(hl[5], "")
   local title = chunks_text(vim.api.nvim_win_get_config(header.win).title)
-  eq(vim.startswith(title, " infra / ops › issues › #214 "), true)
+  eq(vim.startswith(title, " issues › #214 "), true)
   eq(vim.endswith(title, " opened by User One · updated 1w ago "), true)
   local cl = buf_lines(content.buf)
-  eq(cl[1], " Rotate the credentials of the state backend.")
-  eq(cl[3]:match("^ Acceptance%s+1 of 2 done$") ~= nil, true)
-  eq(cl[4], " ✓ new key in the vault")
-  eq(cl[5], " ○ old key revoked")
+  eq(cl[1], "")
+  eq(cl[2], " Rotate the credentials of the state backend.")
+  eq(cl[4]:match("^ Acceptance%s+1 of 2 done$") ~= nil, true)
+  eq(cl[5], " ✓ new key in the vault")
+  eq(cl[6], " ○ old key revoked")
   local sl = buf_lines(side.buf)
-  eq(sl[1], " ASSIGNEE")
-  eq(sl[2], " (US) User")
+  eq(sl[1], "")
+  eq(sl[2], " ASSIGNEE")
+  eq(sl[3], " (US) User")
   eq(table.concat(sl, "\n"):find(" 2026-11-01          2026-11-14", 1, true) ~= nil, true)
   eq(table.concat(sl, "\n"):find("⎇ 214-rotate-credentials", 1, true) ~= nil, true)
   eq(table.concat(sl, "\n"):find("!88 Rotate Terraform", 1, true) ~= nil, true)
   -- tabs in the content title, hints in its footer
   local cfg = vim.api.nvim_win_get_config(content.win)
   eq(chunks_text(cfg.title), "  Description   Activity 2  ")
-  eq(chunks_text(cfg.footer), " [gm] Milestone • [gp] Merge request ")
+  eq(chunks_text(cfg.footer), " [i] Edit ")
+  -- the edit key only says that editing comes later
+  local notes = {}
+  local notify = vim.notify
+  vim.notify = function(msg)
+    table.insert(notes, msg)
+  end
+  keys("i")
+  vim.notify = notify
+  eq(notes, { "gg.ui: editing is not available yet" })
 end
 
 T["Activity loads on first show; za folds a thread"] = function()
@@ -126,27 +139,30 @@ T["Activity loads on first show; za folds a thread"] = function()
   keys("<Tab>")
   local _, content = wins()
   H.wait_for(function()
-    return buf_lines(vim.api.nvim_win_get_buf(content.win))[1]:find("YESTERDAY", 1, true) ~= nil
+    return (buf_lines(vim.api.nvim_win_get_buf(content.win))[2] or ""):find("YESTERDAY", 1, true) ~= nil
   end)
   eq(#fake:requests() > before, true)
   local l = buf_lines(vim.api.nvim_win_get_buf(content.win))
-  eq(l[1]:find(" YESTERDAY · 09.11.2026 ─", 1, true) ~= nil, true)
-  eq(vim.startswith(l[2], "   ◈  Ann Example added ~docs label"), true)
-  eq(l[4]:find(" TODAY · 10.11.2026 ", 1, true) ~= nil, true)
-  eq(vim.startswith(l[5], "  ▎ AE Ann Example  09:00  you"), true)
-  eq(vim.startswith(l[7], "      └─ ▎ BS Bob Sample  09:30"), true)
-  vim.api.nvim_win_set_cursor(content.win, { 6, 0 })
+  eq(l[1], "")
+  eq(l[2]:find(" YESTERDAY · 09.11.2026 ─", 1, true) ~= nil, true)
+  eq(vim.startswith(l[3], "   ◈  Ann Example added ~docs label"), true)
+  eq(l[5]:find(" TODAY · 10.11.2026 ", 1, true) ~= nil, true)
+  eq(vim.startswith(l[6], "  ▎ AE Ann Example  09:00  you"), true)
+  eq(vim.startswith(l[8], "      └─ ▎ BS Bob Sample  09:30"), true)
+  -- no key hints under the timeline
+  eq(chunks_text(vim.api.nvim_win_get_config(content.win).footer), " ")
+  vim.api.nvim_win_set_cursor(content.win, { 7, 0 })
   keys("za")
   l = buf_lines(vim.api.nvim_win_get_buf(content.win))
-  eq(l[7], "     ▸ 1 reply · [za] expand")
-  eq(vim.api.nvim_win_get_cursor(content.win)[1], 5)
-  vim.api.nvim_win_set_cursor(content.win, { 7, 0 })
+  eq(l[8], "     ▸ 1 reply · [za] expand")
+  eq(vim.api.nvim_win_get_cursor(content.win)[1], 6)
+  vim.api.nvim_win_set_cursor(content.win, { 8, 0 })
   keys("<CR>")
-  eq(vim.startswith(buf_lines(vim.api.nvim_win_get_buf(content.win))[7], "      └─ ▎ BS Bob Sample"), true)
+  eq(vim.startswith(buf_lines(vim.api.nvim_win_get_buf(content.win))[8], "      └─ ▎ BS Bob Sample"), true)
   local activity_buf = vim.api.nvim_win_get_buf(content.win)
   keys("<S-Tab>")
   eq(vim.api.nvim_win_get_buf(content.win) ~= activity_buf, true)
-  eq(buf_lines(vim.api.nvim_win_get_buf(content.win))[1], " Rotate the credentials of the state backend.")
+  eq(buf_lines(vim.api.nvim_win_get_buf(content.win))[2], " Rotate the credentials of the state backend.")
 end
 
 T["gm and gp open the milestone and the merge request; q goes back"] = function()
@@ -177,7 +193,7 @@ T["narrow: no sidebar, a meta strip in the header"] = function()
   loaded()
   local header, _, side = wins()
   eq(side, nil)
-  eq(buf_lines(header.buf)[4], " Open · @user-ma · security · ◆ 2026.11 Patch cycle · due 2026-11-14 · 214-rotate-cred…") -- cut to the width
+  eq(buf_lines(header.buf)[5], " Open · @user-ma · security · ◆ 2026.11 Patch cycle · due 2026-11-14 · 214-rotate-cred…") -- cut to the width
 end
 
 T["load error shows in the description; R retries"] = function()
@@ -190,7 +206,8 @@ T["load error shows in the description; R retries"] = function()
   detail.issue({ stack = s, cfg = config.get(), host = X.HOST, project = X.PROJECT, today = X.TODAY }, { iid = 214 })
   local _, content = wins()
   H.wait_for(function()
-    return buf_lines(content.buf)[1]:find("500", 1, true) ~= nil or buf_lines(content.buf)[1]:find("boom", 1, true) ~= nil
+    local l = buf_lines(content.buf)[2] or ""
+    return l:find("500", 1, true) ~= nil or l:find("boom", 1, true) ~= nil
   end)
   fake:add(X.issue_responses())
   keys("R")

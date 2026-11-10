@@ -36,8 +36,6 @@ M.TABS = {
 ---@field issues gg.ui.Loadable
 ---@field mrs gg.ui.Loadable
 ---@field summaries table<integer, gg.ui.MrSummaryEntry>
----@field issue_tab gg.ui.Tab
----@field mr_tab gg.ui.MrTab
 local View = {}
 View.__index = View
 
@@ -54,8 +52,6 @@ function M.open(ctx, item)
     full = false,
     tasks = {},
     summaries = {},
-    issue_tab = "all",
-    mr_tab = "all",
   }, View)
   self.h = host.new({
     stack = ctx.stack,
@@ -103,26 +99,7 @@ function M.open(ctx, item)
       open_desc = "Open merge request",
     }),
   }
-  local k = self.h.keys
-  for key, field in pairs({ work_items = "issue_tab", merge_requests = "mr_tab" }) do
-    local tabs = key == "work_items" and issues_model.TABS or mr_model.TABS
-    local function cycle(dir)
-      local idx = 1
-      for i, t in ipairs(tabs) do
-        if t == self[field] then
-          idx = i
-        end
-      end
-      self[field] = tabs[(idx - 1 + dir) % #tabs + 1]
-      self:render()
-    end
-    self.h:map(key, k.next_tab, function()
-      cycle(1)
-    end, "Next state")
-    self.h:map(key, k.prev_tab, function()
-      cycle(-1)
-    end, "Previous state")
-  end
+  self.edit_hint = self.h:map_edit("description")
   self:load()
   return self
 end
@@ -253,40 +230,42 @@ function View:render()
       c.milestone = nil
       return c
     end, self.issues.value)
-    issues_mdl = issues_model.build(list, { tab = self.issue_tab, today = data.today, order = self.ctx.cfg.order })
+    issues_mdl = issues_model.build(list, { tab = "all", today = data.today, order = self.ctx.cfg.order })
   end
   self.tables.work_items:set(issues_render.render({
     width = width,
     status = status_of(self.issues),
-    tab = self.issue_tab,
+    tab = "all",
     model = issues_mdl,
     page = issues_mdl and { blocks = issues_mdl.blocks, count = issues_mdl.matching } or nil,
     error = self.issues.error,
+    no_tabs = true,
     label_hl = highlights.label,
     retry_key = picker.first_key(h.keys.refresh) or false,
   }))
 
   local mr_mdl
   if self.mrs.status == "ready" then
-    mr_mdl = mr_model.build(self.mrs.value, { tab = self.mr_tab })
+    mr_mdl = mr_model.build(self.mrs.value, { tab = "all" })
   end
   self.tables.merge_requests:set(mr_render.render({
     width = width,
     status = status_of(self.mrs),
-    tab = self.mr_tab,
+    tab = "all",
     model = mr_mdl,
     page = mr_mdl and { rows = mr_mdl.rows, count = #mr_mdl.rows } or nil,
     error = self.mrs.error,
     summaries = self.summaries,
     user_colors = self.ctx.cfg.user_colors,
+    no_tabs = true,
     retry_key = picker.first_key(h.keys.refresh) or false,
   }))
 
   local k = h.keys
   local open = picker.first_key(k.open_item)
-  local states = { { key = picker.first_key(k.next_tab), desc = "State" } }
-  h:set_hints("work_items", vim.list_extend({ { key = open, desc = "Issue" } }, states))
-  h:set_hints("merge_requests", vim.list_extend({ { key = open, desc = "Merge request" } }, states))
+  h:set_hints("description", { self.edit_hint })
+  h:set_hints("work_items", { { key = open, desc = "Issue" } })
+  h:set_hints("merge_requests", { { key = open, desc = "Merge request" } })
   local tabs = vim.deepcopy(M.TABS)
   if self.issues.status == "ready" then
     tabs[2].count = #self.issues.value

@@ -117,6 +117,8 @@ function M.open(ctx, item)
   self.h:map("description", k.open_item, function()
     self:open_card()
   end, "Open issue")
+  -- after open_item: in the description `i` edits, `<CR>` opens a card
+  self.edit_hint = self.h:map_edit("description")
   self:load()
   return self
 end
@@ -147,6 +149,7 @@ function View:_mount_pipelines()
     host = self.ctx.host,
     project = self.project,
     mr_iid = self.iid,
+    no_tabs = true, -- one table of every pipeline of the merge request
     surface = {
       list = list,
       active = function()
@@ -172,18 +175,11 @@ function View:_mount_pipelines()
   h:map(tab, k.open_item, function()
     ctrl:inspect()
   end, "Open pipeline")
-  h:map(tab, k.next_tab, function()
-    ctrl:switch_tab(1)
-  end, "Next state")
-  h:map(tab, k.prev_tab, function()
-    ctrl:switch_tab(-1)
-  end, "Previous state")
   h:map(tab, k.next_page, function()
     ctrl:next_page()
   end, "Load more")
   h:set_hints(tab, {
     { key = picker.first_key(k.open_item), desc = "Pipeline" },
-    { key = picker.first_key(k.next_tab), desc = "State" },
     { key = picker.first_key(k.next_page), desc = "More" },
   })
 end
@@ -373,11 +369,7 @@ function View:render()
     user_colors = self.ctx.cfg.user_colors,
   }))
   local k = h.keys
-  local hints = { { key = picker.first_key(k.goto_pipeline), desc = "Pipeline" } }
-  if #self.refs > 0 then
-    table.insert(hints, 1, { key = picker.first_key(k.open_item), desc = "Issue" })
-  end
-  h:set_hints("description", hints)
+  h:set_hints("description", { self.edit_hint })
   h:set_hints("changes", { { key = picker.first_key(k.goto_pipeline), desc = "Pipeline" } })
   local tally = self.commits.status == "ready" and commits.tally(self.commits.value) or ""
   h:set_hints("commits", { { key = picker.first_key(k.goto_pipeline), desc = "Pipeline" } }, tally ~= "" and { { " " .. tally .. " ", "GitlabHintText" } } or nil)

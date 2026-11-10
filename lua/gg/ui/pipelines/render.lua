@@ -35,6 +35,7 @@ local TABS = {
 ---@field error? string
 ---@field loaded? integer pipelines loaded
 ---@field retry_key? string|false
+---@field no_tabs? boolean leave out the tabs line (one table of every state)
 
 ---@class gg.ui.PipelineRowInfo
 ---@field kind "tabs"|"blank"|"header"|"rule"|"pipeline"|"message"
@@ -128,11 +129,11 @@ end
 function M.render(input)
   local cols = columns.layout(input.width, input.id_width)
   local out = grid.new(cols)
-  grid.head(out, grid.tabs_line({
+  grid.head(out, not input.no_tabs and grid.tabs_line({
     tabs = TABS,
     active = input.tab,
     counts = input.model and input.model.counts or nil,
-  }), header_line(cols))
+  }) or nil, header_line(cols))
 
   local mdl = input.model
   if grid.state(out, {

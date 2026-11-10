@@ -11,6 +11,7 @@
 --- A detail view is a screen of the picker's stack: `host.screen` is what
 --- the view hands to `stack:push`.
 local float = require("gg.ui.components.float")
+local doc = require("gg.ui.lib.doc")
 local float_group = require("gg.ui.components.float_group")
 local header = require("gg.ui.detail.header")
 local hint = require("gg.ui.lib.hint")
@@ -95,10 +96,13 @@ function M.new(opts)
     _footers = {},
   }, Host)
   self.active = self.tabs[1].key
+  -- every border gray, focused or not
   self.group = float_group.new({
     layout = function()
       return self:_rects()
     end,
+    border_hl = "GitlabDetailBorder",
+    border_active_hl = "GitlabDetailBorder",
   })
   self.header_float = self.group:add({
     name = "header",
@@ -233,6 +237,17 @@ function Host:_shared_maps()
   end
 end
 
+--- Map the edit key in tab `key` and return its hint. Editing is not part
+--- of the detail views yet: the key says so.
+---@param key string
+---@return gg.ui.Hint
+function Host:map_edit(key)
+  self:map(key, self.keys.edit, function()
+    vim.notify("gg.ui: editing is not available yet", vim.log.levels.INFO)
+  end, "Edit")
+  return { key = require("gg.ui.components.picker").first_key(self.keys.edit), desc = "Edit" }
+end
+
 --- Show tab `key` in the content window.
 ---@param key string
 function Host:show_tab(key)
@@ -341,12 +356,16 @@ function Host:write(buf, d)
   self.docs[buf] = d
 end
 
---- Write the content of tab `key`; the cursor stays on its line (clamped).
+--- Write the content of tab `key` below an empty first line (space
+--- between the border and the text); the cursor stays on its line
+--- (clamped).
 ---@param key string
 ---@param d gg.ui.Doc
 function Host:set_content(key, d)
-  local buf = self:buf(key)
-  self:write(buf, d)
+  local padded = doc.new()
+  padded:blank()
+  padded:append(d)
+  self:write(self:buf(key), padded)
 end
 
 --- Write the header body and its border texts; resizes the header to fit.
@@ -370,7 +389,11 @@ end
 ---@param d gg.ui.Doc
 function Host:set_sidebar(d)
   if self.sidebar_float then
-    self:write(self.sidebar_float.buf, d)
+    -- the same empty first line as the tabs, so both start level
+    local padded = doc.new()
+    padded:blank()
+    padded:append(d)
+    self:write(self.sidebar_float.buf, padded)
   end
 end
 

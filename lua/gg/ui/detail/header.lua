@@ -11,7 +11,7 @@ local text = require("gg.ui.lib.text")
 local M = {}
 
 M.FILL = "─"
-M.BORDER_HL = "GitlabPickerBorder"
+M.BORDER_HL = "GitlabDetailBorder"
 M.MIN_CRUMB = 20
 
 ---@alias gg.ui.Segs { [1]: string, [2]: string|nil }[]
@@ -41,18 +41,11 @@ local function tail(s, max)
   return text.ELLIPSIS .. out
 end
 
---- "group/sub / project › issues › " for a project path and a kind.
----@param project string|nil full path
+--- The breadcrumb before the reference: "issues › ".
 ---@param kind string e.g. "issues"
 ---@return string
-function M.crumb(project, kind)
-  project = project or ""
-  local ns, name = project:match("^(.*)/([^/]+)$")
-  local base = ns and (ns .. " / " .. name) or project
-  if base == "" then
-    return kind .. " › "
-  end
-  return ("%s › %s › "):format(base, kind)
+function M.crumb(kind)
+  return kind .. " › "
 end
 
 --- Border title chunks exactly `width` cells wide: " crumb #ref ──── meta ".
@@ -98,7 +91,8 @@ end
 ---@field label string
 ---@field count? integer|string
 
---- Tab bar chunks for a window title: " Description  Activity 12 ".
+--- Tab bar chunks for a window title: " Description  Activity 12 ", the
+--- active tab bold and bright, the others gray (no background).
 ---@param tabs gg.ui.TabSpec[]
 ---@param active string
 ---@return gg.ui.Chunk[]
@@ -109,7 +103,7 @@ function M.tabs_title(tabs, active)
       table.insert(out, { " ", M.BORDER_HL })
     end
     local label = t.count ~= nil and ("%s %s"):format(t.label, tostring(t.count)) or t.label
-    table.insert(out, { " " .. label .. " ", t.key == active and "GitlabTabActive" or "GitlabDetailTab" })
+    table.insert(out, { " " .. label .. " ", t.key == active and "GitlabDetailTabActive" or "GitlabDetailTab" })
   end
   table.insert(out, { " ", M.BORDER_HL })
   return out
@@ -125,11 +119,12 @@ end
 ---@field strip? string meta strip for narrow windows (dim)
 ---@field extra? gg.ui.Doc a block below everything else
 
---- The header body.
+--- The header body, with an empty line above the title and one at the end.
 ---@param input gg.ui.HeaderInput
 ---@return gg.ui.Doc
 function M.build(input)
   local d = doc.new()
+  d:blank()
   local width = math.max(10, input.width)
   local inner = width - 2 -- one cell of padding on both sides
   local right = input.title_right or {}
@@ -163,6 +158,7 @@ function M.build(input)
     d:blank()
     d:append(input.extra)
   end
+  d:blank()
   return d
 end
 

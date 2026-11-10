@@ -7,17 +7,17 @@ Shared foundation: `docs/detail_views_design_spec.md`. Opened by `i` in the issu
 - **Pill:** ` ● Open ` or ` ● Closed `.
 - **Title line:** the title, then `#iid`.
 - **Chip row:** label chips, then `◆ milestone`, then `│`, then the description's task progress (`● ○ 1/2 criteria`, only when it has tasks).
-- **Border:** `group / project › issues › #iid` on the left; `opened by <author> · updated <age> ago` on the right.
+- **Border:** `issues › #iid` on the left; `opened by <author> · updated <age> ago` on the right.
 - **Narrow windows:** the header adds `Open · @assignee · label · ◆ milestone · due <date> · <branch>`.
 
 ## Tabs
 
-1. **Description.** Markdown subset (`gg.ui.lib.markdown`):
+1. **Description.** Footer: `[i] Edit`. Markdown subset (`gg.ui.lib.markdown`):
    - headings in the accent colour, with `n of m done` right-aligned when tasks follow;
    - tasks `✓` / `○`, bullets `•` / `–`;
    - code fences shown as they are;
    - links reduced to their text, `#hashtags` highlighted.
-2. **Activity** (shared with merge requests). Loaded the first time the tab is shown. The tab label carries the comment count.
+2. **Activity** (shared with merge requests). Loaded the first time the tab is shown. No footer hints. The tab label carries the comment count.
    - **Events:** one line each — icon, actor, text, `HH:MM` on the right.
    - **Days:** a divider each, `TODAY · DD.MM.YYYY` / `YESTERDAY · …` / `DD.MM.YYYY`.
    - **Event runs:** more than 4 consecutive events show the first 2, `⋯ N more changes · [<CR>] expand`, and the last 2.

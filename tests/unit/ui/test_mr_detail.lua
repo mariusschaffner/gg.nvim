@@ -186,7 +186,8 @@ local function open()
   local g = s:top().group
   H.wait_for(function()
     local c = lines(g.members.content.buf)
-    return #c > 3 and c[4]:find("#214", 1, true) ~= nil and lines(g.members.header.buf)[3] ~= nil and lines(g.members.header.buf)[3]:find("(✓)", 1, true) ~= nil
+    local hd = lines(g.members.header.buf)
+    return #c > 4 and c[5]:find("#214", 1, true) ~= nil and hd[4] ~= nil and hd[4]:find("(✓)", 1, true) ~= nil
   end)
   return g, fake
 end
@@ -194,26 +195,39 @@ end
 T["view: header strip, sidebar, description cards"] = function()
   local g = open()
   local hl = lines(g.members.header.buf)
-  eq(vim.startswith(hl[1], "  ● Merged  Rotate Terraform state backend credentials !88"), true)
-  eq(vim.startswith(hl[4], " Pipeline "), true)
-  eq(vim.endswith(hl[4], "Merged into main"), true)
+  eq(hl[1], "")
+  eq(vim.startswith(hl[2], "  ● Merged  Rotate Terraform state backend credentials !88"), true)
+  eq(vim.startswith(hl[5], " Pipeline "), true)
+  eq(vim.endswith(hl[5], "Merged into main"), true)
+  eq(hl[#hl], "")
   local side = table.concat(lines(g.members.sidebar.buf), "\n")
   eq(side:find("⎇ 8568-share-local-config", 1, true) ~= nil, true)
   eq(side:find("(T1) user-1         ✓ approved", 1, true) ~= nil, true)
   eq(side:find("● Close #214", 1, true) ~= nil, true)
   local c = lines(g.members.content.buf)
-  eq(c[3], " Closes #214 and #211")
-  eq(vim.startswith(c[4], "  ● #214  Rotate Terraform state backend credentials"), true)
-  eq(vim.endswith(c[4], "WF:Review "), true)
-  eq(vim.startswith(c[5], "  ● #211  WinRM over HTTPS"), true)
+  eq(c[1], "")
+  eq(c[4], " Closes #214 and #211")
+  eq(vim.startswith(c[5], "  ● #214  Rotate Terraform state backend credentials"), true)
+  eq(vim.endswith(c[5], "WF:Review "), true)
+  eq(vim.startswith(c[6], "  ● #211  WinRM over HTTPS"), true)
+  local footer = table.concat(vim.tbl_map(function(ch)
+    return ch[1]
+  end, vim.api.nvim_win_get_config(g.members.content.win).footer))
+  eq(footer, " [i] Edit ")
   -- <CR> on a card opens the issue
   local got
   local real = detail.issue
   detail.issue = function(ctx, issue)
     got = { issue.iid, ctx.project }
   end
-  vim.api.nvim_win_set_cursor(g.members.content.win, { 5, 0 })
-  local ok, err = pcall(keys, "<CR>")
+  vim.api.nvim_win_set_cursor(g.members.content.win, { 6, 0 })
+  local notify = vim.notify
+  vim.notify = function() end
+  local ok, err = pcall(keys, "i") -- `i` is the edit key here, not open
+  vim.notify = notify
+  assert(ok, err)
+  eq(got, nil)
+  ok, err = pcall(keys, "<CR>")
   detail.issue = real
   assert(ok, err)
   eq(got, { 211, X.PROJECT })
@@ -224,17 +238,21 @@ T["view: Changes, Commits, Activity tabs"] = function()
   local win = g.members.content.win
   keys("<Tab>")
   H.wait_for(function()
-    return lines(vim.api.nvim_win_get_buf(win))[1]:find("04.03.2018", 1, true) ~= nil
+    return (lines(vim.api.nvim_win_get_buf(win))[2] or ""):find("04.03.2018", 1, true) ~= nil
   end)
   local a = lines(vim.api.nvim_win_get_buf(win))
-  eq(a[5]:find("⎇ package.json:27  ✓ resolved thread", 1, true) ~= nil, true)
+  eq(a[6]:find("⎇ package.json:27  ✓ resolved thread", 1, true) ~= nil, true)
+  local afoot = table.concat(vim.tbl_map(function(ch)
+    return ch[1]
+  end, vim.api.nvim_win_get_config(win).footer))
+  eq(afoot, " ") -- no key hints under the activity
   keys("<Tab>")
   local c = lines(vim.api.nvim_win_get_buf(win))
-  eq(c[2]:find("internal/commands/mr/view.go", 1, true) ~= nil, true)
-  eq(vim.startswith(c[5], "   2 files changed"), true)
+  eq(c[3]:find("internal/commands/mr/view.go", 1, true) ~= nil, true)
+  eq(vim.startswith(c[6], "   2 files changed"), true)
   keys("<Tab>")
   local m = lines(vim.api.nvim_win_get_buf(win))
-  eq(m[3], " │   return false on any stat error, not just missing")
+  eq(m[4], " │   return false on any stat error, not just missing")
   local footer = table.concat(vim.tbl_map(function(ch)
     return ch[1]
   end, vim.api.nvim_win_get_config(win).footer))
@@ -250,19 +268,22 @@ T["view: Pipelines tab is the pipelines table of this MR; i opens one; q stops i
   local win = g.members.content.win
   keys("<Tab><Tab><Tab><Tab>")
   H.wait_for(function()
-    return (lines(vim.api.nvim_win_get_buf(win))[2] or ""):find("All 2", 1, true) ~= nil
+    return (lines(vim.api.nvim_win_get_buf(win))[4] or ""):find("✗ failed", 1, true) ~= nil
   end)
   local l = lines(vim.api.nvim_win_get_buf(win))
-  eq(l[6]:find("✗ failed", 1, true) ~= nil, true)
+  -- one table of every pipeline: no All / Running / Failed / Passed line
+  eq(l[2]:find("Status", 1, true) ~= nil, true)
+  eq(table.concat(l, " "):find("Running", 1, true), nil)
+  local footer = table.concat(vim.tbl_map(function(ch)
+    return ch[1]
+  end, vim.api.nvim_win_get_config(win).footer))
+  eq(footer, " [i] Pipeline • [P] More ")
   for _, r in ipairs(fake:requests()) do
     if r.operation == "PipelinesListMr" then
       eq(r.variables.iid, tostring(X.MR_IID))
     end
   end
-  eq(vim.api.nvim_win_get_cursor(win)[1], 6)
-  keys("L")
-  eq((lines(vim.api.nvim_win_get_buf(win))[2]):find("Running 0", 1, true) ~= nil, true)
-  keys("H")
+  eq(vim.api.nvim_win_get_cursor(win)[1], 4)
   local got
   local real = detail.pipeline
   detail.pipeline = function(ctx, p)

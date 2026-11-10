@@ -45,7 +45,7 @@ function M.build(fields, width)
       d:line(l)
       local lines = f.lines or {}
       if #lines == 0 then
-        d:line(line.new():add(pad):add(text.truncate(f.empty or "none", inner), "GitlabEmpty"))
+        d:line(line.new():add(pad):add(text.truncate(f.empty or "none", inner), "GitlabDetailMuted"))
       end
       for _, segs in ipairs(lines) do
         d:line(line.new():add(pad):segments(segs, inner))

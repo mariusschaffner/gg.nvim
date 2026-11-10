@@ -120,10 +120,10 @@ local function open()
   H.wait_for(function()
     local side = lines(g.members.sidebar.buf)
     local tab3 = lines(s:top().group.members.content.buf)
-    return side[1] == " PROGRESS" and side[2] ~= " Loading…" and #tab3 > 1
+    return side[2] == " PROGRESS" and side[3] ~= " Loading…" and #tab3 > 2
   end)
   H.wait_for(function()
-    return lines(g.members.header.buf)[1]:find("Patch cycle", 1, true) ~= nil and #lines(g.members.header.buf) == 5
+    return lines(g.members.header.buf)[2]:find("Patch cycle", 1, true) ~= nil and #lines(g.members.header.buf) == 7
   end)
   return g, fake
 end
@@ -131,21 +131,27 @@ end
 T["view: header strip, sidebar buckets, description"] = function()
   local g, fake = open()
   local hl = lines(g.members.header.buf)
-  eq(vim.startswith(hl[1], "  ● Active  2026.11 Patch cycle %11"), true)
-  eq(vim.startswith(hl[3], " │02.11."), true)
-  eq(vim.endswith(hl[3], "20.11.│"), true)
-  eq(vim.trim(hl[5]), "today")
+  eq(hl[1], "")
+  eq(vim.startswith(hl[2], "  ● Active  2026.11 Patch cycle %11"), true)
+  eq(vim.startswith(hl[4], " │02.11."), true)
+  eq(vim.endswith(hl[4], "20.11.│"), true)
+  eq(vim.trim(hl[6]), "today")
+  eq(hl[7], "")
   local title = table.concat(vim.tbl_map(function(c)
     return c[1]
   end, vim.api.nvim_win_get_config(g.members.header.win).title))
-  eq(vim.startswith(title, " infra / ops › milestones › %11 "), true)
+  eq(vim.startswith(title, " milestones › %11 "), true)
   eq(vim.endswith(title, " project milestone · updated 1d ago "), true)
   local side = lines(g.members.sidebar.buf)
-  eq(side[3], " 2/6 closed")
-  eq(side[7], " ◐ Doing                      2")
-  eq(side[9], " unassigned                   1")
-  eq(side[13], " IN PROGRESS")
-  eq(lines(g.members.content.buf), { " Patch everything.", "", " ✓ hypervisors", " ○ hosts" })
+  eq(side[4], " 2/6 closed")
+  eq(side[8], " ◐ Doing                      2")
+  eq(side[10], " unassigned                   1")
+  eq(side[14], " IN PROGRESS")
+  eq(lines(g.members.content.buf), { "", " Patch everything.", "", " ✓ hypervisors", " ○ hosts" })
+  local footer = table.concat(vim.tbl_map(function(c)
+    return c[1]
+  end, vim.api.nvim_win_get_config(g.members.content.win).footer))
+  eq(footer, " [i] Edit ")
   -- the issues asked for the milestone's title, in every state
   for _, r in ipairs(fake:requests()) do
     if r.operation == "IssuesListProject" then
@@ -163,13 +169,18 @@ T["view: work items and merge requests tables open their detail views"] = functi
   keys("<Tab>")
   local win = g.members.content.win
   local l = lines(vim.api.nvim_win_get_buf(win))
-  eq(l[2], "    Open 4     Closed 2     All 6  ")
-  eq(l[6]:find("#214  Rotate Terraform state backend credentials", 1, true) ~= nil, true)
-  eq(vim.api.nvim_win_get_cursor(win)[1], 6)
+  -- one table of every issue: no Open / Closed / All line
+  eq(l[1], "")
+  eq(vim.trim(l[2]):sub(1, 5), "Issue")
+  eq(#l, 3 + 6)
+  eq(l[4]:find("#214  Rotate Terraform state backend credentials", 1, true) ~= nil, true)
+  eq(vim.api.nvim_win_get_cursor(win)[1], 4)
   keys("j")
-  eq(vim.api.nvim_win_get_cursor(win)[1], 7)
-  keys("L")
-  eq(lines(vim.api.nvim_win_get_buf(win))[6]:find("#214", 1, true) ~= nil, true) -- Open tab
+  eq(vim.api.nvim_win_get_cursor(win)[1], 5)
+  local footer = table.concat(vim.tbl_map(function(c)
+    return c[1]
+  end, vim.api.nvim_win_get_config(win).footer))
+  eq(footer, " [i] Issue ")
   local got = {}
   local real = { issue = detail.issue, merge_request = detail.merge_request }
   detail.issue = function(ctx, issue)
@@ -182,7 +193,8 @@ T["view: work items and merge requests tables open their detail views"] = functi
     keys("i")
     keys("<Tab>")
     local mrl = lines(vim.api.nvim_win_get_buf(win))
-    eq(mrl[6]:find("!88", 1, true) ~= nil, true)
+    eq(mrl[2]:find("Title", 1, true) ~= nil, true) -- no state tabs here either
+    eq(mrl[4]:find("!88", 1, true) ~= nil, true)
     keys("j")
     keys("<CR>")
   end)
@@ -203,7 +215,7 @@ T["view: narrow puts the counts in the header"] = function()
   local g = s:top().group
   eq(g.members.sidebar, nil)
   H.wait_for(function()
-    return lines(g.members.header.buf)[2] == " 2/6 closed · 2 doing · 1 unassigned · 2 MRs"
+    return lines(g.members.header.buf)[3] == " 2/6 closed · 2 doing · 1 unassigned · 2 MRs"
   end)
 end
 

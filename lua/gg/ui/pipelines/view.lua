@@ -140,7 +140,7 @@ end
 --- The table outside the picker (the merge request detail view): one
 --- project's pipelines, or only those of merge request `mr_iid`. Call
 --- `activate` to load it.
----@param opts { surface: gg.ui.PipelinesSurface, cfg: gg.ui.Config, host: string, project: string, mr_iid?: integer }
+---@param opts { surface: gg.ui.PipelinesSurface, cfg: gg.ui.Config, host: string, project: string, mr_iid?: integer, no_tabs?: boolean }
 ---@return gg.ui.PipelinesView
 function M.mount(opts)
   return new({
@@ -151,6 +151,7 @@ function M.mount(opts)
     host = opts.host,
     project = opts.project,
     mr_iid = opts.mr_iid,
+    no_tabs = opts.no_tabs,
     -- merge request pipelines cannot be fetched by ids: one request each
     no_ids = opts.mr_iid ~= nil or nil,
   })
@@ -337,6 +338,7 @@ function View:_output()
     error = self.err_msg,
     loaded = #self.pipelines,
     retry_key = picker.first_key(self.keys.refresh) or false,
+    no_tabs = self.no_tabs,
   })
 end
 

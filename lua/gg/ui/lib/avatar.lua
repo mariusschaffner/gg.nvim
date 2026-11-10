@@ -37,10 +37,10 @@ end
 function M.segments(user, opts)
   opts = opts or {}
   if not user then
-    return { { "unknown", "GitlabEmpty" } }
+    return { { "unknown", "GitlabDetailMuted" } }
   end
   local name = user.name and user.name ~= "" and user.name or user.username or "?"
-  local hl = user.username and user_hl.group(user.username, opts.overrides) or "GitlabEmpty"
+  local hl = user.username and user_hl.group(user.username, opts.overrides) or "GitlabDetailMuted"
   local segs = {
     { "(" .. M.initials(name) .. ")", hl },
     { " ", nil },

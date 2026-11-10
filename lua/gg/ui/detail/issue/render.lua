@@ -88,7 +88,7 @@ function M.header(data, width, narrow)
     local age = date.age(issue.updated_at, data.now)
     table.insert(meta, { (#meta > 0 and " · " or "") .. "updated " .. (age == "now" and "just now" or (age .. " ago")) })
   end
-  local title = header.border_title(width, header.crumb(issue.project or data.project, "issues"), "#" .. tostring(issue.iid), meta)
+  local title = header.border_title(width, header.crumb("issues"), "#" .. tostring(issue.iid), meta)
   return body, title
 end
 
@@ -159,7 +159,7 @@ function M.sidebar(data, width)
       dates = {}
     else
       dates = {
-        sidebar.spread({ { d.start or "?", d.start and "GitlabDetailDate" or "GitlabEmpty" } }, { { d.due or "?", d.due and "GitlabDetailDate" or "GitlabEmpty" } }, inner),
+        sidebar.spread({ { d.start or "?", d.start and "GitlabDetailDate" or "GitlabDetailMuted" } }, { { d.due or "?", d.due and "GitlabDetailDate" or "GitlabDetailMuted" } }, inner),
       }
     end
   end
@@ -176,7 +176,7 @@ function M.sidebar(data, width)
     end))
     vim.list_extend(dev, loadable_lines(data.mrs, inner, function(list)
       return vim.tbl_map(function(mr)
-        return { { "!" .. mr.iid, "GitlabIid" }, { " " .. (mr.title or ""), MR_HL[mr.state] or "GitlabDetailValue" } }
+        return { { "!" .. mr.iid, "GitlabDetailMuted" }, { " " .. (mr.title or ""), MR_HL[mr.state] or "GitlabDetailValue" } }
       end, list)
     end))
   end

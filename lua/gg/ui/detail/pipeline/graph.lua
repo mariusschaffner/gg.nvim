@@ -187,9 +187,8 @@ function M.render(input)
       c:put(y + 2, x, box.bl .. string.rep(box.h, inner) .. box.br, border_hl)
       c:put(y + 1, x, box.v, border_hl)
       c:put(y + 1, x + M.COL_W - 1, box.v, border_hl)
-      if is_sel then
-        c:paint(y + 1, x + 1, inner, "GitlabCursorLine")
-      end
+      -- the thick border marks the selection; no fill (a cell has one
+      -- highlight, so a fill would only show between the texts)
       c:put(y + 1, x + 2, b.icon, b.icon_hl)
       local right = b.right or ""
       local name_room = inner - 4 - text.width(right) - 1

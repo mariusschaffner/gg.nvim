@@ -107,8 +107,7 @@ function M.header(data, width, narrow)
     local age = date.age(m.updated_at, data.now)
     table.insert(meta, { " · updated " .. (age == "now" and "just now" or (age .. " ago")) })
   end
-  local where = m.project or m.group or data.project
-  return body, header.border_title(width, header.crumb(where, "milestones"), "%" .. tostring(m.id), meta)
+  return body, header.border_title(width, header.crumb("milestones"), "%" .. tostring(m.id), meta)
 end
 
 --- The sidebar: progress, work item counts, the issues in progress.
@@ -145,7 +144,7 @@ function M.sidebar(data, width)
     table.insert(fields, { divider = true })
     local lines = {}
     for _, i in ipairs(c.in_progress) do
-      table.insert(lines, { { "#" .. i.iid, "GitlabIid" }, { " " .. text.clean(i.title), "GitlabDetailValue" } })
+      table.insert(lines, { { "#" .. i.iid, "GitlabDetailMuted" }, { " " .. text.clean(i.title), "GitlabDetailValue" } })
     end
     table.insert(fields, { label = "In progress", lines = lines })
   end

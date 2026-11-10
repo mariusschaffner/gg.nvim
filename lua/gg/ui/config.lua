@@ -29,13 +29,13 @@ local M = {}
 ---@field detail_next_tab gg.ui.Keymap Detail: next tab (default "<Tab>")
 ---@field detail_prev_tab gg.ui.Keymap Detail: previous tab (default "<S-Tab>")
 ---@field open_item gg.ui.Keymap Detail: open the row or card under the cursor (default { "i", "<CR>" })
+---@field edit gg.ui.Keymap Detail, Description tab: edit (default "i"; editing comes in a later version)
 ---@field goto_milestone gg.ui.Keymap Issue detail: open the issue's milestone (default "gm")
 ---@field goto_mr gg.ui.Keymap Issue detail: open the linked merge request (default "gp")
 ---@field goto_pipeline gg.ui.Keymap Merge request detail: open the latest pipeline (default "gp")
 ---@field toggle_fold gg.ui.Keymap Detail: fold the thread under the cursor / the job log section (default "za")
 ---@field toggle_all_folds gg.ui.Keymap Detail: fold every thread (default "zA")
 ---@field log_follow gg.ui.Keymap Pipeline detail: follow the job log (default "F")
----@field log_fullscreen gg.ui.Keymap Pipeline detail: hide or show the graph (default "gz")
 ---@field log_focus gg.ui.Keymap Pipeline detail: from the graph into the job log (default "<CR>")
 ---@field graph_back gg.ui.Keymap Pipeline detail: from the job log back to the graph (default "<Esc>")
 ---@field graph_left gg.ui.Keymap Pipeline detail: previous stage (default "h")
@@ -85,13 +85,13 @@ local function defaults()
       detail_next_tab = "<Tab>",
       detail_prev_tab = "<S-Tab>",
       open_item = { "i", "<CR>" },
+      edit = "i",
       goto_milestone = "gm",
       goto_mr = "gp",
       goto_pipeline = "gp",
       toggle_fold = "za",
       toggle_all_folds = "zA",
       log_follow = "F",
-      log_fullscreen = "gz",
       log_focus = "<CR>",
       graph_back = "<Esc>",
       graph_left = "h",

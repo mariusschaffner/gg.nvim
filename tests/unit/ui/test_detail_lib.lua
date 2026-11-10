@@ -71,15 +71,15 @@ T["doc: lines, marks follow their rows, append shifts"] = function()
 end
 
 T["header: crumb, border title width and truncation"] = function()
-  eq(header.crumb("infra/sub/ops", "issues"), "infra/sub / ops › issues › ")
-  eq(header.crumb("ops", "issues"), "ops › issues › ")
-  local t = header.border_title(80, header.crumb("infra/ops", "issues"), "#17", { { "updated 2h ago" } })
+  eq(header.crumb("issues"), "issues › ") -- no group / project
+  local t = header.border_title(80, header.crumb("issues"), "#17", { { "updated 2h ago" } })
   eq(text.width(joined(t)), 80)
-  eq(t[1][1], " infra / ops › issues › ")
+  eq(t[1][1], " issues › ")
+  eq(t[3][2], "GitlabDetailBorder") -- the fill is gray like the border
   eq(t[2], { "#17 ", "GitlabDetailRef" })
   eq(vim.endswith(joined(t), " updated 2h ago "), true)
   -- narrow: the crumb is cut from the start, then the meta goes
-  local long = header.crumb("a-very-long-group/with-subgroups/and-a-long-project", "merge requests")
+  local long = "a-very-long-crumb-that-does-not-fit-anywhere › merge requests › "
   t = header.border_title(60, long, "!36", { { "opened by someone · updated 3h ago" } })
   eq(text.width(joined(t)) <= 60, true)
   eq(joined(t):find("!36", 1, true) ~= nil, true)
@@ -98,24 +98,27 @@ T["header: title line, chips, strip, extra"] = function()
     strip = "Open · unassigned",
     extra = extra,
   })
-  eq(vim.startswith(d.lines[1], "  ● Open  Rotate credentials #17"), true)
-  eq(vim.endswith(d.lines[1], "3:05 elapsed"), true)
-  eq(text.width(d.lines[1]), 59)
-  eq(d.lines[2], "")
-  eq(d.lines[3], "  docs ") -- a chip keeps its padding
-  eq(d.lines[4], " Open · unassigned")
-  eq({ d.lines[5], d.lines[6] }, { "", "EXTRA" })
+  -- an empty line above the title and one at the end
+  eq(d.lines[1], "")
+  eq(vim.startswith(d.lines[2], "  ● Open  Rotate credentials #17"), true)
+  eq(vim.endswith(d.lines[2], "3:05 elapsed"), true)
+  eq(text.width(d.lines[2]), 59)
+  eq(d.lines[3], "")
+  eq(d.lines[4], "  docs ") -- a chip keeps its padding
+  eq(d.lines[5], " Open · unassigned")
+  eq({ d.lines[6], d.lines[7], d.lines[8] }, { "", "EXTRA", "" })
+  eq(#d.lines, 8)
   -- a long title is cut, the right text dropped when there is no room
   d = header.build({ width = 30, pill = chip.pill("●", "Open", "X"), title = string.rep("x", 40), ref = "#1", title_right = { { "right side text" } } })
-  eq(text.width(d.lines[1]) <= 29, true)
-  eq(d.lines[1]:find("right", 1, true), nil)
+  eq(text.width(d.lines[2]) <= 29, true)
+  eq(d.lines[2]:find("right", 1, true), nil)
 end
 
 T["header: tabs title"] = function()
   local t = header.tabs_title({ { key = "a", label = "Description" }, { key = "b", label = "Activity", count = 12 } }, "b")
   eq(joined(t), "  Description   Activity 12  ")
   eq(t[2][2], "GitlabDetailTab")
-  eq(t[4][2], "GitlabTabActive")
+  eq(t[4][2], "GitlabDetailTabActive") -- bold text, no background
 end
 
 T["sidebar: fields, empty values, dividers, spread"] = function()
@@ -177,8 +180,9 @@ end
 T["layout.detail: header, content and sidebar rects"] = function()
   local r = layout.detail({ header_h = 4, sidebar = true, area = { columns = 160, lines = 40 } })
   eq(r.header, { row = 0, col = 0, width = 158, height = 4 })
-  eq(r.content, { row = 6, col = 0, width = 123, height = 32 })
-  eq(r.sidebar, { row = 6, col = 126, width = 32, height = 32 })
+  -- one empty row between the header and the boxes below
+  eq(r.content, { row = 7, col = 0, width = 123, height = 31 })
+  eq(r.sidebar, { row = 7, col = 126, width = 32, height = 31 })
   -- narrow: no sidebar
   r = layout.detail({ header_h = 4, sidebar = true, area = { columns = 90, lines = 40 } })
   eq(r.sidebar, nil)

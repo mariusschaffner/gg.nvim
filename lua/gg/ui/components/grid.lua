@@ -129,14 +129,18 @@ function M.header_line(labels)
   return l
 end
 
---- Push the five head lines: blank, tabs, blank, header, rule.
+--- Push the five head lines: blank, tabs, blank, header, rule. Without a
+--- tabs line (a table with one state, e.g. inside a detail view): blank,
+--- header, rule.
 ---@param out gg.ui.Rendered
----@param tabs_l gg.ui.Line
+---@param tabs_l gg.ui.Line|nil
 ---@param header_l gg.ui.Line
 function M.head(out, tabs_l, header_l)
   M.push(out, line.new(), { kind = "blank" })
-  M.push(out, tabs_l, { kind = "tabs" })
-  M.push(out, line.new(), { kind = "blank" })
+  if tabs_l then
+    M.push(out, tabs_l, { kind = "tabs" })
+    M.push(out, line.new(), { kind = "blank" })
+  end
   M.push(out, header_l, { kind = "header" })
   M.push(out, line.new():add(text.rep(M.RULE, out.columns.width), "GitlabSeparator"), { kind = "rule" })
 end

@@ -45,6 +45,7 @@ local TABS = {
 ---@field summaries? table<integer, gg.ui.MrSummaryEntry> by IID; absent = still loading
 ---@field user_colors? table<string, string>
 ---@field me? string the signed-in user's username (bold)
+---@field no_tabs? boolean leave out the tabs line (one table of every state)
 
 ---@class gg.ui.MrRowInfo
 ---@field kind "tabs"|"blank"|"header"|"rule"|"mr"|"message"
@@ -145,13 +146,13 @@ end
 function M.render(input)
   local cols = columns.layout(input.width)
   local out = grid.new(cols)
-  grid.head(out, grid.tabs_line({
+  grid.head(out, not input.no_tabs and grid.tabs_line({
     tabs = TABS,
     active = input.tab,
     counts = input.model and input.model.counts or nil,
     pending = input.pending,
     truncated = input.truncated,
-  }), header_line(cols))
+  }) or nil, header_line(cols))
 
   local page = input.page
   if grid.state(out, {

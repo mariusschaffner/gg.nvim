@@ -669,10 +669,10 @@ gg.ui.setup({opts})                                             *gg.ui.setup()*
         inspect_pipeline = "i",
         -- detail views (|gg-ui-detail|)
         close_all = "Q", detail_next_tab = "<Tab>", detail_prev_tab = "<S-Tab>",
-        open_item = { "i", "<CR>" },
+        open_item = { "i", "<CR>" }, edit = "i",
         goto_milestone = "gm", goto_mr = "gp", goto_pipeline = "gp",
         toggle_fold = "za", toggle_all_folds = "zA",
-        log_follow = "F", log_fullscreen = "gz",
+        log_follow = "F",
         log_focus = "<CR>", graph_back = "<Esc>",
         graph_left = "h", graph_right = "l", graph_down = "j", graph_up = "k",
       },
@@ -797,11 +797,13 @@ Detail views                                                  *gg-ui-detail*
     show what GitLab has, nothing is changed from them.
 
     Layout: a header across the top (state pill, title, reference; its
-    border carries the breadcrumb and who opened / updated it), the content
-    below it with tabs in its border (`<Tab>` / `<S-Tab>` switch, each tab
-    keeps its cursor) and key hints at its bottom, and a sidebar on the
-    right. Below 100 columns there is no sidebar; a one-line summary in the
-    header takes its place. `R` reloads.
+    border carries the kind and reference, e.g. `issues › #214`, and who
+    opened / updated it), an empty row, then the content with tabs in its
+    border (`<Tab>` / `<S-Tab>` switch, each tab keeps its cursor) and key
+    hints at its bottom, and a sidebar on the right. Every border is gray.
+    Below 100 columns there is no sidebar; a one-line summary in the header
+    takes its place. `R` reloads. The Description tabs show `[i] Edit`:
+    editing is not available yet, the key says so.
 
     Issue                                                 *gg-ui-detail-issue*
     Header: labels, milestone and the checklist progress of the
@@ -824,8 +826,8 @@ Detail views                                                  *gg-ui-detail*
     Header: Active / Upcoming / Overdue / Closed and a date strip from the
     start (else the creation date) to the due date, a tick every Monday and
     the today marker. Tabs: Description, Work items (the issues table) and
-    Merge requests (the merge requests table); `L` / `H` switch their
-    states, `i` / `<CR>` opens the row. Sidebar: progress (done, doing, to
+    Merge requests (the merge requests table), each one table of every
+    state; `i` / `<CR>` opens the row. Sidebar: progress (done, doing, to
     do), counts and the issues in progress. An issue is done when closed,
     otherwise it follows its `WF:Doing` / `WF:Done` / `WF:To do` label (to
     do without one).
@@ -837,7 +839,8 @@ Detail views                                                  *gg-ui-detail*
     Tabs: Description (issues the description closes appear as cards; `i` /
     `<CR>` opens one), Activity, Changes (files with their line counts and a
     bar), Commits (by day, with the conventional-commit type) and Pipelines
-    (the pipelines table of this merge request, live while shown). Sidebar:
+    (every pipeline of this merge request in one table, live while shown;
+    `P` loads more). In the Description `<CR>` opens a card. Sidebar:
     branches, assignee, reviewers with their review state, labels,
     milestone, and what happens on merge. `gp` opens the newest pipeline.
 
@@ -846,7 +849,7 @@ Detail views                                                  *gg-ui-detail*
     selected job (the first running one, else the first failed one). Graph
     mode: `h` / `l` stage, `j` / `k` job, `<CR>` into the log. Log mode:
     the usual motions and `/`, `<Esc>` back to the graph. `F` follows a
-    running job's log, `za` folds a section, `gz` hides the graph. The log
+    running job's log, `za` folds a section. The log
     keeps the colours of the job; sections fold. While the view is shown,
     an active pipeline is fetched again every `pipeline_detail_poll_ms`,
     durations tick every second and a running job's log is tailed every

@@ -71,6 +71,10 @@ T["graph: render with markers and job scrolling"] = function()
   eq(#d.lines, 7)
   eq(d.lines[6]:find("┃ ◐ c", 1, true) ~= nil, true)
   eq(d.lines[3]:find("✗ b", 1, true) ~= nil, true)
+  -- the selected pill has no fill: no highlight on the spaces inside it
+  for _, mk in ipairs(d.marks) do
+    eq(mk.hl ~= "GitlabCursorLine", true)
+  end
   local empty = graph.render({ stages = {}, width = 60, now = 0 })
   eq(vim.trim(empty.lines[1]), "No jobs in this pipeline yet.")
 end
@@ -169,14 +173,14 @@ end
 T["view: header graph, the running job's log, following"] = function()
   local g = open({ X.pipeline_graph(nil, { ["repeat"] = true }), X.trace(102, X.LOG) }, { pipeline_detail_poll_ms = 0, job_log_poll_ms = 0 })
   local hl = lines(g.members.header.buf)
-  eq(vim.startswith(hl[1], "  ◐ Running  Add HTTPS listener task #4821"), true)
-  eq(vim.endswith(hl[1], "9:00 elapsed · 2/4 jobs"), true)
-  eq(hl[3]:find("build ✓ 1:02", 1, true) ~= nil, true)
-  eq(hl[5]:find("┃ ◐ molecule          2:14 ┃", 1, true) ~= nil, true)
+  eq(vim.startswith(hl[2], "  ◐ Running  Add HTTPS listener task #4821"), true)
+  eq(vim.endswith(hl[2], "9:00 elapsed · 2/4 jobs"), true)
+  eq(hl[4]:find("build ✓ 1:02", 1, true) ~= nil, true)
+  eq(hl[6]:find("┃ ◐ molecule          2:14 ┃", 1, true) ~= nil, true)
   local title = table.concat(vim.tbl_map(function(c)
     return c[1]
   end, vim.api.nvim_win_get_config(g.members.header.win).title))
-  eq(vim.startswith(title, " infra / ops › pipelines › #4821 "), true)
+  eq(vim.startswith(title, " pipelines › #4821 "), true)
   eq(vim.endswith(title, "⎇ main · a1f3c9e0 · user-1 · started 9m ago "), true)
   local win = g.members.content.win
   eq(vim.wo[win].number, true)
@@ -199,6 +203,12 @@ T["view: header graph, the running job's log, following"] = function()
   eq(ct, " ◐ molecule ")
   keys("F")
   eq(vim.api.nvim_win_get_cursor(win)[1], 6)
+  -- no fullscreen key any more
+  eq(vim.fn.maparg("gz", "n", false, true).buffer, nil)
+  local footer = table.concat(vim.tbl_map(function(c)
+    return c[1]
+  end, vim.api.nvim_win_get_config(win).footer))
+  eq(footer, " [F] Follow • [/] Search • [za] Fold ")
 end
 
 T["view: graph keys pick jobs; <CR> / <Esc> switch modes"] = function()
@@ -213,7 +223,7 @@ T["view: graph keys pick jobs; <CR> / <Esc> switch modes"] = function()
   H.wait_for(function()
     return lines(vim.api.nvim_win_get_buf(win))[1] == "lint output"
   end)
-  eq(lines(g.members.header.buf)[8]:find("┃ ! lint", 1, true) ~= nil, true)
+  eq(lines(g.members.header.buf)[9]:find("┃ ! lint", 1, true) ~= nil, true)
   keys("h") -- previous stage, job index clamped
   H.wait_for(function()
     return lines(vim.api.nvim_win_get_buf(win))[1] == "built"
@@ -280,7 +290,7 @@ T["view: the job finishing fetches the rest of its log once"] = function()
     return l[#l] == "the end"
   end)
   H.wait_for(function()
-    return lines(g.members.header.buf)[1]:find("✗ Failed", 1, true) ~= nil
+    return lines(g.members.header.buf)[2]:find("✗ Failed", 1, true) ~= nil
   end)
   local n = 0
   for _, r in ipairs(fake:requests()) do

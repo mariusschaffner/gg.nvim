@@ -10,7 +10,6 @@ local highlights = require("gg.ui.highlights")
 local host = require("gg.ui.detail.host")
 local doc = require("gg.ui.lib.doc")
 local markdown = require("gg.ui.lib.markdown")
-local picker = require("gg.ui.components.picker")
 local render = require("gg.ui.detail.issue.render")
 
 local M = {}
@@ -90,6 +89,7 @@ function M.open(ctx, item)
   self.h:map_all(k.goto_mr, function()
     self:goto_mr()
   end, "Merge request")
+  self.edit_hint = self.h:map_edit("description")
   self:_tab_counts(self.issue.user_notes_count)
   self:load()
   return self
@@ -194,19 +194,11 @@ function View:render()
   end
   local data = self:_data()
   local body, title = render.header(data, h:header_width(), not h:has_sidebar())
-  local k = h.keys
-  local hints = {}
-  if self.issue.milestone and picker.first_key(k.goto_milestone) then
-    table.insert(hints, { key = picker.first_key(k.goto_milestone), desc = "Milestone" })
-  end
-  if self.mrs and self.mrs.status == "ready" and #self.mrs.value > 0 and picker.first_key(k.goto_mr) then
-    table.insert(hints, { key = picker.first_key(k.goto_mr), desc = "Merge request" })
-  end
   h:set_header(body, title)
   if h:has_sidebar() then
     h:set_sidebar(render.sidebar(data, h:sidebar_width()))
   end
-  h:set_hints("description", hints)
+  h:set_hints("description", { self.edit_hint })
   local d
   if self.status == "error" then
     d = doc.new()

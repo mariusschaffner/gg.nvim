@@ -49,11 +49,7 @@ function M.new(host, opts)
   host:map(opts.tab, k.toggle_all_folds, function()
     self:toggle_all()
   end, "Fold all")
-  host:set_hints(opts.tab, {
-    { key = picker.first_key(k.open_item) and picker.lhs_list(k.open_item)[#picker.lhs_list(k.open_item)], desc = "Expand" },
-    { key = picker.first_key(k.toggle_fold), desc = "Fold" },
-    { key = picker.first_key(k.toggle_all_folds), desc = "Fold all" },
-  })
+  host:set_hints(opts.tab, {}) -- the timeline shows its own key hints
   return self
 end
 

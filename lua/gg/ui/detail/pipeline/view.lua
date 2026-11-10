@@ -4,8 +4,7 @@
 --- Two key modes on the log window: in graph mode `h` / `l` pick the
 --- stage, `j` / `k` the job and `<CR>` moves into the log; in log mode the
 --- usual motions and `/` work and `<Esc>` goes back to the graph. `F`
---- follows the log of a running job, `za` folds a section, `gz` hides the
---- graph. Read-only.
+--- follows the log of a running job, `za` folds a section. Read-only.
 ---
 --- Live while visible: the pipeline is polled while it is active
 --- (`pipeline_detail_poll_ms`), its clocks tick every second, and the log
@@ -55,7 +54,6 @@ local CLOCK_HL = {
 ---@field sel { stage: integer, job: integer }|nil
 ---@field mode "graph"|"log"
 ---@field following boolean
----@field fullscreen boolean
 ---@field log gg.ui.PipelineLog|nil
 local View = {}
 View.__index = View
@@ -81,7 +79,6 @@ function M.open(ctx, item)
     status = "loading",
     mode = "graph",
     following = true,
-    fullscreen = false,
     timers = {},
   }, View)
   self.h = host.new({
@@ -135,10 +132,6 @@ function View:_keymaps()
   h:map_all(k.log_follow, function()
     self:follow()
   end, "Follow the log")
-  h:map_all(k.log_fullscreen, function()
-    self.fullscreen = not self.fullscreen
-    self:render_header()
-  end, "Hide the graph")
   h:map_all(k.toggle_fold, function()
     pcall(vim.cmd, "normal! za")
   end, "Fold")
@@ -524,26 +517,25 @@ function View:render_header()
   local now = self:_now()
   local width = h:header_width()
   local extra
-  if not self.fullscreen then
-    if self.status == "loading" then
-      extra = doc.new()
-      extra:text(" Loading pipeline…", "GitlabDetailMuted")
-    elseif self.status == "error" then
-      extra = doc.new()
-      extra:text(" " .. (self.err or "Failed to load the pipeline"), "GitlabDetailError")
-    else
-      local g, start = graph.render({
-        stages = p.stages,
-        width = width - 2,
-        selected = self.sel,
-        focus = self.mode == "graph",
-        now = now,
-        start = self.graph_start,
-        max_rows = layout.header_max() - 2,
-      })
-      self.graph_start = start
-      extra = g
-    end
+  if self.status == "loading" then
+    extra = doc.new()
+    extra:text(" Loading pipeline…", "GitlabDetailMuted")
+  elseif self.status == "error" then
+    extra = doc.new()
+    extra:text(" " .. (self.err or "Failed to load the pipeline"), "GitlabDetailError")
+  else
+    local g, start = graph.render({
+      stages = p.stages,
+      width = width - 2,
+      selected = self.sel,
+      focus = self.mode == "graph",
+      now = now,
+      start = self.graph_start,
+      -- the header also holds two padding lines, the title and a blank line
+      max_rows = layout.header_max() - 4,
+    })
+    self.graph_start = start
+    extra = g
   end
   local done, total = 0, 0
   for _, st in ipairs(p.stages or {}) do
@@ -608,7 +600,7 @@ function View:render_header()
   hints = vim.tbl_filter(function(x)
     return x.key ~= nil
   end, hints)
-  h:set_header(body, header.border_title(width, header.crumb(p.project or self.project, "pipelines"), "#" .. tostring(p.id), meta), hint.chunks(hints))
+  h:set_header(body, header.border_title(width, header.crumb("pipelines"), "#" .. tostring(p.id), meta), hint.chunks(hints))
 end
 
 -- the content window's title and footer
@@ -636,7 +628,6 @@ function View:_log_chrome()
     { key = picker.first_key(k.log_follow), desc = "Follow" },
     { key = "/", desc = "Search" },
     { key = picker.first_key(k.toggle_fold), desc = "Fold" },
-    { key = picker.first_key(k.log_fullscreen), desc = self.fullscreen and "Graph" or "Fullscreen" },
   }
   h:set_hints("main", hints)
 end

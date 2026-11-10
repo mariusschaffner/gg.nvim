@@ -165,7 +165,7 @@ function M.strip(m, today, width)
   width = math.max(12, width - 2)
   local state, days = M.bar_state(m, today)
   if state == "no_dates" then
-    d:line(line.new():add(pad):add("no dates", "GitlabEmpty"))
+    d:line(line.new():add(pad):add("no dates", "GitlabDetailMuted"))
     return d
   end
   local start, due = M.range(m)

@@ -152,7 +152,7 @@ Shared behaviour (filter focus, tabs with `<Tab>`/`<S-Tab>`, cursor rules, selec
 
 | Key | Action |
 |---|---|
-| `i` | inspect the pipeline under the cursor (existing detail view, otherwise `on_inspect_pipeline(pipeline)` callback, default `vim.notify` stub) |
+| `i` | open the pipeline detail view (`docs/pipeline_detail_design_spec.md`) |
 | `P` | next / previous page |
 
 ### Filter syntax

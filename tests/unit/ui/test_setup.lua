@@ -17,8 +17,9 @@ local T = MiniTest.new_set({
 T["config: defaults and merge"] = function()
   local c = config.get()
   eq({ c.limit, c.page_size, c.keymaps.next_tab, c.keymaps.next_page, c.keymaps.close }, { 2000, 50, "L", "P", "q" })
-  eq(type(c.on_inspect_issue), "function")
-  eq({ type(c.on_inspect_pipeline), c.pipeline_refresh_ms, c.keymaps.inspect_pipeline }, { "function", 10000, "i" })
+  eq(c.on_inspect_issue, nil) -- the detail views replaced the callbacks
+  eq({ c.pipeline_refresh_ms, c.pipeline_detail_poll_ms, c.job_log_poll_ms, c.keymaps.inspect_pipeline }, { 10000, 4000, 1500, "i" })
+  eq({ c.keymaps.close_all, c.keymaps.detail_next_tab, c.keymaps.open_item, c.keymaps.goto_milestone }, { "Q", "<Tab>", { "i", "<CR>" }, "gm" })
   eq(config.setup({ pipeline_refresh_ms = 0 }), true) -- 0 turns the live refresh off
   eq({ config.setup({ page_size = 10, keymaps = { close = false, refresh = "r" } }) }, { true, nil })
   c = config.get()
@@ -36,8 +37,10 @@ T["config: validation keeps the previous options"] = function()
     { { keymaps = { close = "" } }, "ui.keymaps.close" },
     { { order = { top = "x" } }, "ui.order.top" },
     { { order = { other = function() end } }, "ui.order.other" },
-    { { on_inspect_issue = 1 }, "ui.on_inspect_issue" },
-    { { on_inspect_pipeline = "x" }, "ui.on_inspect_pipeline" },
+    { { on_inspect_issue = function() end }, "ui.on_inspect_issue" }, -- removed: unknown
+    { { keymaps = { log_follow = 1 } }, "ui.keymaps.log_follow" },
+    { { job_log_poll_ms = -1 }, "ui.job_log_poll_ms" },
+    { { pipeline_detail_poll_ms = 1.5 }, "ui.pipeline_detail_poll_ms" },
     { { pipeline_refresh_ms = -1 }, "ui.pipeline_refresh_ms" },
     { { pipeline_refresh_ms = 1.5 }, "ui.pipeline_refresh_ms" },
     { { pipeline_refresh_ms = 600001 }, "ui.pipeline_refresh_ms" },

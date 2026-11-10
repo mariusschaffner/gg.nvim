@@ -238,16 +238,21 @@ T["the signed-in user is bold"] = function()
   eq(bold, 5) -- assignee of !88, !87, !86; reviewer of !85, !84
 end
 
-T["i and <CR> call on_inspect_mr"] = function()
+T["i and <CR> open the merge request detail view"] = function()
+  local detail = require("gg.ui.detail")
+  local real = detail.merge_request
   local got = {}
-  local v = ready(open({
-    on_inspect_mr = function(mr, ctx)
-      table.insert(got, { mr.iid, ctx.host, ctx.project })
-    end,
-  }))
-  keys("i")
-  keys("j")
-  keys("<CR>")
+  detail.merge_request = function(ctx, mr)
+    table.insert(got, { mr.iid, ctx.host, ctx.project })
+  end
+  local ok, err = pcall(function()
+    ready(open())
+    keys("i")
+    keys("j")
+    keys("<CR>")
+  end)
+  detail.merge_request = real
+  assert(ok, err)
   eq(got, { { 88, D.HOST, D.PROJECT }, { 87, D.HOST, D.PROJECT } })
 end
 

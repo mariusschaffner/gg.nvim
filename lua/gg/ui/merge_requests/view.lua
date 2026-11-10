@@ -491,22 +491,12 @@ function View:next_page()
   self:render()
 end
 
---- Call `on_inspect_mr` for the merge request under the cursor.
+--- Open the detail view of the merge request under the cursor.
 function View:inspect_mr()
   local lnum = self.list:current()
   local row = lnum and self.rendered and self.rendered.rows[lnum]
-  if not (row and row.mr) then
-    return
-  end
-  local ok, err = pcall(self.cfg.on_inspect_mr, row.mr, {
-    host = self.host,
-    project = self.project,
-    close = function()
-      self:close()
-    end,
-  })
-  if not ok then
-    vim.notify("gg.ui: " .. tostring(err), vim.log.levels.ERROR)
+  if row and row.mr then
+    require("gg.ui.detail").merge_request(self.shell:detail_ctx(self), row.mr)
   end
 end
 

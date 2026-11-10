@@ -112,21 +112,31 @@ require("gg.ui").setup({
   limit = 2000,    -- issues fetched per state; tabs, filter and pages work locally
   page_size = 50,  -- P cycles through the pages
   keymaps = { refresh = "R", close = "q" }, -- false disables a key
-  on_inspect_issue = function(issue, ctx) ctx.close(); vim.ui.open(issue.web_url) end,
 })
 ```
 
 Keys: `/` filter (`~label %milestone @user #iid text`), `L`/`H` Open/Closed/All, `P` next page, `]m`/`[m` milestones,
-`i`/`I` inspect issue/milestone, `R` reload, `q` close. `:help gg-ui` has the details and the highlight groups.
+`i`/`I` open the issue/milestone detail view, `R` reload, `q` close. `:help gg-ui` has the details and the highlight groups.
 
 `<Tab>` switches the same windows to the project's merge requests: one line each with branches, reviewers, assignee,
 the head pipeline's stages and the diff size. The rows show at once; pipeline and diff cells fill in afterwards
-(batched, cached while the picker is open). `i`/`<CR>` calls `on_inspect_mr(mr, ctx)`;
+(batched, cached while the picker is open). `i`/`<CR>` opens the merge request;
 `require("gg.ui").open({ view = "merge_requests" })` starts there. See `:help gg-ui-mrs`.
 
 `<Tab>` again shows the pipelines: status, id, ref, stages, linked MR, source, short SHA and start time,
 with All/Running/Failed/Passed tabs. Active pipelines update in place every 10 s (`pipeline_refresh_ms`, `0` = off);
-`P` loads the next 50. `i` calls `on_inspect_pipeline(pipeline, ctx)`. See `:help gg-ui-pipelines`.
+`P` loads the next 50. `i` opens the pipeline. See `:help gg-ui-pipelines`.
+
+Detail views open over the picker and over each other; `q` goes back, `Q` closes everything. They are read-only:
+- **Issue**: description (markdown, task progress), activity (comments and events by day), assignees, labels,
+  milestone, dates, related branches and merge requests. `gm` opens the milestone, `gp` the merge request.
+- **Milestone**: a date strip with the today marker, description, its issues and merge requests as tables, and
+  progress by workflow label (`WF:Doing` / `WF:Done`).
+- **Merge request**: a readiness strip (pipeline, conflicts, review, threads, draft), description with cards for the
+  issues it closes, activity, changes, commits and its pipelines (live). `gp` opens the newest pipeline.
+- **Pipeline**: the stage/job graph and the selected job's log, tailed live while it runs (`F` follows).
+
+See `:help gg-ui-detail`.
 
 ## Pagination
 

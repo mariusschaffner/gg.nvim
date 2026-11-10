@@ -153,7 +153,7 @@ MR-specific keys:
 
 | Key | Action |
 |---|---|
-| `i` / `<CR>` | inspect the MR under the cursor (existing detail view, otherwise `on_inspect_mr(mr)` callback, default `vim.notify` stub) |
+| `i` / `<CR>` | open the merge request detail view (`docs/mergerequest_detail_design_spec.md`) |
 
 All keys are buffer-local and configurable.
 

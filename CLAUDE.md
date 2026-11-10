@@ -41,6 +41,10 @@ lua/gg/
     lib/              pure helpers: display-width text, line builder, dates, hints
     components/       reusable UI pieces: layout, floats, prompt, list buffer, tabs
     issues/           issues picker: filter, model, paginate, columns, render (pure) + view
+    merge_requests/   merge requests picker view (same split)
+    pipelines/        pipelines picker view (same split; also mounted in the MR detail view)
+    detail/           detail views: host (windows), header/sidebar (pure), activity/,
+                      issue/, milestone/, merge_request/, pipeline/ (pure parts + view)
 plugin/gg.lua         registers :Gitlab (lazy; loads gg.ui only when run)
 tests/
   fixtures/rest/      recorded, sanitized responses
@@ -71,8 +75,13 @@ gg.ui.* -> gg (the facade) only        nothing outside gg.ui requires gg.ui
 - `lua/gg/ui/project.lua` is the one module allowed to run `git`
   (`git remote get-url origin`, async via `vim.system`) to find the project.
 - `ui/lib`, the pure parts of `ui/issues` (filter, model, paginate, columns,
-  render) and `ui/components/tabs.lua` do not touch `vim.api`; they are tested
-  headless without windows.
+  render), `ui/components/tabs.lua` and everything under `ui/detail` except
+  `view.lua`, `host.lua` and `init.lua` do not touch `vim.api`; they are
+  tested headless without windows.
+- Screens stack: the picker is the bottom of a `ui/components/stack`; detail
+  views are pushed on it (`gg.ui.detail.*`) and reach other screens only
+  through it (`q` back, `Q` close all). A covered screen is hidden and its
+  timers are suspended.
 - Colours come only from highlight groups defined with `default = true`.
 - Key hints are always written `[<key>] <description>`.
 

@@ -15,12 +15,17 @@
 ---   on_select(lnum)     the cursor moved to `lnum` (or nil)
 ---   keymaps()           { { lhs, fn, desc } } for the table, while active
 ---   teardown()          the picker closed
+---   suspend(), resume() optional: a detail view covers the picker / is gone
+---
+--- The picker is the bottom screen of a `gg.ui.components.stack`; detail
+--- views are pushed on top of it with `push` and `q` comes back to it.
 local float = require("gg.ui.components.float")
 local float_group = require("gg.ui.components.float_group")
 local hint = require("gg.ui.lib.hint")
 local layout = require("gg.ui.components.layout")
 local list_buffer = require("gg.ui.components.list_buffer")
 local prompt = require("gg.ui.components.prompt")
+local screens = require("gg.ui.components.stack")
 
 local M = {}
 
@@ -60,6 +65,7 @@ local TABLE_WIN_OPTS = {
 ---@field views table<string, table>
 ---@field active table|nil
 ---@field closed boolean
+---@field stack gg.ui.Stack the picker at the bottom, detail views above it
 local Picker = {}
 Picker.__index = Picker
 
@@ -179,9 +185,51 @@ function M.new(opts)
   self.group:on_close(function()
     self:_teardown()
   end)
+  self.stack = screens.new()
+  self.stack:adopt({
+    group = self.group,
+    suspend = function()
+      self:_each_view("suspend")
+    end,
+    resume = function()
+      self:_each_view("resume")
+      self:render()
+    end,
+  })
   self.group:focus("table")
   self:_hide_cursor(vim.api.nvim_get_current_win() == self.table_float.win)
   return self
+end
+
+---@private
+function Picker:_each_view(method)
+  for _, view in pairs(self.views) do
+    if view[method] then
+      pcall(view[method], view)
+    end
+  end
+end
+
+--- Push a screen (a detail view) over the picker; see `gg.ui.components.stack`.
+---@param open fun(stack: gg.ui.Stack): gg.ui.Screen
+---@return gg.ui.Screen|nil
+function Picker:push(open)
+  if self.closed then
+    return nil
+  end
+  return self.stack:push(open)
+end
+
+--- The context detail views are opened with.
+---@param view table the active view (its host and project)
+---@return gg.ui.DetailCtx
+function Picker:detail_ctx(view)
+  return {
+    stack = self.stack,
+    cfg = self.cfg,
+    host = view.host or self.host,
+    project = view.project or self.project,
+  }
 end
 
 --- Register a view under its name (it does not become active).

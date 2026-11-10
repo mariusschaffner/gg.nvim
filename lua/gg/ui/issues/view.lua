@@ -13,6 +13,7 @@
 local gg = require("gg")
 local config = require("gg.ui.config")
 local date = require("gg.ui.lib.date")
+local detail = require("gg.ui.detail")
 local highlights = require("gg.ui.highlights")
 local hint = require("gg.ui.lib.hint")
 local model = require("gg.ui.issues.model")
@@ -375,33 +376,15 @@ function View:jump_milestone(dir)
   end
 end
 
----@private
-function View:_ctx()
-  return {
-    host = self.host,
-    project = self.project,
-    close = function()
-      self:close()
-    end,
-  }
-end
-
-local function call(fn, ...)
-  local ok, err = pcall(fn, ...)
-  if not ok then
-    vim.notify("gg.ui: " .. tostring(err), vim.log.levels.ERROR)
-  end
-end
-
---- Call `on_inspect_issue` for the issue under the cursor.
+--- Open the detail view of the issue under the cursor.
 function View:inspect_issue()
   local row = self:_current_row()
   if row and row.issue then
-    call(self.cfg.on_inspect_issue, row.issue, self:_ctx())
+    detail.issue(self.shell:detail_ctx(self), row.issue)
   end
 end
 
---- Call `on_inspect_milestone` for the milestone of the issue under the cursor.
+--- Open the detail view of the milestone of the issue under the cursor.
 function View:inspect_milestone()
   local row = self:_current_row()
   if not (row and row.issue) then
@@ -411,7 +394,7 @@ function View:inspect_milestone()
     vim.notify("No milestone", vim.log.levels.INFO)
     return
   end
-  call(self.cfg.on_inspect_milestone, row.issue.milestone, self:_ctx())
+  detail.milestone(self.shell:detail_ctx(self), row.issue.milestone)
 end
 
 --- Focus the filter in insert mode, at the end of the text.

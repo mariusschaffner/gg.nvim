@@ -184,10 +184,10 @@ T["prompt:set_placeholder"] = function()
   vim.api.nvim_buf_delete(buf, { force = true })
 end
 
-T["config: MR keymaps, key lists, user_colors, on_inspect_mr"] = function()
+T["config: MR keymaps, key lists, user_colors"] = function()
   local c = config.get()
   eq({ c.keymaps.next_view, c.keymaps.prev_view, c.keymaps.inspect_mr }, { "<Tab>", "<S-Tab>", { "i", "<CR>" } })
-  eq(type(c.on_inspect_mr), "function")
+  eq(c.on_inspect_mr, nil)
   eq(c.user_colors, {})
   eq({ config.setup({ keymaps = { inspect_mr = { "o" }, next_view = false }, user_colors = { ["user-1"] = "GitlabUser3" } }) }, { true, nil })
   c = config.get()

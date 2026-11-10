@@ -215,7 +215,7 @@ Apply highlights with extmarks in one namespace. Compute **byte** columns for `c
 
 All keymaps buffer-local, configurable via `setup({ keymaps = { … } })`, and `false` disables one.
 
-"Inspect" opens the plugin's existing issue/milestone detail view if it has one. Otherwise call configurable callbacks `on_inspect_issue(issue)` / `on_inspect_milestone(milestone)`, defaulting to a `vim.notify` stub.
+"Inspect" opens the issue / milestone detail view (`docs/issue_detail_design_spec.md`, `docs/milestone_detail_design_spec.md`) on top of the picker; `q` comes back.
 
 ### Filter syntax
 

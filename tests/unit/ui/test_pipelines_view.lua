@@ -239,9 +239,12 @@ end
 
 T["filter, tabs and i"] = function()
   local got
-  local v = open({ on_inspect_pipeline = function(p, ctx)
+  local detail = require("gg.ui.detail")
+  local real = detail.pipeline
+  detail.pipeline = function(ctx, p)
     got = { p.id, ctx.project }
-  end })
+  end
+  local v = open()
   filled(ready(v))
   v.shell.prompt:set_text("status:failed")
   H.wait_for(function()
@@ -262,6 +265,7 @@ T["filter, tabs and i"] = function()
   keys("L")
   eq({ v.tab, #v.rendered.selectable }, { "failed", 2 })
   keys("i")
+  detail.pipeline = real
   eq(got, { 4819, D.PROJECT })
 end
 

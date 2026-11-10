@@ -25,11 +25,23 @@ local M = {}
 ---@field prev_view gg.ui.Keymap Table: previous view (default "<S-Tab>")
 ---@field inspect_mr gg.ui.Keymap Table: inspect the merge request under the cursor (default { "i", "<CR>" })
 ---@field inspect_pipeline gg.ui.Keymap Table: inspect the pipeline under the cursor (default "i")
-
----@class gg.ui.InspectContext
----@field host string
----@field project string
----@field close fun() closes the picker
+---@field close_all gg.ui.Keymap Detail: close every view, back to where `:Gitlab` started (default "Q")
+---@field detail_next_tab gg.ui.Keymap Detail: next tab (default "<Tab>")
+---@field detail_prev_tab gg.ui.Keymap Detail: previous tab (default "<S-Tab>")
+---@field open_item gg.ui.Keymap Detail: open the row or card under the cursor (default { "i", "<CR>" })
+---@field goto_milestone gg.ui.Keymap Issue detail: open the issue's milestone (default "gm")
+---@field goto_mr gg.ui.Keymap Issue detail: open the linked merge request (default "gp")
+---@field goto_pipeline gg.ui.Keymap Merge request detail: open the latest pipeline (default "gp")
+---@field toggle_fold gg.ui.Keymap Detail: fold the thread under the cursor / the job log section (default "za")
+---@field toggle_all_folds gg.ui.Keymap Detail: fold every thread (default "zA")
+---@field log_follow gg.ui.Keymap Pipeline detail: follow the job log (default "F")
+---@field log_fullscreen gg.ui.Keymap Pipeline detail: hide or show the graph (default "gz")
+---@field log_focus gg.ui.Keymap Pipeline detail: from the graph into the job log (default "<CR>")
+---@field graph_back gg.ui.Keymap Pipeline detail: from the job log back to the graph (default "<Esc>")
+---@field graph_left gg.ui.Keymap Pipeline detail: previous stage (default "h")
+---@field graph_right gg.ui.Keymap Pipeline detail: next stage (default "l")
+---@field graph_down gg.ui.Keymap Pipeline detail: next job in the stage (default "j")
+---@field graph_up gg.ui.Keymap Pipeline detail: previous job in the stage (default "k")
 
 ---@class gg.ui.Order
 ---@field top? fun(a: gg.Issue, b: gg.Issue): boolean issues without a milestone
@@ -42,28 +54,10 @@ local M = {}
 ---@field filter_debounce_ms integer
 ---@field keymaps gg.ui.Keymaps
 ---@field order gg.ui.Order comparators; nil entries use the defaults
----@field on_inspect_issue fun(issue: gg.Issue, ctx: gg.ui.InspectContext)
----@field on_inspect_milestone fun(milestone: gg.MilestoneRef, ctx: gg.ui.InspectContext)
----@field on_inspect_mr fun(mr: gg.MergeRequest, ctx: gg.ui.InspectContext)
----@field on_inspect_pipeline fun(pipeline: gg.Pipeline, ctx: gg.ui.InspectContext)
----@field pipeline_refresh_ms integer refresh interval of active pipelines in the pipelines view; 0 = off
+---@field pipeline_refresh_ms integer refresh interval of active pipelines in the pipelines tables; 0 = off
+---@field pipeline_detail_poll_ms integer refresh interval of an active pipeline in its detail view; 0 = off
+---@field job_log_poll_ms integer how often the log of a running job is tailed; 0 = off
 ---@field user_colors table<string, string> username -> highlight group (e.g. "GitlabUser1")
-
-local function default_inspect_issue(issue)
-  vim.notify(("#%d %s\n%s"):format(issue.iid, issue.title or "", issue.web_url or ""), vim.log.levels.INFO)
-end
-
-local function default_inspect_milestone(milestone)
-  vim.notify(("%%%s\n%s"):format(milestone.title or "", milestone.web_url or ""), vim.log.levels.INFO)
-end
-
-local function default_inspect_mr(mr)
-  vim.notify(("!%d %s\n%s"):format(mr.iid, mr.title or "", mr.web_url or ""), vim.log.levels.INFO)
-end
-
-local function default_inspect_pipeline(pipeline)
-  vim.notify(("#%d %s\n%s"):format(pipeline.id, pipeline.ref or "", pipeline.web_url or ""), vim.log.levels.INFO)
-end
 
 local function defaults()
   return {
@@ -87,13 +81,28 @@ local function defaults()
       prev_view = "<S-Tab>",
       inspect_mr = { "i", "<CR>" },
       inspect_pipeline = "i",
+      close_all = "Q",
+      detail_next_tab = "<Tab>",
+      detail_prev_tab = "<S-Tab>",
+      open_item = { "i", "<CR>" },
+      goto_milestone = "gm",
+      goto_mr = "gp",
+      goto_pipeline = "gp",
+      toggle_fold = "za",
+      toggle_all_folds = "zA",
+      log_follow = "F",
+      log_fullscreen = "gz",
+      log_focus = "<CR>",
+      graph_back = "<Esc>",
+      graph_left = "h",
+      graph_right = "l",
+      graph_down = "j",
+      graph_up = "k",
     },
     order = {},
-    on_inspect_issue = default_inspect_issue,
-    on_inspect_milestone = default_inspect_milestone,
-    on_inspect_mr = default_inspect_mr,
-    on_inspect_pipeline = default_inspect_pipeline,
     pipeline_refresh_ms = 10000,
+    pipeline_detail_poll_ms = 4000,
+    job_log_poll_ms = 1500,
     user_colors = {},
   }
 end
@@ -122,11 +131,9 @@ local TOP = {
   filter_debounce_ms = true,
   keymaps = true,
   order = true,
-  on_inspect_issue = true,
-  on_inspect_milestone = true,
-  on_inspect_mr = true,
-  on_inspect_pipeline = true,
   pipeline_refresh_ms = true,
+  pipeline_detail_poll_ms = true,
+  job_log_poll_ms = true,
   user_colors = true,
 }
 
@@ -168,11 +175,9 @@ function M.validate(opts)
   local err = check_int(opts.limit, "limit", 1)
     or check_int(opts.page_size, "page_size", 1)
     or check_int(opts.filter_debounce_ms, "filter_debounce_ms", 0, 10000)
-    or check_fn(opts.on_inspect_issue, "on_inspect_issue")
-    or check_fn(opts.on_inspect_milestone, "on_inspect_milestone")
-    or check_fn(opts.on_inspect_mr, "on_inspect_mr")
-    or check_fn(opts.on_inspect_pipeline, "on_inspect_pipeline")
     or check_int(opts.pipeline_refresh_ms, "pipeline_refresh_ms", 0, 600000)
+    or check_int(opts.pipeline_detail_poll_ms, "pipeline_detail_poll_ms", 0, 600000)
+    or check_int(opts.job_log_poll_ms, "job_log_poll_ms", 0, 600000)
   if err then
     return err
   end

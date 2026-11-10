@@ -4,6 +4,9 @@
 ---   them all and returns to the window that was current before.
 --- * `VimResized` recomputes the layout.
 --- * The focused member's border uses the active highlight.
+--- * `hide` / `show` keep the group alive while another screen covers it
+---   (see `gg.ui.components.stack`); while hidden, leaving the group does
+---   not close it.
 local float = require("gg.ui.components.float")
 
 local M = {}
@@ -12,6 +15,7 @@ local M = {}
 ---@field name string
 ---@field border_hl? string this member's border (default: the group's)
 ---@field border_active_hl? string this member's border while focused
+---@field winhighlight? string extra 'winhighlight' entries ("CursorLine:X")
 
 ---@class gg.ui.FloatGroup
 ---@field members table<string, gg.ui.Float>
@@ -24,11 +28,16 @@ local M = {}
 ---@field private _on_resize fun()[]
 ---@field private _border { active: string, inactive: string }
 ---@field private _borders table<integer, { active: string, inactive: string }> per member window
+---@field private _hidden boolean
+---@field private _focus string|nil member focused when the group was hidden
+---@field private _specs table<string, { focusable: boolean }>
+---@field private _closed_au table<string, integer> WinClosed autocmd per member
 local Group = {}
 Group.__index = Group
 
-local function winhighlight(border)
-  return ("FloatBorder:%s,FloatTitle:GitlabPickerTitle,FloatFooter:GitlabPickerFooter"):format(border)
+local function winhighlight(border, extra)
+  local s = ("FloatBorder:%s,FloatTitle:GitlabPickerTitle,FloatFooter:GitlabPickerFooter"):format(border)
+  return extra and (s .. "," .. extra) or s
 end
 
 --- Create a group. `layout()` returns a rect per member name.
@@ -44,6 +53,9 @@ function M.new(opts)
     _on_close = {},
     _on_resize = {},
     _border = { active = opts.border_active_hl or "GitlabPickerBorderActive", inactive = opts.border_hl or "GitlabPickerBorder" },
+    _hidden = false,
+    _specs = {},
+    _closed_au = {},
   }, Group)
   self._augroup = vim.api.nvim_create_augroup(("gg.ui.group.%s"):format(tostring(self):match("0x%x+") or vim.uv.hrtime()), { clear = true })
   return self
@@ -53,23 +65,48 @@ end
 ---@param spec gg.ui.GroupMemberSpec
 ---@return gg.ui.Float
 function Group:add(spec)
-  spec.rect = self._layout()[spec.name]
+  spec.rect = spec.rect or self._layout()[spec.name]
+  spec.hide = self._hidden or nil
   local f = float.open(spec)
   self.members[spec.name] = f
+  self._specs[spec.name] = { focusable = spec.focusable ~= false, winhl = spec.winhighlight }
   table.insert(self._order, spec.name)
   self._borders = self._borders or {}
   self._borders[f.win] = {
     active = spec.border_active_hl or self._border.active,
     inactive = spec.border_hl or self._border.inactive,
   }
-  vim.api.nvim_set_option_value("winhighlight", winhighlight(self._borders[f.win].inactive), { win = f.win })
-  self:_watch(f)
+  vim.api.nvim_set_option_value("winhighlight", winhighlight(self._borders[f.win].inactive, spec.winhighlight), { win = f.win })
+  self:_watch(spec.name, f)
   return f
 end
 
+--- Close one member without closing the group (e.g. a side panel that does
+--- not fit any more). A no-op for an unknown name.
+---@param name string
+function Group:remove(name)
+  local f = self.members[name]
+  if not f then
+    return
+  end
+  pcall(vim.api.nvim_del_autocmd, self._closed_au[name])
+  self._closed_au[name] = nil
+  self.members[name] = nil
+  self._specs[name] = nil
+  for i, n in ipairs(self._order) do
+    if n == name then
+      table.remove(self._order, i)
+      break
+    end
+  end
+  if vim.api.nvim_win_is_valid(f.win) then
+    pcall(vim.api.nvim_win_close, f.win, true)
+  end
+end
+
 ---@private
-function Group:_watch(f)
-  vim.api.nvim_create_autocmd("WinClosed", {
+function Group:_watch(name, f)
+  self._closed_au[name] = vim.api.nvim_create_autocmd("WinClosed", {
     group = self._augroup,
     pattern = tostring(f.win),
     callback = function()
@@ -78,7 +115,8 @@ function Group:_watch(f)
       end)
     end,
   })
-  if #self._order == 1 then
+  if not self._watching then
+    self._watching = true
     vim.api.nvim_create_autocmd("VimResized", {
       group = self._augroup,
       callback = function()
@@ -89,7 +127,7 @@ function Group:_watch(f)
       group = self._augroup,
       callback = function()
         vim.schedule(function()
-          if self._closed then
+          if self._closed or self._hidden then
             return
           end
           if self:name_of(vim.api.nvim_get_current_win()) then
@@ -119,11 +157,11 @@ end
 ---@private
 function Group:_paint()
   local cur = vim.api.nvim_get_current_win()
-  for _, f in pairs(self.members) do
+  for name, f in pairs(self.members) do
     if vim.api.nvim_win_is_valid(f.win) then
       local b = self._borders[f.win]
       local hl = f.win == cur and b.active or b.inactive
-      vim.api.nvim_set_option_value("winhighlight", winhighlight(hl), { win = f.win })
+      vim.api.nvim_set_option_value("winhighlight", winhighlight(hl, self._specs[name].winhl), { win = f.win })
     end
   end
 end
@@ -146,7 +184,7 @@ function Group:relayout()
   local rects = self._layout()
   for name, f in pairs(self.members) do
     if rects[name] then
-      float.update(f.win, rects[name])
+      float.update(f.win, rects[name], { hide = self._hidden, focusable = self._specs[name].focusable })
     end
   end
   for _, fn in ipairs(self._on_resize) do
@@ -169,6 +207,39 @@ end
 ---@return boolean
 function Group:is_closed()
   return self._closed
+end
+
+---@return boolean
+function Group:is_hidden()
+  return self._hidden
+end
+
+--- Hide every member (the windows and buffers stay). Remembers the focused
+--- member for `show`.
+function Group:hide()
+  if self._closed or self._hidden then
+    return
+  end
+  self._hidden = true
+  self._focus = self:name_of(vim.api.nvim_get_current_win()) or self._focus
+  for _, name in ipairs(self._order) do
+    float.set_hidden(self.members[name].win, true)
+  end
+end
+
+--- Show the members again, re-run the layout (the editor may have been
+--- resized meanwhile) and focus the member that had focus (or `focus`).
+---@param focus? string
+function Group:show(focus)
+  if self._closed or not self._hidden then
+    return
+  end
+  self._hidden = false
+  for _, name in ipairs(self._order) do
+    float.set_hidden(self.members[name].win, false)
+  end
+  self:relayout()
+  self:focus(focus or self._focus or self._order[1])
 end
 
 --- Close every member, restore the previous window (unless

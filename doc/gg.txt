@@ -667,19 +667,25 @@ gg.ui.setup({opts})                                             *gg.ui.setup()*
         next_view = "<Tab>", prev_view = "<S-Tab>",
         inspect_mr = { "i", "<CR>" }, -- a key or a list of keys
         inspect_pipeline = "i",
+        -- detail views (|gg-ui-detail|)
+        close_all = "Q", detail_next_tab = "<Tab>", detail_prev_tab = "<S-Tab>",
+        open_item = { "i", "<CR>" },
+        goto_milestone = "gm", goto_mr = "gp", goto_pipeline = "gp",
+        toggle_fold = "za", toggle_all_folds = "zA",
+        log_follow = "F", log_fullscreen = "gz",
+        log_focus = "<CR>", graph_back = "<Esc>",
+        graph_left = "h", graph_right = "l", graph_down = "j", graph_up = "k",
       },
       order = {},            -- { top?, milestones?, issues? } comparators
-      on_inspect_issue = function(issue, ctx) end,         -- default: notify
-      on_inspect_milestone = function(milestone, ctx) end, -- default: notify
-      on_inspect_mr = function(mr, ctx) end,               -- default: notify
-      on_inspect_pipeline = function(pipeline, ctx) end,   -- default: notify
-      pipeline_refresh_ms = 10000, -- live refresh of active pipelines; 0 = off
+      pipeline_refresh_ms = 10000,    -- live refresh of active pipelines in
+                                      -- the tables; 0 = off
+      pipeline_detail_poll_ms = 4000, -- an active pipeline's detail view; 0 = off
+      job_log_poll_ms = 1500,         -- tailing a running job's log; 0 = off
       user_colors = {},      -- { ["username"] = "GitlabUser1" } pins a colour
     })
 <
-    The inspect callbacks get a mapped |gg-issues| model, the issue's
-    milestone, a |gg-merge_requests| model or a |gg-pipelines| model, and `ctx = { host, project, close }` (`close()` closes the
-    picker first, e.g. before opening a detail window).
+    `i` (and `I` for a milestone) opens the detail views, see
+    |gg-ui-detail|.
 
 Layout                                                          *gg-ui-layout*
     Two floats: the filter prompt on top and the table below. The table
@@ -717,7 +723,7 @@ Filter                                                          *gg-ui-filter*
 Keys                                                              *gg-ui-keys*
     Table: `j` `k` `<Down>` `<Up>` `gg` `G` move between rows only,
     `/` filter, `L` / `H` next / previous tab, `P` next page, `]m` / `[m`
-    next / previous milestone, `i` / `I` inspect the issue / its milestone,
+    next / previous milestone, `i` / `I` open the issue / its milestone,
     `R` reload, `q` close, `<Tab>` / `<S-Tab>` switch between the issues,
     merge requests and pipelines views. Filter: `<CR>` back to the table,
     `<Esc><Esc>` clear and go back. Closing either window closes both.
@@ -733,7 +739,8 @@ Merge requests                                                   *gg-ui-mrs*
     Tabs: Open / Merged / Closed / All, recently updated first. Narrow
     windows hide Target, then Reviewers, then the diff bar, then Source.
     Usernames have a stable colour (`GitlabUser1`…`8`, see `user_colors`);
-    the signed-in user is bold. `i` or `<CR>` calls `on_inspect_mr`.
+    the signed-in user is bold. `i` or `<CR>` opens the merge request
+    (|gg-ui-detail-mr|).
 
     The list loads first (three parallel streams, like the issues). The
     Pipeline and Diff cells of the visible page fill in afterwards with
@@ -774,12 +781,76 @@ Pipelines                                                  *gg-ui-pipelines*
     the active pipelines among the rows are fetched again every
     `pipeline_refresh_ms` (one request per 20) and only their lines change;
     this stops once none is active. The "Started" times are redrawn every
-    30 seconds. `i` calls `on_inspect_pipeline`.
+    30 seconds. `i` opens the pipeline (|gg-ui-detail-pipeline|). While a
+    detail view covers the picker the refresh pauses.
 
     Filter tokens: `status:failed` (GitLab's status or the shown word,
     e.g. `status:waiting`), `source:schedule`, `ref:main`, `@user` (who
     triggered it), `#4821` or `4821` (the id), `!87` (the merge request),
     other text: the ref, the commit title or the SHA.
+
+Detail views                                                  *gg-ui-detail*
+    `i` on a row opens its detail view over the picker; detail views open
+    each other (an issue's milestone, a merge request's pipeline, ...), and
+    every jump can be undone with `q` (back, finally to the picker with its
+    tab, filter and selection) or `Q` (close everything). Read-only: they
+    show what GitLab has, nothing is changed from them.
+
+    Layout: a header across the top (state pill, title, reference; its
+    border carries the breadcrumb and who opened / updated it), the content
+    below it with tabs in its border (`<Tab>` / `<S-Tab>` switch, each tab
+    keeps its cursor) and key hints at its bottom, and a sidebar on the
+    right. Below 100 columns there is no sidebar; a one-line summary in the
+    header takes its place. `R` reloads.
+
+    Issue                                                 *gg-ui-detail-issue*
+    Header: labels, milestone and the checklist progress of the
+    description. Tabs: Description (markdown: headings with "n of m done",
+    tasks, bullets, code fences) and Activity. Sidebar: assignees, labels,
+    milestone, start / due date, related branches and merge requests. `gm`
+    opens the milestone, `gp` the related merge request (a choice when
+    there are several).
+
+    Activity                                           *gg-ui-detail-activity*
+    Comments and system events, oldest first, by day. Events take one line
+    each; more than four in a row collapse to the first and last two around
+    "N more changes" (`<CR>` expands). Comments show the author, time,
+    `you`, resolved / unresolved threads and, for merge request diff
+    threads, the file and line; replies hang below them. Comments longer
+    than eight lines are cut (`za` shows them in full); `za` elsewhere in a
+    thread folds its replies, `zA` folds every thread.
+
+    Milestone                                         *gg-ui-detail-milestone*
+    Header: Active / Upcoming / Overdue / Closed and a date strip from the
+    start (else the creation date) to the due date, a tick every Monday and
+    the today marker. Tabs: Description, Work items (the issues table) and
+    Merge requests (the merge requests table); `L` / `H` switch their
+    states, `i` / `<CR>` opens the row. Sidebar: progress (done, doing, to
+    do), counts and the issues in progress. An issue is done when closed,
+    otherwise it follows its `WF:Doing` / `WF:Done` / `WF:To do` label (to
+    do without one).
+
+    Merge request                                            *gg-ui-detail-mr*
+    Header: Open / Draft / Merged / Closed and the readiness strip: the
+    pipeline, conflicts, review, threads and draft gates and the merge
+    node, the one blocking the merge in its colour with a hint below it.
+    Tabs: Description (issues the description closes appear as cards; `i` /
+    `<CR>` opens one), Activity, Changes (files with their line counts and a
+    bar), Commits (by day, with the conventional-commit type) and Pipelines
+    (the pipelines table of this merge request, live while shown). Sidebar:
+    branches, assignee, reviewers with their review state, labels,
+    milestone, and what happens on merge. `gp` opens the newest pipeline.
+
+    Pipeline                                           *gg-ui-detail-pipeline*
+    The header holds the stage / job graph; the content the log of the
+    selected job (the first running one, else the first failed one). Graph
+    mode: `h` / `l` stage, `j` / `k` job, `<CR>` into the log. Log mode:
+    the usual motions and `/`, `<Esc>` back to the graph. `F` follows a
+    running job's log, `za` folds a section, `gz` hides the graph. The log
+    keeps the colours of the job; sections fold. While the view is shown,
+    an active pipeline is fetched again every `pipeline_detail_poll_ms`,
+    durations tick every second and a running job's log is tailed every
+    `job_log_poll_ms` (only the new bytes).
 
 Highlights                                                  *gg-ui-highlights*
     All groups are defined with `default = true` and link to standard
@@ -805,6 +876,13 @@ Highlights                                                  *gg-ui-highlights*
     Pipelines: `GitlabRefDefault` (Special) `GitlabRefTag` (Constant)
     `GitlabSha` (DiagnosticWarn) `GitlabPipelineSource` (Comment)
     `GitlabPipelineSourceSchedule` (DiagnosticWarn).
+    Detail views: `GitlabDetail*` (breadcrumb, meta, labels, values),
+    `GitlabPill*` (state pills: the linked group's colour as background),
+    `GitlabChip_<hex>` (label chips in the label's colour),
+    `GitlabTimeline*` `GitlabComment*` `GitlabBadge*` (activity),
+    `GitlabStrip*` (readiness and date strips), `GitlabCommit*` and
+    `GitlabChip<Type>` (commit types), `GitlabGraph*` (pipeline graph),
+    `GitlabLog*` and `GitlabAnsi*` (job log).
     `GitlabIssueTitle` and `GitlabDue` take only the foreground of
     `Normal`, so the row highlight shows behind them.
     Key hints use `GitlabHintKey` (the `Function` colour, bold) for the

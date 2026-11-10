@@ -146,11 +146,14 @@ T["pure UI modules do not touch vim.api"] = function()
     "lua/gg/ui/components/queue.lua", "lua/gg/ui/merge_requests/filter.lua", "lua/gg/ui/merge_requests/model.lua",
     "lua/gg/ui/merge_requests/columns.lua", "lua/gg/ui/merge_requests/cells.lua", "lua/gg/ui/merge_requests/render.lua",
     "lua/gg/ui/pipelines/filter.lua", "lua/gg/ui/pipelines/model.lua", "lua/gg/ui/pipelines/columns.lua",
-    "lua/gg/ui/pipelines/render.lua" }
+    "lua/gg/ui/pipelines/render.lua", "lua/gg/ui/detail" }
+  -- under lua/gg/ui/detail everything but the windows is pure
+  local impure = { ["view.lua"] = true, ["host.lua"] = true, ["init.lua"] = true }
   local bad = {}
   for _, file in ipairs(sources()) do
     for _, prefix in ipairs(pure) do
-      if file:sub(1, #prefix) == prefix and code_only(H.read(file)):find("vim%.api") then
+      if file:sub(1, #prefix) == prefix and not (prefix == "lua/gg/ui/detail" and impure[vim.fs.basename(file)])
+        and code_only(H.read(file)):find("vim%.api") then
         table.insert(bad, file)
       end
     end

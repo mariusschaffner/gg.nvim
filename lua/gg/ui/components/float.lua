@@ -10,6 +10,9 @@ local M = {}
 ---@field filetype? string
 ---@field win_opts? table<string, any> window-local options
 ---@field zindex? integer default 50
+---@field focusable? boolean default true
+---@field hide? boolean open hidden (default false)
+---@field border? string|string[] default "rounded"
 
 ---@class gg.ui.Float
 ---@field win integer
@@ -36,9 +39,11 @@ local function win_config(spec)
     col = spec.rect.col,
     width = spec.rect.width,
     height = spec.rect.height,
-    border = "rounded",
+    border = spec.border or "rounded",
     style = "minimal",
     zindex = spec.zindex or 50,
+    focusable = spec.focusable ~= false,
+    hide = spec.hide == true,
   }
   if spec.title then
     cfg.title = spec.title
@@ -66,14 +71,39 @@ end
 --- Move/resize a float and optionally change its title or footer.
 ---@param win integer
 ---@param rect gg.ui.Rect
----@param extra? { title?: string|gg.ui.Chunk[], footer?: string|gg.ui.Chunk[] }
+---@param extra? { title?: string|gg.ui.Chunk[], footer?: string|gg.ui.Chunk[], hide?: boolean, border?: string|string[], focusable?: boolean }
 function M.update(win, rect, extra)
   if not vim.api.nvim_win_is_valid(win) then
     return
   end
-  local cfg = win_config({ rect = rect, title = extra and extra.title, footer = extra and extra.footer })
+  extra = extra or {}
+  local cfg = win_config({
+    rect = rect,
+    title = extra.title,
+    footer = extra.footer,
+    hide = extra.hide,
+    border = extra.border,
+    focusable = extra.focusable,
+  })
   cfg.style = nil -- "minimal" can only be set when the window is created
+  cfg.zindex = nil -- keep the window's own
+  -- the title and footer stay unless given (a border change would drop them)
+  if not extra.title then
+    cfg.title = nil
+  end
+  if not extra.footer then
+    cfg.footer = nil
+  end
   vim.api.nvim_win_set_config(win, cfg)
+end
+
+--- Hide or show a float (Neovim 0.10 `hide`), keeping everything else.
+---@param win integer
+---@param hidden boolean
+function M.set_hidden(win, hidden)
+  if vim.api.nvim_win_is_valid(win) then
+    vim.api.nvim_win_set_config(win, { hide = hidden })
+  end
 end
 
 --- Set the title and/or footer of a float, keeping its geometry.

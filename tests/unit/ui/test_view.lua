@@ -224,34 +224,35 @@ T["]m / [m jump between milestone blocks"] = function()
   eq(v.selected_iid, 211)
 end
 
-T["i / I call the inspect callbacks; no milestone notifies"] = function()
+T["i / I open the detail views; no milestone notifies"] = function()
+  local detail = require("gg.ui.detail")
+  local real = { issue = detail.issue, milestone = detail.milestone }
   local got = {}
-  local v = ready(open({
-    on_inspect_issue = function(issue, ctx)
-      got.issue, got.ctx = issue, ctx
-    end,
-    on_inspect_milestone = function(m)
-      got.milestone = m
-    end,
-  }))
-  local notes = {}
-  vim.notify = function(msg)
-    table.insert(notes, msg)
+  detail.issue = function(ctx, issue)
+    got.issue, got.ctx = issue, ctx
   end
-  keys("i")
-  eq(got.issue.iid, 220)
-  eq({ got.ctx.host, got.ctx.project, type(got.ctx.close) }, { D.HOST, D.PROJECT, "function" })
-  keys("I")
-  eq(notes, { "No milestone" })
-  eq(got.milestone, nil)
-  keys("jj")
-  keys("I")
-  eq(got.milestone.title, "2026.11 Patch cycle")
-  eq(got.milestone.issue_stats, { total = 6, closed = 2 })
-  -- ctx.close closes the picker
-  got.ctx.close()
-  eq(v.closed, true)
-  current = nil
+  detail.milestone = function(_, m)
+    got.milestone = m
+  end
+  local ok, err = pcall(function()
+    local v = ready(open())
+    local notes = {}
+    vim.notify = function(msg)
+      table.insert(notes, msg)
+    end
+    keys("i")
+    eq(got.issue.iid, 220)
+    eq({ got.ctx.host, got.ctx.project, got.ctx.stack == v.shell.stack }, { D.HOST, D.PROJECT, true })
+    keys("I")
+    eq(notes, { "No milestone" })
+    eq(got.milestone, nil)
+    keys("jj")
+    keys("I")
+    eq(got.milestone.title, "2026.11 Patch cycle")
+    eq(got.milestone.issue_stats, { total = 6, closed = 2 })
+  end)
+  detail.issue, detail.milestone = real.issue, real.milestone
+  assert(ok, err)
 end
 
 T["keymaps are configurable and false disables one"] = function()

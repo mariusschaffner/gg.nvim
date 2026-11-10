@@ -21,6 +21,11 @@
 ---     request, `CONCURRENCY` requests at a time); the timer stops when no
 ---     shown pipeline is active, the view is inactive, or the picker closes.
 ---   * every `STARTED_MS` the relative "Started" times are redrawn.
+---
+--- The same table also lives inside the merge request detail view, filtered
+--- to that merge request (`M.mount` with `mr_iid`). Everything that touches
+--- the windows goes through a surface (`gg.ui.PipelinesSurface`): the
+--- picker's (`M.attach`) or the detail view's.
 local columns = require("gg.ui.pipelines.columns")
 local date = require("gg.ui.lib.date")
 local gg = require("gg")
@@ -57,20 +62,24 @@ M.MAX_IDS = 20
 ---@field touched boolean
 ---@field queue gg.ui.Queue
 ---@field closed boolean
+---@field surface gg.ui.PipelinesSurface
+---@field mr_iid integer|nil only this merge request's pipelines
 local View = {}
 View.__index = View
 
---- Create the pipelines view inside an open picker (not activated).
----@param shell gg.ui.Picker
----@return gg.ui.PipelinesView
-function M.attach(shell)
-  local self = setmetatable({
+---@class gg.ui.PipelinesSurface
+---@field list gg.ui.ListBuffer the table buffer
+---@field active fun(): boolean the table is visible (else render is a no-op and the timers stop)
+---@field width fun(): integer
+---@field chrome fun(title: string, footer: string|gg.ui.Chunk[])
+---@field overlay fun(lnum: integer|nil) cursor mark and row highlight
+---@field counter? fun(s: string|nil) the filter's match counter
+---@field open fun(pipeline: gg.Pipeline) inspect
+---@field close fun()
+
+local function new(fields)
+  return setmetatable(vim.tbl_extend("force", {
     name = "pipelines",
-    filetype = "gg_ui_pipelines",
-    placeholder = "Filter",
-    shell = shell,
-    cfg = shell.cfg,
-    keys = shell.keys,
     status = "idle",
     tab = "all",
     query = "",
@@ -85,11 +94,66 @@ function M.attach(shell)
     loading_more = false,
     utc_offset = date.utc_offset(),
     queue = queue.new({ concurrency = M.CONCURRENCY }),
+  }, fields), View)
+end
+
+--- Create the pipelines view inside an open picker (not activated).
+---@param shell gg.ui.Picker
+---@return gg.ui.PipelinesView
+function M.attach(shell)
+  local self = new({
+    filetype = "gg_ui_pipelines",
+    placeholder = "Filter",
+    shell = shell,
+    cfg = shell.cfg,
+    keys = shell.keys,
     list = shell.list,
-    prompt = shell.prompt,
-  }, View)
+  })
+  self.surface = {
+    list = shell.list,
+    active = function()
+      return shell:is_active(self) and shell:valid()
+    end,
+    width = function()
+      return shell:width()
+    end,
+    chrome = function(title, footer)
+      shell:chrome(title, footer)
+    end,
+    overlay = function(lnum)
+      shell:overlay(lnum)
+    end,
+    counter = function(c)
+      shell.prompt:set_counter(c)
+    end,
+    open = function(p)
+      require("gg.ui.detail").pipeline(shell:detail_ctx(self), p)
+    end,
+    close = function()
+      shell:close()
+    end,
+  }
   shell:add(self)
   return self
+end
+
+--- The table outside the picker (the merge request detail view): one
+--- project's pipelines, or only those of merge request `mr_iid`. Call
+--- `activate` to load it.
+---@param opts { surface: gg.ui.PipelinesSurface, cfg: gg.ui.Config, host: string, project: string, mr_iid?: integer }
+---@return gg.ui.PipelinesView
+function M.mount(opts)
+  return new({
+    surface = opts.surface,
+    list = opts.surface.list,
+    cfg = opts.cfg,
+    keys = opts.cfg.keymaps,
+    host = opts.host,
+    project = opts.project,
+    mr_iid = opts.mr_iid,
+    -- merge request pipelines cannot be fetched by ids: one request each
+    no_ids = opts.mr_iid ~= nil or nil,
+  })
 end
 
 --- Called by the picker when this view becomes active: the first time it
@@ -97,7 +161,9 @@ end
 function View:activate()
   highlights.setup()
   if self.status == "idle" then
-    if self.shell.host then
+    if self.host then
+      self:load()
+    elseif self.shell.host then
       self.host, self.project = self.shell.host, self.shell.project
       self:load()
     else
@@ -177,7 +243,7 @@ function View:load()
     self.next_cursor = nil
   end
   self:render()
-  local t = gg.pipelines.list({ host = self.host, project = self.project }, { per_page = M.PER_PAGE })
+  local t = gg.pipelines.list(self:_list_args(), { per_page = M.PER_PAGE })
   self.tasks.page = t
   t:on_done(function(page, err)
     if self.closed or gen ~= self.gen then
@@ -199,6 +265,11 @@ function View:load()
   self:_load_context(gen)
 end
 
+---@private
+function View:_list_args()
+  return { host = self.host, project = self.project, mr_iid = self.mr_iid }
+end
+
 -- the default branch, the project id and the open merge requests
 ---@private
 function View:_load_context(gen)
@@ -216,6 +287,11 @@ function View:_load_context(gen)
       self:_patch()
     end
   end)
+  if self.mr_iid then
+    -- every row belongs to this merge request: no branch lookup needed
+    self.ctx.mr_by_branch = {}
+    return
+  end
   local mt = gg.merge_requests.list_all({ host = self.host, project = self.project, state = "opened" }, { limit = self.cfg.limit })
   self.tasks.mrs = mt
   mt:on_done(function(res, err)
@@ -250,7 +326,7 @@ function View:_output()
   end
   self.model = mdl
   return render.render({
-    width = self.shell:width(),
+    width = self.surface.width(),
     status = self.status == "idle" and "loading" or self.status,
     tab = self.tab,
     model = mdl,
@@ -267,7 +343,7 @@ end
 --- Redraw the table from the current state; the selection survives. A no-op
 --- while another view is active.
 function View:render()
-  if self.closed or not self.shell:is_active(self) or not self.shell:valid() then
+  if self.closed or not self.surface.active() then
     return
   end
   if not self.touched then
@@ -288,8 +364,10 @@ function View:render()
   self._rendering = true
   self.list:select(target or self.sel_row)
   self._rendering = false
-  self.prompt:set_counter(nil) -- this view has no match counter
-  self.shell:chrome(self:_title(), self:_footer())
+  if self.surface.counter then
+    self.surface.counter(nil) -- this view has no match counter
+  end
+  self.surface.chrome(self:_title(), self:_footer())
 end
 
 -- per row: its marks as one comparable string
@@ -332,7 +410,7 @@ end
 -- Rewrite only the lines that changed; redraw when the rows changed.
 ---@private
 function View:_patch()
-  if self.closed or not self.shell:is_active(self) or not self.shell:valid() or not self.rendered then
+  if self.closed or not self.surface.active() or not self.rendered then
     return
   end
   local r = self:_output()
@@ -343,9 +421,9 @@ function View:_patch()
   self.rendered = r
   if #lnums > 0 then
     self.list:patch(r, lnums)
-    self.shell:overlay(self.list:current())
+    self.surface.overlay(self.list:current())
   end
-  self.shell:chrome(self:_title(), self:_footer())
+  self.surface.chrome(self:_title(), self:_footer())
 end
 
 ---@private
@@ -412,13 +490,13 @@ end
 --- ready, the refresh while a shown pipeline is active (and it is on).
 ---@private
 function View:_start_timers()
-  if self.closed or self.status ~= "ready" or not self.shell:is_active(self) then
+  if self.closed or self.suspended or self.status ~= "ready" or not self.surface.active() then
     return
   end
   if not self.started_timer then
     self.started_timer = vim.uv.new_timer()
     self.started_timer:start(M.STARTED_MS, M.STARTED_MS, vim.schedule_wrap(function()
-      if self.closed or not self.shell:is_active(self) then
+      if self.closed or not self.surface.active() then
         return self:_stop_timers()
       end
       self:_patch()
@@ -436,7 +514,7 @@ end
 --- One refresh: fetch the shown active pipelines again.
 ---@private
 function View:_tick()
-  if self.closed or not self.shell:is_active(self) then
+  if self.closed or not self.surface.active() then
     return self:_stop_timers()
   end
   if self.status ~= "ready" then
@@ -487,6 +565,22 @@ function View:_refreshed(items)
   end
 end
 
+--- A detail view covers the picker: stop the timers.
+function View:suspend()
+  self.suspended = true
+  self:_stop_timers()
+end
+
+--- Visible again: refresh what is active now, then restart the timers.
+function View:resume()
+  self.suspended = false
+  if self.closed or not self.surface.active() then
+    return
+  end
+  self:_tick()
+  self:_start_timers()
+end
+
 -- Interaction ----------------------------------------------------------------
 
 --- The cursor moved to `lnum` (called by the picker).
@@ -501,7 +595,7 @@ function View:on_select(lnum)
       self.touched = true
     end
   end
-  self.shell:overlay(row and row.pipeline and lnum or nil)
+  self.surface.overlay(row and row.pipeline and lnum or nil)
 end
 
 --- Set the filter query and redraw.
@@ -536,9 +630,9 @@ function View:next_page()
     return
   end
   self.loading_more = true
-  self.shell:chrome(self:_title(), self:_footer())
+  self.surface.chrome(self:_title(), self:_footer())
   local gen = self.gen
-  local t = gg.pipelines.list({ host = self.host, project = self.project }, { per_page = M.PER_PAGE, cursor = self.next_cursor })
+  local t = gg.pipelines.list(self:_list_args(), { per_page = M.PER_PAGE, cursor = self.next_cursor })
   self.tasks.more = t
   t:on_done(function(page, err)
     if self.closed or gen ~= self.gen then
@@ -548,7 +642,7 @@ function View:next_page()
     self.loading_more = false
     if err then
       vim.notify("gg.ui: loading more pipelines failed: " .. (err.message or tostring(err)), vim.log.levels.WARN)
-      self.shell:chrome(self:_title(), self:_footer())
+      self.surface.chrome(self:_title(), self:_footer())
       return
     end
     self:_append(page.items)
@@ -558,22 +652,12 @@ function View:next_page()
   end)
 end
 
---- Call `on_inspect_pipeline` for the pipeline under the cursor.
+--- Open the detail view of the pipeline under the cursor.
 function View:inspect()
   local lnum = self.list:current()
   local row = lnum and self.rendered and self.rendered.rows[lnum]
-  if not (row and row.pipeline) then
-    return
-  end
-  local ok, err = pcall(self.cfg.on_inspect_pipeline, row.pipeline, {
-    host = self.host,
-    project = self.project,
-    close = function()
-      self:close()
-    end,
-  })
-  if not ok then
-    vim.notify("gg.ui: " .. tostring(err), vim.log.levels.ERROR)
+  if row and row.pipeline then
+    self.surface.open(row.pipeline)
   end
 end
 
@@ -593,7 +677,7 @@ end
 
 --- Close the picker (both windows) and cancel any request in flight.
 function View:close()
-  self.shell:close()
+  self.surface.close()
 end
 
 --- The picker closed: stop the timers and cancel everything (called by the picker).

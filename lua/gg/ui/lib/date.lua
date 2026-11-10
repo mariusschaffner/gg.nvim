@@ -143,6 +143,140 @@ function M.relative(iso, now, utc_offset)
   return ("%s %02d"):format(MONTHS[m], day)
 end
 
+--- Short age of timestamp `iso` at `now`: "now", "12s", "5m", "3h", "2d",
+--- "3w", "4mo", "2y" ("" without a timestamp).
+---@param iso string|nil
+---@param now integer epoch seconds
+---@return string
+function M.age(iso, now)
+  local t = M.parse_time(iso)
+  if not t then
+    return ""
+  end
+  local d = math.max(0, now - t)
+  if d < 5 then
+    return "now"
+  elseif d < 60 then
+    return ("%ds"):format(d)
+  elseif d < 3600 then
+    return ("%dm"):format(math.floor(d / 60))
+  elseif d < 86400 then
+    return ("%dh"):format(math.floor(d / 3600))
+  elseif d < 7 * 86400 then
+    return ("%dd"):format(math.floor(d / 86400))
+  elseif d < 30 * 86400 then
+    return ("%dw"):format(math.floor(d / (7 * 86400)))
+  elseif d < 365 * 86400 then
+    return ("%dmo"):format(math.floor(d / (30 * 86400)))
+  end
+  return ("%dy"):format(math.floor(d / (365 * 86400)))
+end
+
+--- Local calendar day of timestamp `iso` (shifted `utc_offset` seconds east
+--- of UTC).
+---@param iso string|nil
+---@param utc_offset? integer
+---@return gg.ui.Date|nil
+function M.local_day(iso, utc_offset)
+  local t = M.parse_time(iso)
+  if not t then
+    return nil
+  end
+  local y, m, d = civil_from_days(math.floor((t + (utc_offset or 0)) / 86400))
+  return { year = y, month = m, day = d }
+end
+
+--- Local "HH:MM" of timestamp `iso` ("" without a timestamp).
+---@param iso string|nil
+---@param utc_offset? integer
+---@return string
+function M.hhmm(iso, utc_offset)
+  local t = M.parse_time(iso)
+  if not t then
+    return ""
+  end
+  local s = (t + (utc_offset or 0)) % 86400
+  return ("%02d:%02d"):format(math.floor(s / 3600), math.floor(s % 3600 / 60))
+end
+
+--- "DD.MM.YYYY".
+---@param d gg.ui.Date
+---@return string
+function M.dotted(d)
+  return ("%02d.%02d.%04d"):format(d.day, d.month, d.year)
+end
+
+--- "DD.MM." (no year).
+---@param d gg.ui.Date
+---@return string
+function M.dotted_short(d)
+  return ("%02d.%02d."):format(d.day, d.month)
+end
+
+--- A day divider label: "TODAY · 10.11.2026", "YESTERDAY · 09.11.2026" or
+--- "05.11.2026".
+---@param d gg.ui.Date
+---@param today gg.ui.Date
+---@return string
+function M.day_label(d, today)
+  local diff = M.days_between(d, today)
+  if diff == 0 then
+    return "TODAY · " .. M.dotted(d)
+  elseif diff == 1 then
+    return "YESTERDAY · " .. M.dotted(d)
+  end
+  return M.dotted(d)
+end
+
+--- True when both dates are the same day.
+---@param a gg.ui.Date|nil
+---@param b gg.ui.Date|nil
+---@return boolean
+function M.same_day(a, b)
+  return a ~= nil and b ~= nil and a.year == b.year and a.month == b.month and a.day == b.day
+end
+
+--- A duration in seconds as a clock: "12s", "1:02", "1:02:03".
+---@param secs number|nil
+---@return string
+function M.clock(secs)
+  if not secs then
+    return ""
+  end
+  secs = math.max(0, math.floor(secs))
+  if secs < 60 then
+    return ("%ds"):format(secs)
+  elseif secs < 3600 then
+    return ("%d:%02d"):format(math.floor(secs / 60), secs % 60)
+  end
+  return ("%d:%02d:%02d"):format(math.floor(secs / 3600), math.floor(secs % 3600 / 60), secs % 60)
+end
+
+--- Day of the week of `d`: 1 = Monday … 7 = Sunday.
+---@param d gg.ui.Date
+---@return integer
+function M.weekday(d)
+  -- 1970-01-01 was a Thursday (4)
+  return (days_from_civil(d.year, d.month, d.day) + 3) % 7 + 1
+end
+
+--- `d` plus `n` days.
+---@param d gg.ui.Date
+---@param n integer
+---@return gg.ui.Date
+function M.add_days(d, n)
+  local y, m, day = civil_from_days(days_from_civil(d.year, d.month, d.day) + n)
+  return { year = y, month = m, day = day }
+end
+
+--- Whole days from `from` to `to`, by the calendar (no time zones).
+---@param from gg.ui.Date
+---@param to gg.ui.Date
+---@return integer
+function M.diff_days(from, to)
+  return days_from_civil(to.year, to.month, to.day) - days_from_civil(from.year, from.month, from.day)
+end
+
 ---@alias gg.ui.DueTone "normal"|"soon"|"overdue"|"none"
 
 --- Due text for a milestone:

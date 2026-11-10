@@ -43,6 +43,10 @@ lua/gg/
     issues/           issues picker: filter, model, paginate, columns, render (pure) + view
     merge_requests/   merge requests picker view (same split)
     pipelines/        pipelines picker view (same split; also mounted in the MR detail view)
+    create/           creation popups: popup (windows), defs/* (one definition per
+                      view: issue, merge_request, milestone, pipeline), ref_picker,
+                      refs, variables_view; pure: layout, model, placeholders,
+                      variables, mr
     detail/           detail views: host (windows), header/sidebar (pure), activity/,
                       issue/, milestone/, merge_request/, pipeline/ (pure parts + view);
                       editing: edit.lua (runner), editing.lua + fields.lua (glue),
@@ -75,16 +79,26 @@ gg.ui.* -> gg (the facade) only        nothing outside gg.ui requires gg.ui
 - `gg.ui` is a consumer of the API: it requires only `gg` and `gg.ui.*`, never
   resources/graphql/transport directly. Consumers only see mapped models.
 - Its options live in `require("gg.ui").setup()`, separate from `gg.setup()`.
-- `lua/gg/ui/project.lua` is the one module allowed to run `git`
-  (`git remote get-url origin`, async via `vim.system`) to find the project.
+- `lua/gg/ui/project.lua` is the one module allowed to run `git` (async via
+  `vim.system`): `git remote get-url origin` to find the project, and for the
+  creation popups `git branch --show-current` and, after the user confirms,
+  `git push -u origin <branch>`.
 - `ui/lib`, the pure parts of `ui/issues` (filter, model, paginate, columns,
   render), `ui/components/tabs.lua` and everything under `ui/detail` except
-  `view.lua`, `create_view.lua`, `host.lua`, `init.lua`, `edit.lua`,
-  `editing.lua` and `fields.lua` do not touch `vim.api`;
+  `view.lua`, `host.lua`, `init.lua`, `edit.lua`,
+  `editing.lua` and `fields.lua`, and `layout`, `model`, `placeholders`,
+  `variables` and `mr` under `ui/create` do not touch `vim.api`;
   they are tested headless without windows.
 - Every change to GitLab from a detail view goes through `ui/detail/edit.lua`
   (`edit.run`: notice, request, apply or roll back, redraw) and then
   `stack:changed(kind)`, so the screens below refresh when shown again.
+- Creation popups (`gg.ui.create.*`) are one generic popup
+  (`ui/create/popup.lua`) driven by a definition per view (`ui/create/defs`).
+  It has its own submit state in the body's border instead of `edit.run`,
+  and calls `stack:changed(kind)` like the detail views.
+- A float border can carry a left and a right label (`title_right`,
+  `footer_right` in `ui/components/float.lua`); `float_group` rebuilds them
+  on resize and focus changes.
 - Screens stack: the picker is the bottom of a `ui/components/stack`; detail
   views are pushed on it (`gg.ui.detail.*`) and reach other screens only
   through it (`q` back, `Q` close all). A covered screen is hidden and its

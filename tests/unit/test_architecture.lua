@@ -146,9 +146,11 @@ T["pure UI modules do not touch vim.api"] = function()
     "lua/gg/ui/components/queue.lua", "lua/gg/ui/merge_requests/filter.lua", "lua/gg/ui/merge_requests/model.lua",
     "lua/gg/ui/merge_requests/columns.lua", "lua/gg/ui/merge_requests/cells.lua", "lua/gg/ui/merge_requests/render.lua",
     "lua/gg/ui/pipelines/filter.lua", "lua/gg/ui/pipelines/model.lua", "lua/gg/ui/pipelines/columns.lua",
-    "lua/gg/ui/pipelines/render.lua", "lua/gg/ui/detail" }
+    "lua/gg/ui/pipelines/render.lua", "lua/gg/ui/create/layout.lua", "lua/gg/ui/create/model.lua",
+    "lua/gg/ui/create/placeholders.lua", "lua/gg/ui/create/variables.lua", "lua/gg/ui/create/mr.lua",
+    "lua/gg/ui/detail" }
   -- under lua/gg/ui/detail everything but the windows is pure
-  local impure = { ["view.lua"] = true, ["host.lua"] = true, ["init.lua"] = true, ["edit.lua"] = true, ["editing.lua"] = true, ["fields.lua"] = true, ["create_view.lua"] = true }
+  local impure = { ["view.lua"] = true, ["host.lua"] = true, ["init.lua"] = true, ["edit.lua"] = true, ["editing.lua"] = true, ["fields.lua"] = true }
   local bad = {}
   for _, file in ipairs(sources()) do
     for _, prefix in ipairs(pure) do

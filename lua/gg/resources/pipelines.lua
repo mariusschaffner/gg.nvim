@@ -10,6 +10,9 @@
 ---     without that field (a schema error) it retries without it. This is
 ---     decided per call; nothing is remembered.
 ---   * retry, cancel: REST (`POST /pipelines/:id/retry|cancel`).
+---   * create: REST (`POST /projects/:id/pipeline`).
+---   * config_variables: GraphQL `project.ciConfigVariables(ref:)`; REST has
+---     no counterpart.
 local common = require("gg.resources.common")
 local gid = require("gg.models.gid")
 local graphql = require("gg.graphql.client")
@@ -185,6 +188,110 @@ end
 function M.graph(args)
   return common.run(args, { host = "host", project = "project", id = "id" }, function()
     return query_pipeline(args, { "pipeline_graph", "pipeline_graph_base" }):await()
+  end)
+end
+
+-- the project path when `project` is one (not an ID), for the model
+local function path_of(project)
+  return type(project) == "string" and not project:match("^%d+$") and project or nil
+end
+
+---@class gg.PipelineVariable
+---@field key string
+---@field value string
+---@field type? "env_var"|"file" default "env_var"
+
+---@class gg.PipelineCreateArgs
+---@field host string
+---@field project string|integer
+---@field ref string a branch or tag
+---@field variables? gg.PipelineVariable[]
+
+local function check_variables(list)
+  if list == nil then
+    return nil
+  end
+  if next(list) ~= nil and not vim.islist(list) then
+    return common.invalid("variables", "must be a list of { key, value, type? }")
+  end
+  for i, v in ipairs(list) do
+    local where = ("variables[%d]"):format(i)
+    if type(v) ~= "table" then
+      return common.invalid(where, "must be a table { key, value, type? }")
+    end
+    if type(v.key) ~= "string" or v.key == "" then
+      return common.invalid(where .. ".key", "must be a non-empty string")
+    end
+    if type(v.value) ~= "string" then
+      return common.invalid(where .. ".value", "must be a string")
+    end
+    if v.type ~= nil and v.type ~= "env_var" and v.type ~= "file" then
+      return common.invalid(where .. ".type", "must be one of: env_var, file")
+    end
+  end
+  return nil
+end
+
+--- Run a new pipeline on a branch or tag (REST `POST /projects/:id/pipeline`).
+---@param args gg.PipelineCreateArgs
+---@return gg.Task resolves with gg.Pipeline
+function M.create(args)
+  local spec = { host = "host", project = "project", ref = "string", variables = "table?" }
+  local err = common.check(args, spec) or check_variables(args.variables)
+  if err then
+    return task.failed(err)
+  end
+  return task.run(function()
+    local body = { ref = args.ref }
+    if args.variables and #args.variables > 0 then
+      body.variables = vim.tbl_map(function(v)
+        return { key = v.key, value = v.value, variable_type = v.type or "env_var" }
+      end, args.variables)
+    end
+    local res, rerr = rest.request(args.host, "POST", ("/projects/%s/pipeline"):format(rest.project(args.project)), { body = body }):await()
+    if rerr then
+      return nil, rerr
+    end
+    return pipeline_model.from_rest(res.data, { origin = common.origin(args.host), project = path_of(args.project) })
+  end)
+end
+
+---@class gg.PipelineConfigVariables
+---@field ready boolean false while GitLab is still reading the CI configuration (ask again)
+---@field variables gg.CiConfigVariable[]
+
+--- The variables the CI configuration of `ref` declares for manually run
+--- pipelines, with their defaults (GraphQL `project.ciConfigVariables`).
+--- GitLab computes them in the background: the first call for a ref may
+--- resolve with `ready = false` and no variables.
+---@param args { host: string, project: string|integer, ref: string }
+---@return gg.Task resolves with gg.PipelineConfigVariables
+function M.config_variables(args)
+  return common.run(args, { host = "host", project = "project", ref = "string" }, function()
+    local path, perr = graphql.project_path(args.host, args.project):await()
+    if not path then
+      return nil, perr
+    end
+    local data, err = graphql.query(args.host, "pipeline_config_variables", { fullPath = path, ref = args.ref }):await()
+    if err then
+      return nil, err
+    end
+    local project, nerr = graphql.require(data, "project", "project " .. path)
+    if not project then
+      return nil, nerr
+    end
+    local list = project.ciConfigVariables
+    if type(list) ~= "table" then
+      return { ready = false, variables = {} }
+    end
+    local out = {}
+    for _, node in ipairs(list) do
+      local v = pipeline_model.config_variable(node)
+      if v then
+        table.insert(out, v)
+      end
+    end
+    return { ready = true, variables = out }
   end)
 end
 

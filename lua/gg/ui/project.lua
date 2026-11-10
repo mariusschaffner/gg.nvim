@@ -2,7 +2,9 @@
 ---
 --- `[host/]group/project` or a remote URL from the user, else the `origin`
 --- remote of the working directory. This is the only module in gg that runs
---- `git` (asynchronously); the API layer never does.
+--- `git` (asynchronously); the API layer never does. Besides the remote it
+--- reads the current branch and pushes a branch, both for the creation
+--- popups (`gg.ui.create`).
 local gg = require("gg")
 
 local M = {}
@@ -112,6 +114,64 @@ function M.resolve(opts)
     on_cancel(function()
       pcall(proc.kill, proc, 15)
     end)
+  end)
+end
+
+-- run git asynchronously; resolves with { code, stdout, stderr } (trimmed)
+local function git(args, cwd)
+  cwd = cwd or vim.fn.getcwd()
+  return gg.task.new(function(resolve, reject, on_cancel)
+    local argv = { "git" }
+    vim.list_extend(argv, args)
+    local ok, proc = pcall(vim.system, argv, { cwd = cwd, text = true }, function(res)
+      vim.schedule(function()
+        resolve({ code = res.code, stdout = vim.trim(res.stdout or ""), stderr = vim.trim(res.stderr or "") })
+      end)
+    end)
+    if not ok then
+      reject(invalid("could not run git: " .. tostring(proc)))
+      return
+    end
+    on_cancel(function()
+      pcall(proc.kill, proc, 15)
+    end)
+  end)
+end
+
+--- The branch checked out in `cwd` (default: the current directory):
+--- `git branch --show-current`. Resolves with its name, or `false` outside a
+--- repository and on a detached HEAD. Never fails for those.
+---@param cwd? string
+---@return gg.Task resolves with string|false
+function M.current_branch(cwd)
+  return gg.task.run(function()
+    local res = git({ "branch", "--show-current" }, cwd):await()
+    if not res or res.code ~= 0 or res.stdout == "" then
+      return false
+    end
+    return res.stdout
+  end)
+end
+
+--- Push `branch` to `origin` and track it: `git push -u origin <branch>`.
+--- Resolves with true; fails with git's message.
+---@param branch string
+---@param cwd? string
+---@return gg.Task
+function M.push(branch, cwd)
+  if type(branch) ~= "string" or branch == "" or branch:sub(1, 1) == "-" then
+    return gg.task.failed(invalid("not a branch name: " .. tostring(branch)))
+  end
+  return gg.task.run(function()
+    local res, err = git({ "push", "-u", "origin", branch }, cwd):await()
+    if not res then
+      return nil, err
+    end
+    if res.code ~= 0 then
+      local msg = res.stderr ~= "" and res.stderr or ("git push exited with code %d"):format(res.code)
+      return nil, gg.errors.new("unknown", "git push failed: " .. msg)
+    end
+    return true
   end)
 end
 

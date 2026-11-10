@@ -139,6 +139,16 @@ M.LINKS = {
   { "GitlabAnsiMagenta", "Constant" },
   { "GitlabAnsiCyan", "Special" },
   { "GitlabAnsiWhite", "Normal" },
+  -- creation popups: the title float's border per kind, keys, submit label
+  { "GitlabCreateIssue", "Function" },
+  { "GitlabCreateMR", "Statement" },
+  { "GitlabCreateMilestone", "Special" },
+  { "GitlabCreatePipeline", "DiagnosticOk" },
+  { "GitlabCreateKey", "DiagnosticWarn" },
+  { "GitlabCreateSubmit", "DiagnosticOk" },
+  { "GitlabCreateError", "DiagnosticError" },
+  { "GitlabCreateHint", "GitlabDetailDim" },
+  { "GitlabCreateDim", "GitlabDetailDim" },
   -- one colour per user (a stable hash picks the group), see gg.ui.lib.user_hl
   { "GitlabUser1", "Function" },
   { "GitlabUser2", "Special" },
@@ -207,6 +217,9 @@ function M.define()
   vim.api.nvim_set_hl(0, "GitlabTimelineActor", { fg = normal_fg, bold = true, default = true })
   vim.api.nvim_set_hl(0, "GitlabTimelineObject", { fg = normal_fg, default = true })
   vim.api.nvim_set_hl(0, "GitlabAnsiBold", { bold = true, default = true })
+  -- creation popups: the title in Title's colour, bold; placeholders italic
+  vim.api.nvim_set_hl(0, "GitlabCreateTitle", { fg = resolved("Title").fg or normal_fg, bold = true, default = true })
+  vim.api.nvim_set_hl(0, "GitlabCreatePlaceholder", { fg = resolved("Comment").fg, italic = true, default = true })
   -- pills and type chips: the colour as background (reverse video)
   for _, p in ipairs(M.PILLS) do
     vim.api.nvim_set_hl(0, p[1], { fg = resolved(p[2]).fg, reverse = true, bold = true, default = true })

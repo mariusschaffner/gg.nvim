@@ -436,6 +436,9 @@ function View:_footer()
   if pages > 1 and k(self.keys.next_page) then
     table.insert(hints, { key = k(self.keys.next_page), desc = ("Page %d/%d"):format(self.page, pages) })
   end
+  if self.project and k(self.keys.create) then
+    table.insert(hints, { key = k(self.keys.create), desc = "Create Merge Request" })
+  end
   if #hints == 0 then
     return " "
   end
@@ -500,11 +503,21 @@ function View:inspect_mr()
   end
 end
 
+--- `c`: the new merge request popup (source: the current git branch).
+function View:create()
+  if self.project then
+    require("gg.ui.create").merge_request(self.shell:detail_ctx(self), { cwd = self.shell.target_opts and self.shell.target_opts.cwd or nil })
+  end
+end
+
 --- The view's own table keymaps (the shell maps the shared ones).
 ---@return { [1]: gg.ui.Keymap, [2]: fun(), [3]: string }[]
 function View:keymaps()
   local k = self.keys
   return {
+    { k.create, function()
+      self:create()
+    end, "Create merge request" },
     { k.inspect_mr, function()
       self:inspect_mr()
     end, "Inspect merge request" },

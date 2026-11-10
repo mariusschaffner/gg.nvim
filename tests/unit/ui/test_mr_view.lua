@@ -104,7 +104,7 @@ T["opens, loads three states, rows first, cells fill in later"] = function()
   eq(cursor(v), 6)
   eq(v.selected_iid, 88)
   -- chrome
-  eq(footer_text(v), " [i] Merge Request ")
+  eq(footer_text(v), " [i] Merge Request • [c] Create Merge Request ")
   eq(vim.api.nvim_win_get_config(v.table_float.win).title[1][1], " Table ")
   local title = table.concat(vim.tbl_map(function(c)
     return c[1]
@@ -259,7 +259,7 @@ end
 T["tabs, filter, paging"] = function()
   local v = filled(ready(open({ page_size = 4 })))
   eq(#v.pages, 2)
-  eq(footer_text(v), " [i] Merge Request • [P] Page 1/2 ")
+  eq(footer_text(v), " [i] Merge Request • [P] Page 1/2 • [c] Create Merge Request ")
   keys("P")
   eq(v.page, 2)
   eq(v.selected_iid, 84)

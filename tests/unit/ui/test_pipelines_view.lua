@@ -92,7 +92,7 @@ T["rows show at once; the MR column and the ref colour fill in without moving th
   -- still loading: "·" in the MR column of branch pipelines; MR pipelines know theirs
   eq(l[6]:find("·", 1, true) ~= nil, true)
   eq(select(2, line_of(v, 4815)):find("!85", 1, true) ~= nil, true)
-  eq(footer_text(v), " [i] Pipeline ")
+  eq(footer_text(v), " [i] Pipeline • [c] Start Pipeline ")
   keys("jj")
   eq(cursor(v), 8)
   eq(v.selected_id, 4817)
@@ -123,7 +123,7 @@ end
 T["P appends the next page and keeps the selection"] = function()
   local v, fake = open(nil, D.all({ now = os.time(), next_cursor = "c1" }))
   ready(v)
-  eq(footer_text(v), " [i] Pipeline ") -- no hint for P, the key still works
+  eq(footer_text(v), " [i] Pipeline • [c] Start Pipeline ") -- no hint for P, the key still works
   eq(lines(v)[2]:find("(first", 1, true), nil)
   keys("jjj")
   local at = cursor(v)
@@ -137,7 +137,7 @@ T["P appends the next page and keeps the selection"] = function()
   eq(v.selected_id, 4815)
   eq(#v.rendered.selectable, 10)
   eq(lines(v)[2], "    All 10     Running 1     Failed 2     Passed 5  ")
-  eq(footer_text(v), " [i] Pipeline ")
+  eq(footer_text(v), " [i] Pipeline • [c] Start Pipeline ")
   local last = fake:last()
   eq({ last.operation, last.variables.after }, { "PipelinesListProject", "c1" })
   -- no further page: P does nothing

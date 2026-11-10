@@ -4,13 +4,16 @@
 local M = {}
 
 --- Ask "<question> [y/N]: "; `on_yes` runs only for an answer starting
---- with y or Y.
+--- with y or Y, `on_no` for anything else (a dismissed prompt included).
 ---@param question string
 ---@param on_yes fun()
-function M.ask(question, on_yes)
+---@param on_no? fun()
+function M.ask(question, on_yes, on_no)
   vim.ui.input({ prompt = question .. " [y/N]: " }, function(answer)
     if answer and answer:match("^%s*[yY]") then
       on_yes()
+    elseif on_no then
+      on_no()
     end
   end)
 end

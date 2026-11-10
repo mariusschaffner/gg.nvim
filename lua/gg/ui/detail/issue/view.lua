@@ -224,7 +224,7 @@ function View:create_branch()
   end)
 end
 
---- `gP`: a new merge request for the issue (a form; `<C-s>` creates it).
+--- `gP`: the new merge request popup for the issue (`<C-s>` creates it).
 function View:create_mr()
   if not self.full then
     return edit.refuse("Still loading the issue")
@@ -233,9 +233,9 @@ function View:create_mr()
     return edit.refuse("Issue is closed")
   end
   local function open(source)
-    require("gg.ui.detail").new_merge_request(self:_ctx(), {
+    require("gg.ui.create").merge_request(self:_ctx(), {
       source_branch = source,
-      title = ('Draft: Resolve "%s"'):format(self.issue.title or ""),
+      title = self.issue.title,
       description = "Closes #" .. tostring(self.iid),
     })
   end

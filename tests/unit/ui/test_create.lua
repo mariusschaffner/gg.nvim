@@ -1,4 +1,4 @@
--- Creating from an issue: a branch (gb) and a merge request (gP, the form).
+-- Creating from an issue: a branch (gb) and a merge request (gP, the popup).
 local H = require("tests.helpers")
 local X = require("tests.support.detail_data")
 local config = require("gg.ui.config")
@@ -97,55 +97,41 @@ T["gb creates a branch named after the issue from the branch picked"] = function
   _ = fake
 end
 
-T["gP opens the new merge request form; <C-s> creates it and shows it"] = function()
+T["gP opens the new merge request popup for the issue; <C-s> creates it and shows it"] = function()
   local project = X.replay("graphql/projects/get.json", { operation = "ProjectGet" }, { ["repeat"] = true })
   project.response.body.data.project.fullPath = X.PROJECT
-  local g, fake = open(vim.list_extend(X.issue_responses(), {
+  local MR = require("tests.support.mr_data")
+  local responses = { { request = { operation = "MergeRequestsListProject", variables = { sourceBranches = { "214-rotate-credentials" } } }, response = { body = MR.body({}) } } }
+  vim.list_extend(responses, X.issue_responses())
+  vim.list_extend(responses, {
     project,
-    X.members(),
+    { request = { method = "GET", path = BRANCHES .. "/214-rotate-credentials" }, response = { body = branch("214-rotate-credentials") } },
     {
       request = {
         method = "POST",
         path = "/api/v4/projects/" .. X.ENC .. "/merge_requests",
-        body_contains = { source_branch = "214-rotate-credentials", target_branch = "main", title = "Rotate the keys" },
+        body_contains = { source_branch = "214-rotate-credentials", target_branch = "main" },
       },
       response = { status = 201, body = X.rest_mr(89, "Rotate the keys") },
     },
-  }))
+  })
+  local g, fake = open(responses)
   keys("gP")
   H.wait_for(function()
-    return s:depth() == 2 and #lines(s:top().group.members.content.buf) > 5
+    return s:depth() == 2 and s:top().group.members.field_target ~= nil
   end)
   local form = s:top().group.members
   H.wait_for(function()
-    local l = table.concat(lines(form.content.buf), "\n")
-    return l:find("⎇ main", 1, true) ~= nil and l:find("@user-1", 1, true) ~= nil
+    return lines(form.field_target.buf)[1] == "⎇ main"
   end)
-  local l = lines(form.content.buf)
-  eq(vim.startswith(l[2], " Source     ⎇ 214-rotate-credentials"), true)
-  eq(vim.startswith(l[3], " Target     ⎇ main"), true)
-  eq(l[4], ' Title      Draft: Resolve "Rotate Terraform state backend credentials"')
-  eq(l[5], " Assignees  @user-1")
-  eq(l[6], " Draft      yes")
-  eq(l[9], " Closes #214")
-  local foot = table.concat(vim.tbl_map(function(c)
-    return c[1]
-  end, vim.api.nvim_win_get_config(form.content.win).footer))
-  eq(foot, " [i] Edit • [<C-s>] Create • [q] Discard ")
-  -- the title, in its overlay (draft follows the prefix)
-  vim.api.nvim_win_set_cursor(form.content.win, { 4, 0 })
-  keys("i")
-  H.wait_for(function()
-    return vim.api.nvim_win_get_config(vim.api.nvim_get_current_win()).zindex == 200
-  end)
+  eq(lines(form.field_source.buf), { "⎇ 214-rotate-credentials" })
+  eq(lines(form.title.buf), { "Rotate Terraform state backend credentials" })
+  eq(lines(form.body.buf), { "Closes #214" })
+  H.flush(20) -- the signed-in user (the assignee) has arrived
   vim.cmd("stopinsert")
-  vim.api.nvim_buf_set_lines(0, 0, -1, false, { "Rotate the keys" })
   keys("<C-s>")
-  eq(lines(form.content.buf)[4], " Title      Rotate the keys")
-  eq(lines(form.content.buf)[6], " Draft      no")
-  keys("<C-s>") -- create
   H.wait_for(function()
-    return s:depth() == 2 and lines(s:top().group.members.header.buf)[2]:find("!89", 1, true) ~= nil
+    return s:depth() == 2 and s:top().group.members.header ~= nil and lines(s:top().group.members.header.buf)[2]:find("!89", 1, true) ~= nil
   end)
   local post
   for _, r in ipairs(fake:requests()) do
@@ -153,7 +139,7 @@ T["gP opens the new merge request form; <C-s> creates it and shows it"] = functi
       post = r.json
     end
   end
-  eq({ post.description, post.assignee_ids }, { "Closes #214", { 1 } })
+  eq({ post.title, post.description, post.assignee_ids }, { "Rotate Terraform state backend credentials", "Closes #214", { 1 } })
   _ = g
 end
 

@@ -1,0 +1,10 @@
+query PipelineConfigVariables($fullPath: ID!, $ref: String!) {
+  project(fullPath: $fullPath) {
+    ciConfigVariables(ref: $ref) {
+      key
+      value
+      description
+      valueOptions
+    }
+  }
+}

@@ -87,7 +87,7 @@ T["opens two floats, loads every state once, renders the table"] = function()
   local fc, tc = vim.api.nvim_win_get_config(v.filter_float.win), vim.api.nvim_win_get_config(v.table_float.win)
   eq({ fc.width, fc.height, tc.width, tc.height }, { 168, 1, 168, 40 - 1 - 3 - 2 })
   eq(tc.row, fc.row + 1 + 2) -- right below the filter box, no blank line
-  eq(footer_text(v), " [I] Milestone • [i] Issue ")
+  eq(footer_text(v), " [I] Milestone • [i] Issue • [c] Create Issue • [C] Create Milestone ")
   eq(vim.api.nvim_win_get_config(v.table_float.win).title[1][1], " Table ")
   local title = table.concat(vim.tbl_map(function(c)
     return c[1]
@@ -213,7 +213,7 @@ end
 T["paging: P cycles and wraps, footer shows the page"] = function()
   local v = ready(open({ page_size = 3 }))
   eq(#v.pages, 4)
-  eq(footer_text(v), " [I] Milestone • [i] Issue • [P] Page 1/4 ")
+  eq(footer_text(v), " [I] Milestone • [i] Issue • [P] Page 1/4 • [c] Create Issue • [C] Create Milestone ")
   keys("P")
   eq(v.page, 2)
   eq(v.selected_iid, 211)
@@ -408,12 +408,39 @@ T["the [I] Milestone hint shows only when some issue has a milestone"] = functio
     n.milestone = vim.NIL
   end
   local v = ready(open({}, D.responses(nodes)))
-  eq(footer_text(v), " [i] Issue ")
+  eq(footer_text(v), " [i] Issue • [c] Create Issue • [C] Create Milestone ")
   v:close()
   current = nil
   H.reset()
   v = ready(open())
-  eq(footer_text(v), " [I] Milestone • [i] Issue ")
+  eq(footer_text(v), " [I] Milestone • [i] Issue • [c] Create Issue • [C] Create Milestone ")
+end
+
+T["c creates an issue (in the milestone of the block under the cursor), C a milestone"] = function()
+  local create = require("gg.ui.create")
+  local real = { issue = create.issue, milestone = create.milestone }
+  local calls = {}
+  create.issue = function(ctx, preset)
+    table.insert(calls, { "issue", ctx.project, preset })
+  end
+  create.milestone = function(ctx)
+    table.insert(calls, { "milestone", ctx.project })
+  end
+  local v = ready(open())
+  local ok, err = pcall(function()
+    -- the first row is an issue without a milestone
+    keys("c")
+    eq(calls[1], { "issue", D.PROJECT, {} })
+    keys("]m")
+    local row = v.rendered.rows[cursor(v)]
+    keys("c")
+    eq(calls[2], { "issue", D.PROJECT, { milestone_id = row.issue.milestone.id } })
+    eq(type(row.issue.milestone.id), "number")
+    keys("C")
+    eq(calls[3], { "milestone", D.PROJECT })
+  end)
+  create.issue, create.milestone = real.issue, real.milestone
+  assert(ok, err)
 end
 
 T["empty result and resize re-render"] = function()

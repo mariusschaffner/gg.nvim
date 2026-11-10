@@ -75,6 +75,7 @@ View.__index = View
 ---@field overlay fun(lnum: integer|nil) cursor mark and row highlight
 ---@field counter? fun(s: string|nil) the filter's match counter
 ---@field open fun(pipeline: gg.Pipeline) inspect
+---@field create? fun() open the run pipeline popup (the picker only)
 ---@field close fun()
 
 local function new(fields)
@@ -128,6 +129,10 @@ function M.attach(shell)
     end,
     open = function(p)
       require("gg.ui.detail").pipeline(shell:detail_ctx(self), p)
+    end,
+    -- only the picker's table starts pipelines (not the one in a merge request)
+    create = function()
+      require("gg.ui.create").pipeline(shell:detail_ctx(self), { cwd = shell.target_opts and shell.target_opts.cwd or nil })
     end,
     close = function()
       shell:close()
@@ -446,6 +451,9 @@ function View:_footer()
   if k(self.keys.inspect_pipeline) then
     table.insert(hints, { key = k(self.keys.inspect_pipeline), desc = "Pipeline" })
   end
+  if self.surface.create and self.project and k(self.keys.create) then
+    table.insert(hints, { key = k(self.keys.create), desc = "Start Pipeline" })
+  end
   if #hints == 0 then
     return " "
   end
@@ -663,11 +671,21 @@ function View:inspect()
   end
 end
 
+--- `c`: the run pipeline popup (the picker's table only).
+function View:create()
+  if self.surface.create and self.project then
+    self.surface.create()
+  end
+end
+
 --- The view's own table keymaps (the shell maps the shared ones).
 ---@return { [1]: gg.ui.Keymap, [2]: fun(), [3]: string }[]
 function View:keymaps()
   local k = self.keys
   return {
+    { k.create, function()
+      self:create()
+    end, "Start pipeline" },
     { k.inspect_pipeline, function()
       self:inspect()
     end, "Inspect pipeline" },

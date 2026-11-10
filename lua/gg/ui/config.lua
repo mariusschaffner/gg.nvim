@@ -70,6 +70,19 @@ local M = {}
 ---@field cancel_pipeline gg.ui.Keymap Pipeline detail: cancel the pipeline (default "gX")
 ---@field complete_next gg.ui.Keymap Field edit: next completion (default "<Tab>")
 ---@field complete_prev gg.ui.Keymap Field edit: previous completion (default "<S-Tab>")
+---@field create gg.ui.Keymap Table: create an issue / a merge request / run a pipeline (default "c")
+---@field create_milestone gg.ui.Keymap Issues table: create a milestone (default "C")
+---@field create_next_field gg.ui.Keymap Creation popup: next float (default "<Tab>")
+---@field create_prev_field gg.ui.Keymap Creation popup: previous float (default "<S-Tab>")
+---@field create_cancel gg.ui.Keymap Creation popup (normal mode): cancel (default "<Esc><Esc>")
+---@field create_source gg.ui.Keymap New merge request: pick the source branch; run pipeline: pick the branch or tag (default "gB")
+---@field create_target gg.ui.Keymap New merge request: pick the target branch (default "gd")
+---@field create_start_date gg.ui.Keymap New milestone: set the start date (default "gs")
+---@field create_due_date gg.ui.Keymap New milestone: set the due date (default "gd")
+---@field next_placeholder gg.ui.Keymap Creation popup: jump to the next `‹placeholder›` (default "<C-n>")
+---@field prev_placeholder gg.ui.Keymap Creation popup: jump to the previous `‹placeholder›` (default "<C-p>")
+---@field add_variable gg.ui.Keymap Run pipeline: add a variable below the cursor (default "a")
+---@field toggle_variable_type gg.ui.Keymap Run pipeline: variable ⇄ file for the line under the cursor (default "t")
 
 ---@class gg.ui.Order
 ---@field top? fun(a: gg.Issue, b: gg.Issue): boolean issues without a milestone
@@ -156,6 +169,19 @@ local function defaults()
       cancel_pipeline = "gX",
       complete_next = "<Tab>",
       complete_prev = "<S-Tab>",
+      create = "c",
+      create_milestone = "C",
+      create_next_field = "<Tab>",
+      create_prev_field = "<S-Tab>",
+      create_cancel = "<Esc><Esc>",
+      create_source = "gB",
+      create_target = "gd",
+      create_start_date = "gs",
+      create_due_date = "gd",
+      next_placeholder = "<C-n>",
+      prev_placeholder = "<C-p>",
+      add_variable = "a",
+      toggle_variable_type = "t",
     },
     order = {},
     pipeline_refresh_ms = 10000,

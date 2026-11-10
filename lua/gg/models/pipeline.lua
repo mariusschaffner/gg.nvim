@@ -125,7 +125,30 @@ function M.from_graphql(node, ctx)
   }
 end
 
---- Map a REST pipeline (`/pipelines/:id`, retry, cancel).
+---@class gg.CiConfigVariable
+---@field key string
+---@field value string|nil the default value
+---@field description string|nil
+---@field options string[]|nil the values the configuration allows
+
+--- Map a GraphQL CiConfigVariable.
+---@param node table|nil
+---@return gg.CiConfigVariable|nil
+function M.config_variable(node)
+  node = util.value(node)
+  if type(node) ~= "table" or type(util.value(node.key)) ~= "string" then
+    return nil
+  end
+  local options = util.value(node.valueOptions)
+  return {
+    key = util.value(node.key),
+    value = util.value(node.value),
+    description = util.value(node.description),
+    options = type(options) == "table" and #options > 0 and options or nil,
+  }
+end
+
+--- Map a REST pipeline (`/pipelines/:id`, create, retry, cancel).
 ---@param raw table|nil
 ---@param ctx? { origin?: string, project?: string }
 ---@return gg.Pipeline|nil

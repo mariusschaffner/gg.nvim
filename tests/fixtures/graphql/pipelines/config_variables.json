@@ -1,0 +1,29 @@
+[
+  {
+    "meta": { "source": "gitlab.com GraphQL schema (Project.ciConfigVariables, CiConfigVariable), 2026-11-10; values from the docs example for prefilled variables" },
+    "request": { "operation": "PipelineConfigVariables", "variables": { "fullPath": "my-group/my-project", "ref": "main" } },
+    "response": {
+      "status": 200,
+      "body": {
+        "data": {
+          "project": {
+            "ciConfigVariables": [
+              { "key": "DEPLOY_ENVIRONMENT", "value": "staging", "description": "The deployment target.", "valueOptions": [ "production", "staging", "canary" ] },
+              { "key": "DEPLOY_CREDENTIALS", "value": "", "description": "The deployment credentials.", "valueOptions": null }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "meta": { "source": "gitlab.com public (gitlab-org/cli), 2026-11-10: null while the configuration is not read yet" },
+    "request": { "operation": "PipelineConfigVariables", "variables": { "fullPath": "my-group/my-project", "ref": "fresh" } },
+    "response": { "status": 200, "body": { "data": { "project": { "ciConfigVariables": null } } } }
+  },
+  {
+    "meta": { "source": "gitlab.com GraphQL: a project the token cannot see is null" },
+    "request": { "operation": "PipelineConfigVariables", "variables": { "fullPath": "nope/missing" } },
+    "response": { "status": 200, "body": { "data": { "project": null } } }
+  }
+]

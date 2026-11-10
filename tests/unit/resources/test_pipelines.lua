@@ -180,6 +180,66 @@ T["retry and cancel (REST)"] = function()
   eq(select(2, H.await(pipelines.retry({ host = HOST, project = MP, id = 47 }))).kind, "forbidden")
 end
 
+T["create: ref and variables in the body"] = function()
+  local fake = H.fake({ "rest/pipelines/create.json" })
+  local p = H.await(pipelines.create({
+    host = HOST,
+    project = MP,
+    ref = "main",
+    variables = { { key = "DEPLOY", value = "staging" }, { key = "CERT", value = "abc", type = "file" } },
+  }))
+  eq({ p.id, p.iid, p.status, p.ref, p.project, p.source }, { 61, 21, "pending", "main", MP, "api" })
+  eq(p.web_url, "https://gitlab.example.com/my-group/my-project/-/pipelines/61")
+  eq(fake:last().method, "POST")
+  eq(fake:last().json, {
+    ref = "main",
+    variables = {
+      { key = "DEPLOY", value = "staging", variable_type = "env_var" },
+      { key = "CERT", value = "abc", variable_type = "file" },
+    },
+  })
+end
+
+T["create: no variables, no key in the body"] = function()
+  local fake = H.fake({ "rest/pipelines/create.json" })
+  H.await(pipelines.create({ host = HOST, project = MP, ref = "main", variables = {} }))
+  eq(fake:last().json, { ref = "main" })
+end
+
+T["create: errors"] = function()
+  H.fake({ "rest/pipelines/create.json" })
+  local _, err = H.await(pipelines.create({ host = HOST, project = MP, ref = "nope" }))
+  eq(err.kind, "validation")
+  eq(err.message:find("Reference not found", 1, true) ~= nil, true)
+  eq(select(2, H.await(pipelines.create({ host = HOST, project = "my-group/readonly", ref = "main" }))).kind, "forbidden")
+  local bad = {
+    { { key = "", value = "x" } },
+    { { key = "A" } },
+    { { key = "A", value = "x", type = "secret" } },
+    { "A=x" },
+    { A = "x" },
+  }
+  for _, variables in ipairs(bad) do
+    eq(select(2, H.await(pipelines.create({ host = HOST, project = MP, ref = "main", variables = variables }))).kind, "validation")
+  end
+end
+
+T["config_variables: defaults, options, and not ready yet"] = function()
+  local fake = H.fake({ "graphql/pipelines/config_variables.json" })
+  local res = H.await(pipelines.config_variables({ host = HOST, project = MP, ref = "main" }))
+  eq(res, {
+    ready = true,
+    variables = {
+      { key = "DEPLOY_ENVIRONMENT", value = "staging", description = "The deployment target.", options = { "production", "staging", "canary" } },
+      { key = "DEPLOY_CREDENTIALS", value = "", description = "The deployment credentials." },
+    },
+  })
+  eq(fake:last().variables, { fullPath = MP, ref = "main" })
+  eq(H.await(pipelines.config_variables({ host = HOST, project = MP, ref = "fresh" })), { ready = false, variables = {} })
+  eq(select(2, H.await(pipelines.config_variables({ host = HOST, project = "nope/missing", ref = "main" }))).kind, "not_found")
+  eq(select(2, H.await(pipelines.config_variables({ host = HOST, project = MP }))).kind, "validation")
+end
+
 T["errors"] = function()
   local fake = H.fake()
   fake:add({ request = { operation = "PipelineGet" }, response = { body = { data = { project = { pipeline = vim.NIL } } } } })

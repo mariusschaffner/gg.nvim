@@ -278,6 +278,12 @@ function View:_footer()
   if pages > 1 and k(self.keys.next_page) then
     table.insert(hints, { key = k(self.keys.next_page), desc = ("Page %d/%d"):format(self.page, pages) })
   end
+  if self.project and k(self.keys.create) then
+    table.insert(hints, { key = k(self.keys.create), desc = "Create Issue" })
+  end
+  if self.project and k(self.keys.create_milestone) then
+    table.insert(hints, { key = k(self.keys.create_milestone), desc = "Create Milestone" })
+  end
   if #hints == 0 then
     return " "
   end
@@ -397,6 +403,25 @@ function View:inspect_milestone()
   detail.milestone(self.shell:detail_ctx(self), row.issue.milestone)
 end
 
+--- `c`: the new issue popup. Inside a milestone block the issue gets that
+--- milestone (set in the background, not shown in the popup).
+function View:create_issue()
+  if not self.project then
+    return
+  end
+  local row = self:_current_row()
+  local block = row and self.rendered.blocks[row.block]
+  local milestone = block and block.kind == "milestone" and row.issue and row.issue.milestone or nil
+  require("gg.ui.create").issue(self.shell:detail_ctx(self), { milestone_id = milestone and milestone.id or nil })
+end
+
+--- `C`: the new milestone popup.
+function View:create_milestone()
+  if self.project then
+    require("gg.ui.create").milestone(self.shell:detail_ctx(self))
+  end
+end
+
 --- Focus the filter in insert mode, at the end of the text.
 function View:focus_filter()
   self.shell:focus_filter()
@@ -427,6 +452,12 @@ function View:keymaps()
     { k.prev_milestone, function()
       self:jump_milestone(-1)
     end, "Previous milestone" },
+    { k.create, function()
+      self:create_issue()
+    end, "Create issue" },
+    { k.create_milestone, function()
+      self:create_milestone()
+    end, "Create milestone" },
   }
 end
 

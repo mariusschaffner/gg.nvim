@@ -1,0 +1,101 @@
+[
+  {
+    "meta": { "source": "docs.gitlab.com example (api/tags: List project repository tags), sanitized" },
+    "request": {
+      "method": "GET",
+      "path": "/api/v4/projects/my-group%2Fmy-project/repository/tags",
+      "query": { "page": "1", "per_page": "2", "search": "^v1" }
+    },
+    "response": {
+      "status": 200,
+      "headers": { "x-next-page": "2", "x-page": "1" },
+      "body": [
+        {
+          "commit": {
+            "id": "2695effb5807a22ff3d138d593fd856244e155e7",
+            "short_id": "2695effb",
+            "title": "Initial commit",
+            "created_at": "2017-07-26T11:08:53.000+02:00",
+            "parent_ids": [ "2a4b78934375d7f53875269ffd4f45fd83a84ebe" ],
+            "message": "Initial commit",
+            "author_name": "Test User 1",
+            "author_email": "user1@example.com",
+            "authored_date": "2012-05-28T04:42:42-07:00",
+            "committer_name": "Test User 1",
+            "committer_email": "user1@example.com",
+            "committed_date": "2012-05-28T04:42:42-07:00"
+          },
+          "release": { "tag_name": "v1.2.0", "description": "Amazing release. Wow" },
+          "name": "v1.2.0",
+          "target": "2695effb5807a22ff3d138d593fd856244e155e7",
+          "message": null,
+          "protected": true,
+          "created_at": "2017-07-26T11:08:53.000+02:00"
+        },
+        {
+          "commit": {
+            "id": "60a8ff033665e1207714d6670fcd7b65304ec02f",
+            "short_id": "60a8ff03",
+            "title": "Prepare 1.1.0",
+            "created_at": "2017-05-12T09:10:11.000+02:00",
+            "parent_ids": [],
+            "message": "Prepare 1.1.0",
+            "author_name": "Test User 1",
+            "author_email": "user1@example.com",
+            "authored_date": "2017-05-12T09:10:11.000+02:00",
+            "committer_name": "Test User 1",
+            "committer_email": "user1@example.com",
+            "committed_date": "2017-05-12T09:10:11.000+02:00"
+          },
+          "release": null,
+          "name": "v1.1.0",
+          "target": "5937ac0a7beb003549fc5fd26fc247adbce4a52e",
+          "message": "Version 1.1.0",
+          "protected": false,
+          "created_at": "2017-05-12T09:10:11.000+02:00"
+        }
+      ]
+    }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com example (api/tags: List project repository tags), sanitized; second page" },
+    "request": {
+      "method": "GET",
+      "path": "/api/v4/projects/my-group%2Fmy-project/repository/tags",
+      "query": { "page": "2", "per_page": "2", "search": "^v1" }
+    },
+    "response": {
+      "status": 200,
+      "headers": { "x-page": "2" },
+      "body": [
+        {
+          "commit": {
+            "id": "7b5c3cc8be40ee161ae89a06bba6229da1032a0c",
+            "short_id": "7b5c3cc8",
+            "title": "add projects API",
+            "created_at": "2012-06-28T03:44:20-07:00",
+            "parent_ids": [],
+            "message": "add projects API",
+            "author_name": "Test User 1",
+            "author_email": "user1@example.com",
+            "authored_date": "2012-06-27T05:51:39-07:00",
+            "committer_name": "Test User 1",
+            "committer_email": "user1@example.com",
+            "committed_date": "2012-06-28T03:44:20-07:00"
+          },
+          "release": null,
+          "name": "v1.0.0",
+          "target": "7b5c3cc8be40ee161ae89a06bba6229da1032a0c",
+          "message": null,
+          "protected": false,
+          "created_at": "2012-06-28T03:44:20-07:00"
+        }
+      ]
+    }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com example (api/rest: 404 response shape)" },
+    "request": { "method": "GET", "path": "/api/v4/projects/nope%2Fmissing/repository/tags" },
+    "response": { "status": 404, "body": { "message": "404 Project Not Found" } }
+  }
+]

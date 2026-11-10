@@ -4,6 +4,8 @@
 ---   them all and returns to the window that was current before.
 --- * `VimResized` recomputes the layout.
 --- * The focused member's border uses the active highlight.
+--- * A member with a right border label (`title_right`, `footer_right`) gets
+---   its labels rebuilt when its width or its border colour changes.
 --- * `hide` / `show` keep the group alive while another screen covers it
 ---   (see `gg.ui.components.stack`); while hidden, leaving the group does
 ---   not close it.
@@ -56,6 +58,7 @@ function M.new(opts)
     _hidden = false,
     _specs = {},
     _closed_au = {},
+    _labels = {},
   }, Group)
   self._augroup = vim.api.nvim_create_augroup(("gg.ui.group.%s"):format(tostring(self):match("0x%x+") or vim.uv.hrtime()), { clear = true })
   return self
@@ -67,8 +70,10 @@ end
 function Group:add(spec)
   spec.rect = spec.rect or self._layout()[spec.name]
   spec.hide = self._hidden or nil
+  spec.label_hl = spec.border_hl or self._border.inactive
   local f = float.open(spec)
   self.members[spec.name] = f
+  self._labels[spec.name] = { title = spec.title, title_right = spec.title_right, footer = spec.footer, footer_right = spec.footer_right }
   self._specs[spec.name] = { focusable = spec.focusable ~= false, winhl = spec.winhighlight }
   table.insert(self._order, spec.name)
   self._borders = self._borders or {}
@@ -93,6 +98,7 @@ function Group:remove(name)
   self._closed_au[name] = nil
   self.members[name] = nil
   self._specs[name] = nil
+  self._labels[name] = nil
   for i, n in ipairs(self._order) do
     if n == name then
       table.remove(self._order, i)
@@ -174,14 +180,65 @@ function Group:set_border(name, hl)
   self:_paint()
 end
 
+-- the border group member `name` is drawn in right now
+---@private
+function Group:_border_of(name)
+  local f = self.members[name]
+  local b = self._borders[f.win]
+  local focused = f.win == vim.api.nvim_get_current_win()
+  return (self._border_override and self._border_override[name]) or (focused and b.active or b.inactive)
+end
+
+-- rebuild the left + right border labels of `name` for its width and colour
+---@private
+function Group:_relabel(name)
+  local labels, f = self._labels[name], self.members[name]
+  -- a member without a right label keeps whatever its owner set on the window
+  if not (labels and (labels.title_right or labels.footer_right) and f and vim.api.nvim_win_is_valid(f.win)) then
+    return
+  end
+  local hl = self:_border_of(name)
+  local width = vim.api.nvim_win_get_width(f.win)
+  local key = ("%s|%d|%s"):format(hl, width, tostring(labels.rev))
+  if labels.drawn == key then
+    return
+  end
+  labels.drawn = key
+  float.set_text(f.win, {
+    title = labels.title,
+    title_right = labels.title_right,
+    footer = labels.footer,
+    footer_right = labels.footer_right,
+    label_hl = hl,
+  })
+end
+
+--- Set border labels of member `name`: any of `title`, `title_right`,
+--- `footer`, `footer_right` (the others stay). They are kept across
+--- resizes and focus changes.
+---@param name string
+---@param labels { title?: string|gg.ui.Chunk[], title_right?: string|gg.ui.Chunk[], footer?: string|gg.ui.Chunk[], footer_right?: string|gg.ui.Chunk[] }
+function Group:set_labels(name, labels)
+  if not self.members[name] then
+    return
+  end
+  local cur = self._labels[name] or {}
+  for _, k in ipairs({ "title", "title_right", "footer", "footer_right" }) do
+    if labels[k] ~= nil then
+      cur[k] = labels[k]
+    end
+  end
+  cur.rev = (cur.rev or 0) + 1
+  self._labels[name] = cur
+  self:_relabel(name)
+end
+
 ---@private
 function Group:_paint()
-  local cur = vim.api.nvim_get_current_win()
   for name, f in pairs(self.members) do
     if vim.api.nvim_win_is_valid(f.win) then
-      local b = self._borders[f.win]
-      local hl = (self._border_override and self._border_override[name]) or (f.win == cur and b.active or b.inactive)
-      vim.api.nvim_set_option_value("winhighlight", winhighlight(hl, self._specs[name].winhl), { win = f.win })
+      vim.api.nvim_set_option_value("winhighlight", winhighlight(self:_border_of(name), self._specs[name].winhl), { win = f.win })
+      self:_relabel(name)
     end
   end
 end
@@ -205,6 +262,7 @@ function Group:relayout()
   for name, f in pairs(self.members) do
     if rects[name] then
       float.update(f.win, rects[name], { hide = self._hidden, focusable = self._specs[name].focusable })
+      self:_relabel(name)
     end
   end
   for _, fn in ipairs(self._on_resize) do

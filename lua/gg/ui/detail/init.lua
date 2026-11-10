@@ -46,16 +46,6 @@ function M.merge_request(ctx, mr)
   return push(ctx, "gg.ui.detail.merge_request.view", mr)
 end
 
---- Open the form for a new merge request, prefilled from `draft`
---- (`source_branch`, `title`, `description`); `<C-s>` creates it and the
---- form gives way to the new merge request's detail view.
----@param ctx gg.ui.DetailCtx
----@param draft { source_branch?: string, target_branch?: string, title?: string, description?: string }
----@return gg.ui.Screen|nil
-function M.new_merge_request(ctx, draft)
-  return push(ctx, "gg.ui.detail.merge_request.create_view", draft)
-end
-
 --- Open the detail view of `pipeline` (`id` is required).
 ---@param ctx gg.ui.DetailCtx
 ---@param pipeline gg.Pipeline|{ id: integer, project?: string }

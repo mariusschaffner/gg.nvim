@@ -64,6 +64,16 @@ T["create"] = function()
   eq(fake:last().method, "POST")
 end
 
+T["get: the branch name is one encoded segment; a missing branch is not_found"] = function()
+  local fake = H.fake({ "rest/branches/get.json" })
+  local b = H.await(branches.get({ host = HOST, project = "my-group/my-project", name = "feature/login" }))
+  eq({ b.name, b.commit_sha, b.commit_title, b.protected }, { "feature/login", "7b5c3cc8be40ee161ae89a06bba6229da1032a0c", "add projects API", true })
+  eq(fake:last().path, "/api/v4/projects/my-group%2Fmy-project/repository/branches/feature%2Flogin")
+  local _, err = H.await(branches.get({ host = HOST, project = "my-group/my-project", name = "not-pushed" }))
+  eq(err.kind, "not_found")
+  eq(select(2, H.await(branches.get({ host = HOST, project = "my-group/my-project", name = "" }))).kind, "validation")
+end
+
 T["errors"] = function()
   H.fake({ "rest/branches/create.json" })
   local _, e1 = H.await(branches.create({ host = HOST, project = "my-group/my-project", branch = "main", ref = "main" }))

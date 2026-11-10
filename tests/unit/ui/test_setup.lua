@@ -23,6 +23,9 @@ T["config: defaults and merge"] = function()
   -- editing keys and merge defaults
   eq({ c.keymaps.edit_title, c.keymaps.edit_labels, c.keymaps.submit, c.keymaps.actions, c.keymaps.retry_pipeline }, { "gt", "gl", "<C-s>", "A", "gR" })
   eq({ c.merge_squash, c.merge_delete_source_branch }, { nil, nil })
+  -- creation popups
+  eq({ c.keymaps.create, c.keymaps.create_milestone, c.keymaps.create_cancel, c.keymaps.create_source, c.keymaps.create_target }, { "c", "C", "<Esc><Esc>", "gB", "gd" })
+  eq({ c.keymaps.next_placeholder, c.keymaps.add_variable, c.keymaps.toggle_variable_type }, { "<C-n>", "a", "t" })
   eq(config.setup({ merge_squash = true, merge_delete_source_branch = false }), true)
   eq({ config.get().merge_squash, config.get().merge_delete_source_branch }, { true, false })
   config.setup()

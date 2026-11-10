@@ -506,8 +506,18 @@ gg.branches.related_to_issue_all({args}, {opts})
                                            *gg.branches.related_to_issue_all()*
     Branches named `<iid>-...`.
 
+gg.branches.get({args})                                     *gg.branches.get()*
+    `{ host, project, name }`. One branch by its exact name; a `not_found`
+    error when GitLab has no such branch.
+
 gg.branches.create({args})                               *gg.branches.create()*
     `{ host, project, branch, ref }`.
+
+gg.tags.list({args}, {opts})                                   *gg.tags.list()*
+gg.tags.list_all({args}, {opts})                           *gg.tags.list_all()*
+    `{ host, project, search?, order_by?, sort? }`. Repository tags with
+    their commit, most recently updated first. `search` supports "^prefix"
+    and "suffix$"; `order_by` is "name", "updated" or "version".
 
 gg.projects.search({args}, {opts})                       *gg.projects.search()*
 gg.projects.search_all({args}, {opts})               *gg.projects.search_all()*
@@ -546,6 +556,17 @@ gg.pipelines.graph({args})                               *gg.pipelines.graph()*
 
 gg.pipelines.retry({args})                               *gg.pipelines.retry()*
 gg.pipelines.cancel({args})                             *gg.pipelines.cancel()*
+
+gg.pipelines.create({args})                             *gg.pipelines.create()*
+    `{ host, project, ref, variables? }`. Runs a new pipeline on a branch or
+    tag. `variables` is a list of `{ key, value, type? }` with `type`
+    "env_var" (default) or "file".
+
+gg.pipelines.config_variables({args})         *gg.pipelines.config_variables()*
+    `{ host, project, ref }`. The variables the CI configuration of `ref`
+    declares for manual runs: `{ ready, variables }`, each variable
+    `{ key, value, description, options }`. GitLab computes them in the
+    background, so the first call may resolve with `ready = false`.
 
 gg.jobs.list({args}, {opts})                                   *gg.jobs.list()*
 gg.jobs.list_all({args}, {opts})                           *gg.jobs.list_all()*
@@ -647,7 +668,8 @@ It needs the hosts from |gg-setup|; its own options are separate.
     |gg-ui-pipelines|). [project] is
     `group/project`, `host/group/project` or a remote URL. Without it, the
     `origin` remote of the current directory is used (`git remote get-url
-    origin`, run asynchronously; the only place gg runs git). With several
+    origin`, run asynchronously). gg runs git only for this and for the
+    creation popups (the current branch, and a push you confirm). With several
     configured hosts, name the host.
 
 gg.ui.open({opts})                                               *gg.ui.open()*
@@ -691,6 +713,14 @@ gg.ui.setup({opts})                                             *gg.ui.setup()*
         retry_job = "r", play_job = "p", cancel_job = "X",
         retry_pipeline = "gR", cancel_pipeline = "gX",
         complete_next = "<Tab>", complete_prev = "<S-Tab>",
+        -- creation popups (|gg-ui-create|)
+        create = "c", create_milestone = "C",
+        create_next_field = "<Tab>", create_prev_field = "<S-Tab>",
+        create_cancel = "<Esc><Esc>",
+        create_source = "gB", create_target = "gd",
+        create_start_date = "gs", create_due_date = "gd",
+        next_placeholder = "<C-n>", prev_placeholder = "<C-p>",
+        add_variable = "a", toggle_variable_type = "t",
       },
       order = {},            -- { top?, milestones?, issues? } comparators
       pipeline_refresh_ms = 10000,    -- live refresh of active pipelines in
@@ -743,7 +773,9 @@ Keys                                                              *gg-ui-keys*
     `/` filter, `L` / `H` next / previous tab, `P` next page, `]m` / `[m`
     next / previous milestone, `i` / `I` open the issue / its milestone,
     `R` reload, `q` close, `<Tab>` / `<S-Tab>` switch between the issues,
-    merge requests and pipelines views. Filter: `<CR>` back to the table,
+    merge requests and pipelines views. `c` creates what the table shows
+    (an issue, a merge request, a pipeline run), `C` in the issues table a
+    milestone, see |gg-ui-create|. Filter: `<CR>` back to the table,
     `<Esc><Esc>` clear and go back. Closing either window closes both.
 
 Merge requests                                                   *gg-ui-mrs*
@@ -913,17 +945,64 @@ Editing                                                         *gg-ui-edit*
     From an issue (DEVELOPMENT in the sidebar shows `+ link branch [gb]` and
     `+ link merge request [gP]` while there is none): `gb` creates a branch
     `<iid>-<title>` from the branch you
-    pick (default branch first); `gP` opens the new merge request form
-    (source: the issue's branch, target: the default branch, title
-    `Draft: Resolve "<title>"`, description `Closes #<iid>`, assignee: you).
-    `i` / `<CR>` edits the field under the cursor, `<C-s>` creates the merge
-    request and shows it, `q` drops the form.
+    pick (default branch first); `gP` opens the new merge request popup
+    (|gg-ui-create|) with the issue's branch as source, the issue's title
+    and `Closes #<iid>`.
 
     Pipeline (graph mode): `r` retries the selected job, `p` plays a manual
     job, `X` cancels a job (asks first); `gR` retries the pipeline's failed
     jobs, `gX` cancels the pipeline (asks first). The hints in the header's
     border show only what applies. After an action the pipeline is fetched
     at once and polled for 10 more seconds.
+
+Creating                                                      *gg-ui-create*
+    One popup for every "new …" view, over 70 % of the editor (at least
+    60 x 14 cells): a title float with the kind in its border, a row of
+    field floats where the view has fields, and the body with line numbers.
+    The body's border shows `[i] Edit` and the kind at the top, the key
+    hints and `[<C-s>] Create` at the bottom. Only the title float has the
+    kind's colour; the focused float has the active border.
+
+    It opens from the tables: `c` in the issues table (inside a milestone
+    block the new issue gets that milestone, without showing it), `C` there
+    for a milestone, `c` in the merge requests table and `c` in the
+    pipelines table; and with `gP` from an issue for a merge request.
+
+    Keys: `<Tab>` / `<S-Tab>` next / previous float (also while typing the
+    title), `<C-s>` sends from normal and insert mode, `<Esc><Esc>` cancels
+    and asks `Discard changes? [y/N]` when something was changed, `<C-n>` /
+    `<C-p>` select the next / previous `‹placeholder›`. While the request
+    runs the border reads `creating…` and nothing can be edited. Afterwards
+    the popup gives way to the detail view of the new item and the tables
+    below reload. An error keeps the popup and its content: it shows in the
+    border and as a notification, and what GitLab says about a field
+    (`title is too long`) is a diagnostic in that field's float.
+
+    Issue: title and description (markdown).
+
+    Merge request: `[gB] Source` (default: the current git branch) and
+    `[gd] Target` (default: the project's default branch) open a list of
+    branches with a filter (searched on GitLab; `<C-n>` / `<C-p>` move,
+    `<CR>` picks, `<Esc>` closes). The title starts as `Merge <source> into
+    <target>` and follows the branches until you write your own; a source
+    branch named after an issue (`22-some-feature`) gives the issue's title
+    and `Closes #22`. The merge request is assigned to you. Before sending:
+    source and target must differ; a source branch that is not on GitLab
+    can be pushed first (`git push -u origin <branch>`, after `[y/N]`); an
+    open merge request of the source branch is offered instead (`!iid`).
+
+    Milestone: `[gs] Start` and `[gd] Due` take a date in an overlay
+    (`2026-11-20` or `20.11.2026`; empty removes it).
+
+    Run pipeline: `[gB] Branch or tag` (default: the current git branch
+    when GitLab has it, else the default branch) lists branches and tags
+    and shows the ref's commit. The body holds the variables, one
+    `KEY = value` per line, with the type (`var` or `file`) at the right:
+    `a` adds a line, `dd` removes one, `t` toggles the type. The variables
+    the CI configuration declares (|gg.pipelines.config_variables()|) are
+    filled in with their defaults. Keys must be names (letters, digits and
+    `_`, not starting with a digit) and appear once; other lines get a
+    diagnostic and block the run. `<C-s>` runs the pipeline and opens it.
 
 Highlights                                                  *gg-ui-highlights*
     All groups are defined with `default = true` and link to standard
@@ -961,6 +1040,13 @@ Highlights                                                  *gg-ui-highlights*
     edited), `GitlabFieldEdit` (the field overlay), `GitlabEditPlaceholder`,
     `GitlabDetailPlaceholder` (italic: "write a new comment…", "+ link
     branch"), `GitlabCommentAvatar` (your initials in the comment box).
+    Creation popups: `GitlabCreateIssue` (Function) `GitlabCreateMR`
+    (Statement) `GitlabCreateMilestone` (Special) `GitlabCreatePipeline`
+    (DiagnosticOk) for the title float's border, `GitlabCreateTitle`
+    (Title's colour, bold), `GitlabCreateKey` (DiagnosticWarn),
+    `GitlabCreateSubmit` (DiagnosticOk), `GitlabCreateError`
+    (DiagnosticError), `GitlabCreatePlaceholder` (Comment's colour, italic),
+    `GitlabCreateHint` and `GitlabCreateDim` (dimmed text).
     `GitlabIssueTitle` and `GitlabDue` take only the foreground of
     `Normal`, so the row highlight shows behind them.
     Key hints use `GitlabHintKey` (the `Function` colour, bold) for the

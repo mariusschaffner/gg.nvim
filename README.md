@@ -168,10 +168,11 @@ gg.labels.list_all(args, { limit = 500, on_page = function(items) end })
 | `gg.milestones` | `list`, `list_all`, `get`, `issues[_all]`, `merge_requests[_all]`, `create`, `update` |
 | `gg.labels` | `list`, `list_all` |
 | `gg.users` | `current`, `project_members[_all]` |
-| `gg.branches` | `list`, `list_all`, `related_to_issue[_all]`, `create` |
+| `gg.branches` | `list`, `list_all`, `related_to_issue[_all]`, `get`, `create` |
+| `gg.tags` | `list`, `list_all` |
 | `gg.projects` | `search`, `search_all`, `get` |
 | `gg.todos` | `list`, `list_all`, `mark_done` |
-| `gg.pipelines` | `list`, `list_all`, `get`, `graph`, `retry`, `cancel` |
+| `gg.pipelines` | `list`, `list_all`, `get`, `graph`, `retry`, `cancel`, `create`, `config_variables` |
 | `gg.jobs` | `list`, `list_all`, `get`, `trace` (streamed), `retry`, `cancel`, `play` |
 | `gg.artifacts` | `download`, `download_file`, `download_ref`, `download_ref_file` (all streamed) |
 | `gg.registry` | `repositories[_all]`, `tags[_all]`, `tag` |

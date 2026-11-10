@@ -92,6 +92,21 @@ function M.related_to_issue_all(args, opts)
   return list_all(a, opts)
 end
 
+--- One branch by its exact name; a `not_found` error when the repository on
+--- GitLab has no such branch.
+---@param args { host: string, project: string|integer, name: string }
+---@return gg.Task resolves with gg.Branch
+function M.get(args)
+  return common.run(args, { host = "host", project = "project", name = "string" }, function()
+    local path = ("/projects/%s/repository/branches/%s"):format(rest.project(args.project), rest.seg(args.name))
+    local res, err = rest.request(args.host, "GET", path):await()
+    if err then
+      return nil, err
+    end
+    return branch_model.from_rest(res.data)
+  end)
+end
+
 --- Create a branch from a branch name or commit SHA.
 ---@param args { host: string, project: string|integer, branch: string, ref: string }
 ---@return gg.Task resolves with gg.Branch

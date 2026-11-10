@@ -160,8 +160,8 @@ T["commits: parse, render, separators"] = function()
   eq(vim.startswith(d.lines[5], "──── YESTERDAY · 09.11.2026"), true)
   eq(d.lines[7], " │   two")
   -- a rule between commits of a day; the graph line runs through it
-  eq(d.lines[8], " │  " .. string.rep("─", 56))
-  eq(d.rows[8], { kind = "separator" })
+  eq(d.lines[8], " │") -- an empty line, only the graph line runs through it
+  eq(d.rows[8], { kind = "gap" })
   eq(vim.startswith(d.lines[9], " ○   feat "), true)
   eq(d.lines[10], " │   three")
   eq(#d.lines, 10)
@@ -275,7 +275,7 @@ T["view: Changes, Commits, Activity tabs"] = function()
   local title = table.concat(vim.tbl_map(function(ch)
     return ch[1]
   end, vim.api.nvim_win_get_config(win).title))
-  eq(title, " Description   Activity 3   Changes 2   Commits   Pipelines  ") -- no commit count
+  eq(title, " Description · Activity · Changes · Commits · Pipelines ") -- no counts
 end
 
 T["view: Pipelines tab is the pipelines table of this MR; i opens one; q stops it"] = function()

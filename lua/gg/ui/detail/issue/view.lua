@@ -78,9 +78,6 @@ function M.open(ctx, item)
     project = self.project,
     iid = self.iid,
     today = ctx.today,
-    on_loaded = function(n)
-      self:_tab_counts(n)
-    end,
   })
   local k = self.h.keys
   self.h:map_all(k.goto_milestone, function()
@@ -90,16 +87,8 @@ function M.open(ctx, item)
     self:goto_mr()
   end, "Merge request")
   self.edit_hint = self.h:map_edit("description")
-  self:_tab_counts(self.issue.user_notes_count)
   self:load()
   return self
-end
-
----@private
-function View:_tab_counts(comments)
-  local tabs = vim.deepcopy(M.TABS)
-  tabs[2].count = comments
-  self.h:set_tabs(tabs)
 end
 
 ---@private
@@ -150,7 +139,6 @@ function View:load()
       return
     end
     self.issue, self.full, self.status = issue, true, "ready"
-    self:_tab_counts(self.activity.status == "ready" and self.activity:comment_count() or issue.user_notes_count)
   end)
   self:_run("dates", gg.work_items.dates(self:_args()), function(v, err)
     self.dates = loadable(v, err)

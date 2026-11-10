@@ -104,10 +104,6 @@ function M.open(ctx, item)
     project = self.project,
     iid = self.iid,
     today = ctx.today,
-    on_loaded = function(n)
-      self.comments = n
-      self:_tabs()
-    end,
   })
   self:_mount_pipelines()
   local k = self.h.keys
@@ -319,10 +315,6 @@ end
 ---@private
 function View:_tabs()
   local tabs = vim.deepcopy(M.TABS)
-  tabs[2].count = self.comments or self.mr.user_notes_count
-  if self.stats.status == "ready" then
-    tabs[3].count = #self.stats.value
-  end
   if self.pipelines.status == "ready" then
     tabs[5].count = #self.pipelines.pipelines .. (self.pipelines.next_cursor and "+" or "")
   end

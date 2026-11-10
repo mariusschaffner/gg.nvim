@@ -31,7 +31,7 @@ Phase 1 is **read-only**. Editing (title, description, fields, dates, tasks), co
 │                                                                             │
 ╰─────────────────────────────────────────────────────────────────────────────╯
 
-╭  Description   Activity 2  ─────────────────────────╮ ╭──────────────────────╮
+╭ Description · Activity ────────────────────────────╮ ╭──────────────────────╮
 │                                                     │ │                      │
 │ content of the active tab                           │ │ ASSIGNEE             │   sidebar (34 cols,
 │                                                     │ │ (US) User            │   non-focusable)
@@ -41,7 +41,7 @@ Phase 1 is **read-only**. Editing (title, description, fields, dates, tasks), co
 | Window | Content | Notes |
 |---|---|---|
 | Header | pill, title, `#iid` / `!iid` / `%id`, optional chip row, optional extra block (strips, pipeline graph) | Border title: breadcrumb on the left, meta on the right. Height follows the content, capped at 55% of the editor. |
-| Content | the active tab's buffer | Tabs in the border title, starting right after the corner like ` Table ` in the picker: the active one in the picker's title colour (`GitlabDetailTabActive` links `GitlabPickerTitle`), the others gray, no background. A box without hints has no footer, so its bottom border is unbroken. Key hints in the footer, written `[<key>] <description>`. Each tab has its own buffer, so a tab keeps its cursor. Every tab starts with an empty line. |
+| Content | the active tab's buffer | Tabs in the border title, starting right after the corner like ` Table ` in the picker: the active one in the picker's title colour (`GitlabDetailTabActive` links `GitlabPickerTitle`), the others gray, no background, a gray `·` between them. Tab titles carry no counts (only Pipelines shows how many are loaded). A box without hints has no footer, so its bottom border is unbroken. Key hints in the footer, written `[<key>] <description>`. Each tab has its own buffer, so a tab keeps its cursor. Every tab starts with an empty line. |
 | Sidebar | labelled fields (UPPERCASE label, values, dividers) | Only at 100 columns or more. Narrower: no sidebar, and a one-line summary in the header. |
 
 - **Spacing:** the header body has an empty line above the title and one at its end; one empty row separates the header from the boxes below; tabs and the sidebar start with an empty line.

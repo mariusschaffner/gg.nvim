@@ -117,7 +117,8 @@ end
 T["header: tabs title"] = function()
   local t = header.tabs_title({ { key = "a", label = "Description" }, { key = "b", label = "Activity", count = 12 } }, "b")
   -- right after the border corner, like " Table " in the picker
-  eq(joined(t), " Description   Activity 12  ")
+  eq(joined(t), " Description · Activity 12 ")
+  eq(t[2], { "·", "GitlabDetailTab" }) -- a gray separator between the titles
   eq(t[1][2], "GitlabDetailTab")
   eq(t[3][2], "GitlabDetailTabActive") -- the picker's title colour, no background
 end

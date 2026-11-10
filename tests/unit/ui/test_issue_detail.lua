@@ -116,7 +116,7 @@ T["opens on top, loads the issue, renders header, description and sidebar"] = fu
   eq(table.concat(sl, "\n"):find("!88 Rotate Terraform", 1, true) ~= nil, true)
   -- tabs in the content title, hints in its footer
   local cfg = vim.api.nvim_win_get_config(content.win)
-  eq(chunks_text(cfg.title), " Description   Activity 2  ")
+  eq(chunks_text(cfg.title), " Description · Activity ") -- no comment count
   eq(chunks_text(cfg.footer), " [i] Edit ")
   -- the edit key only says that editing comes later
   local notes = {}

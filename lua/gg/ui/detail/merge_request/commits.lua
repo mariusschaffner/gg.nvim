@@ -5,11 +5,12 @@
 ---   ──── 21.10.2026 ─────────────────────────────────────────────
 ---    ○  feat   ui                          14:02  Ann Example  abcd1234
 ---    │   add the detail views
----    │  ─────────────────────────────────────────────────────────────
+---    │
 ---    ◇  merge                              13:10  Ann Example  ef01ab23
 ---    │   feature-x → main
 ---
---- A rule separates the commits of a day; the graph line runs through it.
+--- An empty line separates the commits of a day; only the graph line runs
+--- through it.
 local date = require("gg.ui.lib.date")
 local doc = require("gg.ui.lib.doc")
 local line = require("gg.ui.lib.line")
@@ -139,7 +140,7 @@ function M.render(input)
     )
     local nxt = commits[i + 1]
     if nxt and date.same_day(day_of(nxt), day) then
-      d:line(line.new():add(" "):add("│", "GitlabTimelineGuide"):add("  "):add(text.rep("─", width - 4), "GitlabSeparator"), { kind = "separator" })
+      d:line(line.new():add(" "):add("│", "GitlabTimelineGuide"), { kind = "gap" })
     end
   end
   return d

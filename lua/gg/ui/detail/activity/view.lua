@@ -17,7 +17,6 @@ local M = {}
 ---@field iid integer
 ---@field now? fun(): integer
 ---@field today? gg.ui.Date
----@field on_loaded? fun(count: integer) number of comments, after a load
 
 ---@class gg.ui.ActivityTab
 ---@field host gg.ui.DetailHost
@@ -78,9 +77,6 @@ function Tab:load()
     else
       self.status, self.discussions = "ready", res and res.items or {}
       self.truncated = res and res.truncated
-      if o.on_loaded then
-        o.on_loaded(self:comment_count())
-      end
     end
     self:render()
   end)
@@ -92,20 +88,6 @@ function Tab:load()
       end
     end)
   end
-end
-
---- Number of comments (not system notes).
----@return integer
-function Tab:comment_count()
-  local n = 0
-  for _, d in ipairs(self.discussions or {}) do
-    for _, note in ipairs(d.notes or {}) do
-      if not note.system then
-        n = n + 1
-      end
-    end
-  end
-  return n
 end
 
 --- Cancel requests in flight.

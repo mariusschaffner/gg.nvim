@@ -52,7 +52,7 @@ Shared foundation: `docs/detail_views_design_spec.md`. The Activity tab has no f
    - Grouped by day under dividers.
    - Each commit has a node (`○`, or `◇` for merges), a type chip (` feat `, ` fix `, …), the scope, `HH:MM`, the author and the short SHA.
    - The subject sits on the next row along a `│` guide. Merge commits read `source → target`.
-   - A rule separates the commits of a day; the `│` graph line runs through it. No footer hints. The tab title carries no count.
+   - An empty line separates the commits of a day; only the `│` graph line runs through it. No footer hints. The tab title carries no count.
 5. **Pipelines:** the pipelines table (`gg.ui.pipelines.view` mounted with `mr_iid`).
    - One table of every pipeline of the merge request (no All / Running / Failed / Passed line); `P` loads more (no hint); `i` / `<CR>` opens the pipeline. Footer: `[i] Pipeline`.
    - Live refresh runs only while the tab is visible.

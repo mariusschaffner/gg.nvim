@@ -13,6 +13,7 @@ local M = {}
 M.FILL = "─"
 M.BORDER_HL = "GitlabDetailBorder"
 M.MIN_CRUMB = 20
+M.TAB_SEP = "·" -- between the tab titles
 
 ---@alias gg.ui.Segs { [1]: string, [2]: string|nil }[]
 
@@ -91,10 +92,10 @@ end
 ---@field label string
 ---@field count? integer|string
 
---- Tab bar chunks for a window title: " Description   Activity 12 ",
+--- Tab bar chunks for a window title: " Description · Activity 12 ",
 --- starting right after the border's corner like " Table " in the picker.
 --- The active tab in the picker's title colour, the others gray (no
---- background).
+--- background), a gray `TAB_SEP` between them.
 ---@param tabs gg.ui.TabSpec[]
 ---@param active string
 ---@return gg.ui.Chunk[]
@@ -102,12 +103,11 @@ function M.tabs_title(tabs, active)
   local out = {}
   for i, t in ipairs(tabs) do
     if i > 1 then
-      table.insert(out, { " ", M.BORDER_HL })
+      table.insert(out, { M.TAB_SEP, "GitlabDetailTab" })
     end
     local label = t.count ~= nil and ("%s %s"):format(t.label, tostring(t.count)) or t.label
     table.insert(out, { " " .. label .. " ", t.key == active and "GitlabDetailTabActive" or "GitlabDetailTab" })
   end
-  table.insert(out, { " ", M.BORDER_HL })
   return out
 end
 

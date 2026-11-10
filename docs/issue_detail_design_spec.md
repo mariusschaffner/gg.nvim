@@ -17,7 +17,7 @@ Shared foundation: `docs/detail_views_design_spec.md`. Opened by `i` in the issu
    - tasks `✓` / `○`, bullets `•` / `–`;
    - code fences shown as they are;
    - links reduced to their text, `#hashtags` highlighted.
-2. **Activity** (shared with merge requests). Loaded the first time the tab is shown. No footer hints. The tab label carries the comment count.
+2. **Activity** (shared with merge requests). Loaded the first time the tab is shown. No footer hints and no count in the tab title.
    - **Events:** one line each — icon, actor, text, `HH:MM` on the right.
    - **Days:** a divider each, `TODAY · DD.MM.YYYY` / `YESTERDAY · …` / `DD.MM.YYYY`.
    - **Event runs:** more than 4 consecutive events show the first 2, `⋯ N more changes · [<CR>] expand`, and the last 2.

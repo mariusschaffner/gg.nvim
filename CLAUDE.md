@@ -44,7 +44,10 @@ lua/gg/
     merge_requests/   merge requests picker view (same split)
     pipelines/        pipelines picker view (same split; also mounted in the MR detail view)
     detail/           detail views: host (windows), header/sidebar (pure), activity/,
-                      issue/, milestone/, merge_request/, pipeline/ (pure parts + view)
+                      issue/, milestone/, merge_request/, pipeline/ (pure parts + view);
+                      editing: edit.lua (runner), editing.lua + fields.lua (glue),
+                      edits.lua (pure payloads); components text_edit, field_edit,
+                      composer, confirm
 plugin/gg.lua         registers :Gitlab (lazy; loads gg.ui only when run)
 tests/
   fixtures/rest/      recorded, sanitized responses
@@ -76,8 +79,12 @@ gg.ui.* -> gg (the facade) only        nothing outside gg.ui requires gg.ui
   (`git remote get-url origin`, async via `vim.system`) to find the project.
 - `ui/lib`, the pure parts of `ui/issues` (filter, model, paginate, columns,
   render), `ui/components/tabs.lua` and everything under `ui/detail` except
-  `view.lua`, `host.lua` and `init.lua` do not touch `vim.api`; they are
-  tested headless without windows.
+  `view.lua`, `create_view.lua`, `host.lua`, `init.lua`, `edit.lua`,
+  `editing.lua` and `fields.lua` do not touch `vim.api`;
+  they are tested headless without windows.
+- Every change to GitLab from a detail view goes through `ui/detail/edit.lua`
+  (`edit.run`: notice, request, apply or roll back, redraw) and then
+  `stack:changed(kind)`, so the screens below refresh when shown again.
 - Screens stack: the picker is the bottom of a `ui/components/stack`; detail
   views are pushed on it (`gg.ui.detail.*`) and reach other screens only
   through it (`q` back, `Q` close all). A covered screen is hidden and its

@@ -1,7 +1,16 @@
 --- The Activity tab of the issue and merge request detail views: loads the
 --- discussions, draws the timeline and handles its keys (expand a run or a
---- folded thread, fold threads, expand a long comment). Read-only.
+--- folded thread, fold threads, expand a long comment) and the comment
+--- keys: `i` comment (the box at the end), `gc` reply, `gE` edit and `gD`
+--- delete your own comment, `gX` resolve / unresolve the thread.
+local avatar = require("gg.ui.lib.avatar")
+local composer = require("gg.ui.components.composer")
+local confirm = require("gg.ui.components.confirm")
 local date = require("gg.ui.lib.date")
+local edit = require("gg.ui.detail.edit")
+local editing = require("gg.ui.detail.editing")
+local edits = require("gg.ui.detail.edits")
+local user_hl = require("gg.ui.lib.user_hl")
 local gg = require("gg")
 local model = require("gg.ui.detail.activity.model")
 local picker = require("gg.ui.components.picker")
@@ -17,6 +26,9 @@ local M = {}
 ---@field iid integer
 ---@field now? fun(): integer
 ---@field today? gg.ui.Date
+---@field can_comment? fun(): boolean the item takes comments (open)
+---@field item? fun(): table the issue / merge request (mention candidates)
+---@field changed? fun() a comment changed (tell the screens below)
 
 ---@class gg.ui.ActivityTab
 ---@field host gg.ui.DetailHost
@@ -48,8 +60,343 @@ function M.new(host, opts)
   host:map(opts.tab, k.toggle_all_folds, function()
     self:toggle_all()
   end, "Fold all")
+  -- after open_item: `i` comments here, `<CR>` expands
+  host:map(opts.tab, k.comment, function()
+    self:comment()
+  end, "Comment")
+  host:map(opts.tab, k.reply, function()
+    self:reply()
+  end, "Reply")
+  host:map(opts.tab, k.edit_comment, function()
+    self:edit_comment()
+  end, "Edit the comment")
+  host:map(opts.tab, k.delete_comment, function()
+    self:delete_comment()
+  end, "Delete the comment")
+  host:map(opts.tab, k.toggle_resolved, function()
+    self:toggle_resolved()
+  end, "Resolve / unresolve")
   host:set_hints(opts.tab, {}) -- the timeline shows its own key hints
+  editing.cursor_hint(host, opts.tab, function(info)
+    return self:_hint(info)
+  end)
   return self
+end
+
+---@private
+function Tab:_open()
+  return not self.opts.can_comment or self.opts.can_comment()
+end
+
+-- the note and its discussion behind a timeline row
+---@private
+function Tab:_find(info)
+  for _, d in ipairs(self.discussions or {}) do
+    if d.id == info.thread then
+      for _, n in ipairs(d.notes or {}) do
+        if n.id == info.note then
+          return n, d
+        end
+      end
+      return nil, d
+    end
+  end
+end
+
+-- "[gc] reply · [gE] edit · [gD] delete · [gX] resolve" on comment rows
+---@private
+function Tab:_hint(info)
+  if info.kind ~= "comment" or not self:_open() then
+    return nil
+  end
+  local note, d = self:_find(info)
+  if not d then
+    return nil
+  end
+  local k = self.host.keys
+  local fk = require("gg.ui.components.picker").first_key
+  local parts = { { fk(k.reply), "reply" } }
+  if note and self.me and note.author and note.author.username == self.me then
+    table.insert(parts, { fk(k.edit_comment), "edit" })
+    table.insert(parts, { fk(k.delete_comment), "delete" })
+  end
+  if d.resolvable then
+    table.insert(parts, { fk(k.toggle_resolved), d.resolved and "unresolve" or "resolve" })
+  end
+  local chunks = {}
+  for _, p in ipairs(parts) do
+    if p[1] then
+      if #chunks > 0 then
+        table.insert(chunks, { " · ", "GitlabHintText" })
+      end
+      table.insert(chunks, { "[" .. p[1] .. "]", "GitlabHintKey" })
+      table.insert(chunks, { " " .. p[2], "GitlabHintText" })
+    end
+  end
+  return #chunks > 0 and chunks or nil
+end
+
+---@private
+function Tab:_args(extra)
+  local o = self.opts
+  return vim.tbl_extend("force", { host = o.host, project = o.project, iid = o.iid, noteable = o.noteable }, extra or {})
+end
+
+---@private
+function Tab:_mentions()
+  local item = self.opts.item and self.opts.item() or {}
+  return edits.mentions(item, self.discussions)
+end
+
+-- after a change: reload, put the cursor on note `follow`, tell the view
+---@private
+function Tab:_done(follow)
+  self.follow = follow
+  self:load()
+  if self.opts.changed then
+    self.opts.changed()
+  end
+end
+
+-- open a composer; `post(text, resolve)` returns the task and the note id
+-- to follow afterwards
+---@private
+function Tab:_compose(o)
+  local h = self.host
+  if h.editing then
+    return edit.refuse("Finish the current edit first")
+  end
+  if not self:_open() then
+    return edit.refuse("Commenting is closed")
+  end
+  h:begin_edit({ kind = "composer" })
+  return composer.open({
+    win = h.content_float.win,
+    place = o.place,
+    col = o.col,
+    width = o.width or h:content_width(),
+    text = o.text,
+    title = o.title,
+    placeholder = o.placeholder,
+    keys = h.keys,
+    resolve = o.resolve,
+    mentions = function()
+      return self:_mentions()
+    end,
+    group = h.group,
+    on_submit = function(text, resolve, done)
+      edit.run({
+        what = o.what,
+        busy = o.busy,
+        success = o.success,
+        task = function()
+          return o.post(text, resolve)
+        end,
+        alive = function()
+          return not h.closed
+        end,
+        apply = function(res)
+          self:_done(o.follow and o.follow(res) or nil)
+        end,
+        done = function(_, err)
+          done(err == nil)
+        end,
+      })
+    end,
+    on_close = function()
+      h:end_edit()
+      self:render()
+    end,
+  })
+end
+
+--- `i`: write a new comment (the box docked at the end of the timeline).
+function Tab:comment()
+  return self:_compose({
+    what = "comment",
+    busy = "Adding the comment…",
+    success = "Comment added",
+    title = "Comment",
+    placeholder = "write a comment · markdown, @ to mention",
+    post = function(text)
+      return gg.notes.add(self:_args({ body = text }))
+    end,
+    follow = function(d)
+      return d and d.notes and d.notes[1] and d.notes[1].id
+    end,
+  })
+end
+
+-- the last row of thread `id` (0-based buffer line) in the tab
+---@private
+function Tab:_thread_end(id)
+  local d = self.host.docs[self.host:buf(self.opts.tab)]
+  local last
+  for lnum = 1, d and #d.lines or 0 do
+    local info = d.rows[lnum]
+    if info and info.thread == id and info.kind ~= "gap" then
+      last = lnum
+    end
+  end
+  return last and (last - 1) or nil
+end
+
+--- `gc`: reply to the thread under the cursor (under it, `@author` seeded
+--- when the comment is someone else's).
+function Tab:reply()
+  local info = self.host:current()
+  if not (info and info.thread and info.kind ~= "event") then
+    return
+  end
+  local note, d = self:_find(info)
+  if not d then
+    return
+  end
+  local seed = ""
+  local who = note and note.author and note.author.username
+  if who and who ~= self.me then
+    seed = "@" .. who .. " "
+  end
+  local after = self:_thread_end(d.id)
+  return self:_compose({
+    what = "reply",
+    busy = "Sending the reply…",
+    success = "Reply added",
+    title = "↩ Reply to thread",
+    placeholder = "write a reply · markdown, @ to mention",
+    text = seed,
+    place = after and { bufpos = after } or nil,
+    col = 6,
+    width = math.floor(self.host:content_width() * 0.9) - 6,
+    resolve = d.resolvable and not d.resolved,
+    post = function(text, resolve)
+      local t = gg.notes.reply(self:_args({ discussion_id = d.id, body = text }))
+      if not resolve then
+        return t
+      end
+      return gg.task.run(function()
+        local n, err = t:await()
+        if err then
+          return nil, err
+        end
+        local _, rerr = gg.notes.set_resolved(self:_args({ discussion_id = d.id, resolved = true })):await()
+        if rerr then
+          return nil, rerr
+        end
+        return n
+      end)
+    end,
+    follow = function(n)
+      return n and n.id
+    end,
+  })
+end
+
+-- the comment under the cursor when it is yours
+---@private
+function Tab:_own()
+  local info = self.host:current()
+  if not (info and info.kind == "comment") then
+    return nil
+  end
+  local note, d = self:_find(info)
+  if not note then
+    return nil
+  end
+  if not (self.me and note.author and note.author.username == self.me) then
+    edit.refuse("Only your own comments can be changed")
+    return nil
+  end
+  return note, d, info
+end
+
+--- `gE`: edit your comment under the cursor, in place of its body.
+function Tab:edit_comment()
+  local note, d = self:_own()
+  if not note then
+    return
+  end
+  -- over the comment: below its header row
+  local doc_ = self.host.docs[self.host:buf(self.opts.tab)]
+  local head
+  for lnum = 1, doc_ and #doc_.lines or 0 do
+    local info = doc_.rows[lnum]
+    if info and info.note == note.id then
+      head = lnum - 1
+      break
+    end
+  end
+  return self:_compose({
+    what = "comment",
+    busy = "Editing the comment…",
+    success = "Comment updated",
+    title = "✎ Edit comment",
+    text = note.body or "",
+    place = head and { bufpos = head } or nil,
+    col = 2,
+    width = math.floor(self.host:content_width() * 0.9) - 2,
+    post = function(text)
+      return gg.notes.edit(self:_args({ note_id = note.id, discussion_id = d.id, body = text }))
+    end,
+    follow = function()
+      return note.id
+    end,
+  })
+end
+
+--- `gD`: delete your comment under the cursor (asks first).
+function Tab:delete_comment()
+  local note, d = self:_own()
+  if not note then
+    return
+  end
+  confirm.ask("Delete comment?", function()
+    edit.run({
+      what = "comment",
+      busy = "Deleting the comment…",
+      success = "Comment deleted",
+      task = function()
+        return gg.notes.delete(self:_args({ note_id = note.id, discussion_id = d.id }))
+      end,
+      alive = function()
+        return not self.host.closed
+      end,
+      apply = function()
+        self:_done(nil)
+      end,
+    })
+  end)
+end
+
+--- `gX`: resolve or unresolve the thread under the cursor.
+function Tab:toggle_resolved()
+  local info = self.host:current()
+  if not (info and info.thread) then
+    return
+  end
+  local _, d = self:_find(info)
+  if not d then
+    return
+  end
+  if not d.resolvable then
+    return edit.refuse("This thread cannot be resolved")
+  end
+  local resolve = not d.resolved
+  edit.run({
+    what = "thread",
+    busy = resolve and "Resolving the thread…" or "Reopening the thread…",
+    success = resolve and "Thread resolved" or "Thread reopened",
+    task = function()
+      return gg.notes.set_resolved(self:_args({ discussion_id = d.id, resolved = resolve }))
+    end,
+    alive = function()
+      return not self.host.closed
+    end,
+    apply = function()
+      d.resolved = resolve
+      self:_done(nil)
+    end,
+  })
 end
 
 --- Load the discussions (and the signed-in user, once).
@@ -79,11 +426,19 @@ function Tab:load()
       self.truncated = res and res.truncated
     end
     self:render()
+    if self.follow then
+      local id = self.follow
+      self.follow = nil
+      self:_rerender_at(function(i)
+        return i.note == id
+      end)
+    end
   end)
   if tasks[2] then
     tasks[2]:on_done(function(user)
       if self.tasks == tasks and user and user.username then
         self.me = user.username
+        self.me_name = user.name
         self:render()
       end
     end)
@@ -124,6 +479,11 @@ function Tab:render()
     utc_offset = date.utc_offset(),
     user_colors = self.host.cfg.user_colors,
     keys = { expand = open[#open], fold = picker.first_key(k.toggle_fold) },
+    dock = self:_open() and self.status == "ready" and {
+      initials = avatar.initials(self.me_name or self.me or "you"),
+      hl = self.me and user_hl.group(self.me, self.host.cfg.user_colors) or "GitlabDetailMuted",
+      key = picker.first_key(k.comment),
+    } or nil,
   })
   self.host:set_content(o.tab, d)
 end

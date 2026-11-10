@@ -88,6 +88,13 @@ T["create and update (REST)"] = function()
   local u = H.await(milestones.update({ host = HOST, project = MP, id = 12, state_event = "close" }))
   eq(u.state, "closed")
   eq(fake:last().json, { state_event = "close" })
+  -- false clears a date: sent as null
+  fake:add({ request = { method = "PUT", path = "/api/v4/projects/my-group%2Fmy-project/milestones/12" }, response = { body = { id = 12, iid = 3, title = "v1.0", state = "active", due_date = vim.NIL, start_date = "2026-11-01" } } })
+  local c = H.await(milestones.update({ host = HOST, project = MP, id = 12, due_date = false, start_date = "2026-11-01" }))
+  eq(c.due_date, nil)
+  eq(fake:last().body:find('"due_date":null', 1, true) ~= nil, true)
+  eq(fake:last().json.start_date, "2026-11-01")
+  eq(select(2, H.await(milestones.update({ host = HOST, project = MP, id = 12, due_date = true }))).kind, "validation")
 end
 
 T["errors and validation"] = function()

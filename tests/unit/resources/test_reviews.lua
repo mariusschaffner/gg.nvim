@@ -104,6 +104,15 @@ T["approve: with sha; sha mismatch is validation"] = function()
   eq({ err.kind, err.status }, { "validation", 409 })
 end
 
+T["unapprove: approval state back; not approved is not_found"] = function()
+  local fake = H.fake({ "rest/reviews/drafts.json" })
+  eq(H.await(reviews.unapprove(MR)), { approvals_required = 2, approvals_left = 2 })
+  eq({ fake:last().method, fake:last().path }, { "POST", "/api/v4/projects/my-group%2Fmy-project/merge_requests/12/unapprove" })
+  local _, err = H.await(reviews.unapprove({ host = HOST, project = MP, iid = 13 }))
+  eq(err.kind, "not_found")
+  eq(select(2, H.await(reviews.unapprove({ host = HOST, project = MP }))).kind, "validation")
+end
+
 T["errors"] = function()
   local fake = H.fake()
   fake:add({ request = { operation = "MrReviewers" }, response = { body = { data = { project = { mergeRequest = vim.NIL } } } } })

@@ -154,7 +154,9 @@ function M.ticks(start, due, width)
   return cells_line(cells)
 end
 
---- The strip (three lines, or one when the dates are missing).
+--- The strip (three lines, or one when the dates are missing). The date
+--- labels are the regions "start_date" and "due_date" (both on the
+--- "no dates" text when there are none).
 ---@param m gg.Milestone|gg.MilestoneRef
 ---@param today gg.ui.Date
 ---@param width integer
@@ -165,7 +167,9 @@ function M.strip(m, today, width)
   width = math.max(12, width - 2)
   local state, days = M.bar_state(m, today)
   if state == "no_dates" then
-    d:line(line.new():add(pad):add("no dates", "GitlabDetailMuted"))
+    local lnum = d:line(line.new():add(pad):add("no dates", "GitlabDetailMuted"))
+    d:region("start_date", lnum, #pad, 8)
+    d:region("due_date", lnum, #pad, 8)
     return d
   end
   local start, due = M.range(m)
@@ -178,6 +182,22 @@ function M.strip(m, today, width)
     end
   end
   emit(M.ticks(start, due, width))
+  -- the date labels on the tick line (a colliding start label falls back
+  -- to the start tick)
+  local ticks = d.lines[1]
+  local start_label, due_label = date.dotted_short(start), date.dotted_short(due)
+  local s_at = ticks:find(start_label, 1, true)
+  d:region("start_date", 1, s_at and (s_at - 1) or #pad, text.width(start_label))
+  local d_at
+  local from = 1
+  while true do
+    local at = ticks:find(due_label, from, true)
+    if not at then
+      break
+    end
+    d_at, from = at, at + 1
+  end
+  d:region("due_date", 1, d_at and (d_at - 1) or #pad, text.width(due_label))
 
   local bar = {}
   local marker = M.column(today, start, due, width)

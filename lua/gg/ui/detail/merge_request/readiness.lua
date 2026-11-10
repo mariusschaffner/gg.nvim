@@ -149,7 +149,8 @@ function M.compute(input)
   local result = { gates = gates }
   if mr.state == "merged" then
     -- history now: every gate green, with neutral labels
-    local neutral = { pipeline = "Pipeline", conflicts = "No conflicts", threads = "Threads", draft = "Ready" }
+    -- (the pipeline gate has no label: its "[gp] pipeline" hint names it)
+    local neutral = { pipeline = "", conflicts = "No conflicts", threads = "Threads", draft = "Ready" }
     for _, g in ipairs(gates) do
       g.state, g.reason = "passed", nil
       if neutral[g.key] then

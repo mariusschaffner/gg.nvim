@@ -104,5 +104,18 @@
     "meta": { "source": "docs.gitlab.com (api/merge_request_approvals: Approve a merge request): sha mismatch" },
     "request": { "method": "POST", "path": "/api/v4/projects/my-group%2Fmy-project/merge_requests/13/approve" },
     "response": { "status": 409, "body": { "message": "SHA does not match HEAD of source branch" } }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com (api/merge_request_approvals: Unapprove a merge request; 201 and the approval state), sanitized" },
+    "request": { "method": "POST", "path": "/api/v4/projects/my-group%2Fmy-project/merge_requests/12/unapprove" },
+    "response": {
+      "status": 201,
+      "body": { "id": 5, "iid": 12, "project_id": 1, "approved": false, "approvals_required": 2, "approvals_left": 2, "approved_by": [], "user_has_approved": false, "user_can_approve": true }
+    }
+  },
+  {
+    "meta": { "source": "error shape of the GitLab REST API (not approved by this user)" },
+    "request": { "method": "POST", "path": "/api/v4/projects/my-group%2Fmy-project/merge_requests/13/unapprove" },
+    "response": { "status": 404, "body": { "message": "404 Not Found" } }
   }
 ]

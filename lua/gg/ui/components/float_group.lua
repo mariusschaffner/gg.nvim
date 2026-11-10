@@ -130,7 +130,8 @@ function Group:_watch(name, f)
           if self._closed or self._hidden then
             return
           end
-          if self:name_of(vim.api.nvim_get_current_win()) then
+          local cur = vim.api.nvim_get_current_win()
+          if self:name_of(cur) or (self._guests and self._guests[cur]) then
             self:_paint()
           else
             -- focus moved outside the group: close, but stay where the user went
@@ -154,13 +155,32 @@ function Group:name_of(win)
   return nil
 end
 
+--- Let window `win` (an overlay such as a field editor) take the focus
+--- without the group closing. `false` forgets it again.
+---@param win integer
+---@param allowed? boolean default true
+function Group:allow(win, allowed)
+  self._guests = self._guests or {}
+  self._guests[win] = allowed ~= false or nil
+end
+
+--- Draw member `name`'s border in `hl` (focused or not) until it is reset
+--- with nil, e.g. while its content is being edited.
+---@param name string
+---@param hl string|nil
+function Group:set_border(name, hl)
+  self._border_override = self._border_override or {}
+  self._border_override[name] = hl
+  self:_paint()
+end
+
 ---@private
 function Group:_paint()
   local cur = vim.api.nvim_get_current_win()
   for name, f in pairs(self.members) do
     if vim.api.nvim_win_is_valid(f.win) then
       local b = self._borders[f.win]
-      local hl = f.win == cur and b.active or b.inactive
+      local hl = (self._border_override and self._border_override[name]) or (f.win == cur and b.active or b.inactive)
       vim.api.nvim_set_option_value("winhighlight", winhighlight(hl, self._specs[name].winhl), { win = f.win })
     end
   end

@@ -7,6 +7,10 @@
 ---
 --- Closing a screen any other way (`:close`, focus leaving it) closes the
 --- whole stack and returns to the window where it started.
+---
+--- A screen that changes something on GitLab calls `changed(kind)`; every
+--- screen below it remembers the kind and gets `refresh(kinds)` when it is
+--- on top again, so the tables show the new data after `q`.
 local M = {}
 
 ---@class gg.ui.Screen
@@ -14,6 +18,8 @@ local M = {}
 ---@field suspend? fun(self: gg.ui.Screen) covered by another screen: pause timers
 ---@field resume? fun(self: gg.ui.Screen) on top again
 ---@field teardown? fun(self: gg.ui.Screen) closed: cancel requests, stop timers
+---@field refresh? fun(self: gg.ui.Screen, kinds: table<string, true>) on top again after a change above it
+---@field dirty? table<string, true> kinds changed above this screen (set by the stack)
 
 ---@class gg.ui.Stack
 ---@field screens gg.ui.Screen[] bottom first
@@ -111,6 +117,26 @@ function Stack:pop()
   local below = self:top()
   below.group:show()
   call(below, "resume")
+  if below.dirty and next(below.dirty) and below.refresh then
+    local kinds = below.dirty
+    below.dirty = nil
+    local ok, err = pcall(below.refresh, below, kinds)
+    if not ok then
+      vim.notify("gg.ui: refresh: " .. tostring(err), vim.log.levels.ERROR)
+    end
+  end
+end
+
+--- Something of `kind` ("issue", "milestone", "merge_request",
+--- "pipeline") changed on GitLab: every screen below the top refreshes when
+--- it is shown again.
+---@param kind string
+function Stack:changed(kind)
+  for i = 1, #self.screens - 1 do
+    local s = self.screens[i]
+    s.dirty = s.dirty or {}
+    s.dirty[kind] = true
+  end
 end
 
 --- Close every screen, top first; focus returns to the window that was

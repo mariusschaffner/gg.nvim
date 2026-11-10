@@ -41,6 +41,8 @@ end
 ---@field chip_hl? gg.ui.ChipHl
 ---@field user_colors? table<string, string>
 ---@field me? string
+---@field keys? table<string, string|nil> first key of each edit keymap (sidebar hints); nil: no hints
+---@field editing? string the sidebar field being edited
 
 --- The header: the body and the border title.
 ---@param data gg.ui.IssueDetailData
@@ -134,6 +136,19 @@ local function loadable_lines(l, inner, fn)
   return fn(l.value)
 end
 
+--- A date label with its key: "START [gs]" (orange while edited).
+---@param label string
+---@param key string|nil|false
+---@param editing boolean
+---@return gg.Segs
+function M.date_label(label, key, editing)
+  local segs = { { label, editing and "GitlabDetailLabelEditing" or "GitlabDetailLabel" } }
+  if key then
+    table.insert(segs, { " [" .. key .. "]", "GitlabHintKey" })
+  end
+  return segs
+end
+
 local MR_HL = { merged = "GitlabDetailPositive", closed = "GitlabDetailError", locked = "GitlabDetailError" }
 
 --- The sidebar.
@@ -143,6 +158,8 @@ local MR_HL = { merged = "GitlabDetailPositive", closed = "GitlabDetailError", l
 function M.sidebar(data, width)
   local issue = data.issue
   local inner = sidebar.inner(width)
+  local keys = data.keys or {}
+  local open = issue.state ~= "closed"
   local assignees = {}
   for _, u in ipairs(issue.assignees or {}) do
     table.insert(assignees, avatar.segments(u, { overrides = data.user_colors, me = data.me }))
@@ -182,10 +199,16 @@ function M.sidebar(data, width)
   end
 
   return sidebar.build({
-    { label = "Assignee", lines = assignees, empty = "unassigned" },
-    { label = "Labels", lines = labels, empty = "no labels" },
-    { label = "Milestone", lines = milestone, empty = "no milestone" },
-    { label = "Start", label_right = "DUE", lines = dates, empty = "not scheduled" },
+    { label = "Assignee", lines = assignees, empty = "unassigned", id = "assignees", hint = open and keys.edit_assignees, editing = data.editing == "assignees" },
+    { label = "Labels", lines = labels, empty = "no labels", id = "labels", hint = keys.edit_labels, editing = data.editing == "labels" },
+    { label = "Milestone", lines = milestone, empty = "no milestone", id = "milestone", hint = open and keys.edit_milestone, editing = data.editing == "milestone" },
+    {
+      lines = dates,
+      empty = "not scheduled",
+      ids = { "start_date", "due_date" },
+      label_segs = M.date_label("START", open and keys.edit_start_date, data.editing == "start_date"),
+      right_segs = M.date_label("DUE", open and keys.edit_due_date, data.editing == "due_date"),
+    },
     { divider = true },
     { label = "Development", lines = dev, empty = "no branch or merge request" },
   }, width)

@@ -109,7 +109,7 @@ T["opens on top, loads the issue, renders header, description and sidebar"] = fu
   eq(cl[6], " ○ old key revoked")
   local sl = buf_lines(side.buf)
   eq(sl[1], "")
-  eq(sl[2], " ASSIGNEE")
+  eq(sl[2], " ASSIGNEE                  [ga]") -- the edit key on the right
   eq(sl[3], " (US) User")
   eq(table.concat(sl, "\n"):find(" 2026-11-01          2026-11-14", 1, true) ~= nil, true)
   eq(table.concat(sl, "\n"):find("⎇ 214-rotate-credentials", 1, true) ~= nil, true)
@@ -118,15 +118,6 @@ T["opens on top, loads the issue, renders header, description and sidebar"] = fu
   local cfg = vim.api.nvim_win_get_config(content.win)
   eq(chunks_text(cfg.title), " Description · Activity ") -- no comment count
   eq(chunks_text(cfg.footer), " [i] Edit ")
-  -- the edit key only says that editing comes later
-  local notes = {}
-  local notify = vim.notify
-  vim.notify = function(msg)
-    table.insert(notes, msg)
-  end
-  keys("i")
-  vim.notify = notify
-  eq(notes, { "gg.ui: editing is not available yet" })
 end
 
 T["Activity loads on first show; za folds a thread"] = function()

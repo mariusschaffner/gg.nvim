@@ -4,15 +4,17 @@
 --- Two key modes on the log window: in graph mode `h` / `l` pick the
 --- stage, `j` / `k` the job and `<CR>` moves into the log; in log mode the
 --- usual motions and `/` work and `<Esc>` goes back to the graph. `F`
---- follows the log of a running job, `za` folds a section. Read-only.
+--- follows the log of a running job. Read-only.
 ---
 --- Live while visible: the pipeline is polled while it is active
 --- (`pipeline_detail_poll_ms`), its clocks tick every second, and the log
 --- of a running job is tailed (`job_log_poll_ms`) with byte ranges, so
 --- only new output is fetched; the buffer is rewritten from the first
 --- changed line on.
+local confirm = require("gg.ui.components.confirm")
 local date = require("gg.ui.lib.date")
 local doc = require("gg.ui.lib.doc")
+local edit = require("gg.ui.detail.edit")
 local gg = require("gg")
 local graph = require("gg.ui.detail.pipeline.graph")
 local header = require("gg.ui.detail.header")
@@ -27,6 +29,7 @@ local status = require("gg.ui.detail.pipeline.status")
 local M = {}
 
 M.TICK_MS = 1000
+M.GRACE_S = 10 -- keep polling this long after an action (the pipeline may start again)
 
 -- the elapsed clock in the colour of the status
 local CLOCK_HL = {
@@ -124,7 +127,7 @@ end
 
 -- Keys -------------------------------------------------------------------------
 
-local GRAPH_KEYS = { "graph_left", "graph_right", "graph_down", "graph_up", "log_focus" }
+local GRAPH_KEYS = { "graph_left", "graph_right", "graph_down", "graph_up", "log_focus", "retry_job", "play_job", "cancel_job" }
 
 ---@private
 function View:_keymaps()
@@ -132,10 +135,114 @@ function View:_keymaps()
   h:map_all(k.log_follow, function()
     self:follow()
   end, "Follow the log")
-  h:map_all(k.toggle_fold, function()
-    pcall(vim.cmd, "normal! za")
-  end, "Fold")
+  h:map_all(k.retry_pipeline, function()
+    self:pipeline_action("retry")
+  end, "Retry the failed jobs")
+  h:map_all(k.cancel_pipeline, function()
+    self:pipeline_action("cancel")
+  end, "Cancel the pipeline")
   self:_set_mode("graph")
+end
+
+-- Actions ------------------------------------------------------------------------
+
+-- what the selected job and the pipeline allow
+---@private
+function View:_can()
+  local job = self:_job()
+  local js = job and (job.status or ""):lower() or ""
+  local ps = (self.pipeline.status or ""):lower()
+  return {
+    retry_job = job ~= nil and (job.retryable == true or js == "failed" or js == "canceled"),
+    play_job = job ~= nil and js == "manual",
+    cancel_job = job ~= nil and (job.cancelable == true or status.is_active(js) and js ~= "manual"),
+    retry_pipeline = ps == "failed" or ps == "canceled",
+    cancel_pipeline = status.is_active(ps),
+  }
+end
+
+-- run an action, then refresh at once and keep polling for a while
+---@private
+function View:_act(what, busy, success, task)
+  edit.run({
+    what = what,
+    busy = busy,
+    success = success,
+    task = task,
+    alive = function()
+      return not self.h.closed
+    end,
+    changed = function()
+      self.ctx.stack:changed("pipeline")
+    end,
+    apply = function()
+      self.grace_until = os.time() + M.GRACE_S
+      self:load()
+    end,
+  })
+end
+
+--- `r` / `p` / `X` (graph mode): retry, play or cancel the selected job.
+---@param action "retry"|"play"|"cancel"
+function View:job_action(action)
+  local job = self:_job()
+  if not job then
+    return
+  end
+  local can = self:_can()
+  local args = { host = self.ctx.host, project = self.project, id = job.id }
+  if action == "retry" then
+    if not can.retry_job then
+      return edit.refuse(("Job %s cannot be retried"):format(job.name))
+    end
+    self:_act("job", "Retrying " .. job.name .. "…", "Job " .. job.name .. " retried", function()
+      return gg.jobs.retry(args)
+    end)
+  elseif action == "play" then
+    if not can.play_job then
+      return edit.refuse(("Job %s is not a manual job"):format(job.name))
+    end
+    if job.playable == false then
+      return edit.refuse(("Job %s is blocked"):format(job.name))
+    end
+    self:_act("job", "Starting " .. job.name .. "…", "Job " .. job.name .. " started", function()
+      return gg.jobs.play(args)
+    end)
+  else
+    if not can.cancel_job then
+      return edit.refuse(("Job %s cannot be canceled"):format(job.name))
+    end
+    confirm.ask(("Cancel job %s?"):format(job.name), function()
+      self:_act("job", "Canceling " .. job.name .. "…", "Job " .. job.name .. " canceled", function()
+        return gg.jobs.cancel(args)
+      end)
+    end)
+  end
+end
+
+--- `gR` / `gX`: retry the failed jobs or cancel the pipeline.
+---@param action "retry"|"cancel"
+function View:pipeline_action(action)
+  local can = self:_can()
+  local args = { host = self.ctx.host, project = self.project, id = self.id }
+  local ref = "#" .. tostring(self.id)
+  if action == "retry" then
+    if not can.retry_pipeline then
+      return edit.refuse(("Pipeline %s has no failed jobs to retry"):format(ref))
+    end
+    self:_act("pipeline", "Retrying the failed jobs…", "Pipeline " .. ref .. " retried", function()
+      return gg.pipelines.retry(args)
+    end)
+  else
+    if not can.cancel_pipeline then
+      return edit.refuse(("Pipeline %s is not running"):format(ref))
+    end
+    confirm.ask(("Cancel pipeline %s?"):format(ref), function()
+      self:_act("pipeline", "Canceling the pipeline…", "Pipeline " .. ref .. " canceled", function()
+        return gg.pipelines.cancel(args)
+      end)
+    end)
+  end
 end
 
 ---@private
@@ -172,6 +279,15 @@ function View:_set_mode(mode)
     self:_map("log_focus", function()
       self:_set_mode("log")
     end, "Into the log")
+    self:_map("retry_job", function()
+      self:job_action("retry")
+    end, "Retry the job")
+    self:_map("play_job", function()
+      self:job_action("play")
+    end, "Play the job")
+    self:_map("cancel_job", function()
+      self:job_action("cancel")
+    end, "Cancel the job")
   else
     for _, name in ipairs(GRAPH_KEYS) do
       self:_unmap(name)
@@ -395,7 +511,8 @@ function View:_sync_timers()
   end
   local cfg = self.ctx.cfg
   local active = status.is_active(self.pipeline.status)
-  if active then
+  local grace = self.grace_until and os.time() < self.grace_until
+  if active or grace then
     self:_timer("poll", cfg.pipeline_detail_poll_ms or 0, function()
       self:load()
     end)
@@ -594,8 +711,27 @@ function View:render_header()
       { key = pair("graph_down", "graph_up"), desc = "Job" },
       { key = picker.first_key(k.log_focus), desc = "Log" },
     }
+    -- the job actions that apply to the selected job
+    local can = self.status == "ready" and self:_can() or {}
+    if can.retry_job then
+      table.insert(hints, { key = picker.first_key(k.retry_job), desc = "Retry" })
+    end
+    if can.play_job and (self:_job() or {}).playable ~= false then
+      table.insert(hints, { key = picker.first_key(k.play_job), desc = "Play" })
+    end
+    if can.cancel_job then
+      table.insert(hints, { key = picker.first_key(k.cancel_job), desc = "Cancel" })
+    end
   else
     hints = { { key = picker.first_key(k.graph_back), desc = "Graph" } }
+  end
+  -- the pipeline actions that apply
+  local pcan = self.status == "ready" and self:_can() or {}
+  if pcan.retry_pipeline then
+    table.insert(hints, { key = picker.first_key(k.retry_pipeline), desc = "Retry failed" })
+  end
+  if pcan.cancel_pipeline then
+    table.insert(hints, { key = picker.first_key(k.cancel_pipeline), desc = "Cancel pipeline" })
   end
   hints = vim.tbl_filter(function(x)
     return x.key ~= nil
@@ -627,7 +763,6 @@ function View:_log_chrome()
   local hints = {
     { key = picker.first_key(k.log_follow), desc = "Follow" },
     { key = "/", desc = "Search" },
-    { key = picker.first_key(k.toggle_fold), desc = "Fold" },
   }
   h:set_hints("main", hints)
 end

@@ -122,6 +122,7 @@ end
 ---@field extra? gg.ui.Doc a block below everything else
 
 --- The header body, with an empty line above the title and one at the end.
+--- The title's place is the region "title" (the room it may take).
 ---@param input gg.ui.HeaderInput
 ---@return gg.ui.Doc
 function M.build(input)
@@ -141,6 +142,7 @@ function M.build(input)
     title_room = inner - used - text.width(ref)
   end
   local title = text.truncate(text.clean(input.title), math.max(1, title_room))
+  local title_col = l.bytes
   l:add(title, "GitlabDetailTitle"):add(ref, "GitlabDetailMuted")
   if right_w > 0 then
     l:pad_to(1 + inner - right_w + 2)
@@ -148,7 +150,8 @@ function M.build(input)
       l:add(s[1], s[2])
     end
   end
-  d:line(l)
+  local lnum = d:line(l)
+  d:region("title", lnum, title_col, math.max(1, title_room))
   if input.chips and #input.chips > 0 then
     d:blank()
     d:line(line.new():add(" "):segments(input.chips, inner))

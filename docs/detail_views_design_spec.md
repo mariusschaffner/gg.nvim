@@ -7,7 +7,7 @@ The four detail views (issue, milestone, merge request, pipeline) share one foun
 - `docs/mergerequest_detail_design_spec.md`
 - `docs/pipeline_detail_design_spec.md`
 
-Phase 1 is **read-only**. Editing (title, description, fields, dates, tasks), conversation (comment, reply, resolve, delete), merge request actions (approve, merge, draft), CI actions (retry, cancel, play), viewed marks and the diff/review view are phase 2. There is no open-in-browser and no yank-URL key.
+The views also edit what they show; the editing behaviour is specified in `docs/edit_ressources.md` (and `:help gg-ui-edit`). Viewed marks and the diff/review view are not part of them. There is no open-in-browser and no yank-URL key.
 
 ---
 
@@ -46,7 +46,7 @@ Phase 1 is **read-only**. Editing (title, description, fields, dates, tasks), co
 
 - **Spacing:** the header body has an empty line above the title and one at its end; one empty row separates the header from the boxes below; tabs and the sidebar start with an empty line.
 - **Borders:** every border of a detail view is gray (`GitlabDetailBorder`), focused or not. The breadcrumb names only the kind and the reference (`issues › #214`), not the group or project.
-- **Description tabs** show `[i] Edit`. Editing is phase 2; until then the key says so. Activity tabs show no key hints.
+- **Description tabs** show `[i] Edit` (while the item can be edited). Activity tabs show no footer hints; the comment box at the end shows `[i] Comment`, and the comment under the cursor shows the keys that apply. While editing, the box is orange and its footer reads `[<C-s>] Save • [<Esc>] Cancel`. Field keys are shown right-aligned in the sidebar labels.
 - Rendering is pure: each pane is rendered into a `gg.ui.Doc` (lines, highlights, whole-line backgrounds, per-line metadata), and `gg.ui.detail.host` writes it into the buffer.
 - Loading and error states are static text, `Loading…` or the error message. There is no spinner timer.
 

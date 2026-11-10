@@ -14,18 +14,25 @@ local M = {}
 ---@field hl string
 ---@field priority? integer
 
+---@class gg.ui.Region where an editable value is drawn
+---@field row integer 0-based first row
+---@field col integer 0-based byte column
+---@field width integer display cells
+---@field height integer rows
+
 ---@class gg.ui.Doc
 ---@field lines string[]
 ---@field marks gg.ui.DocMark[]
 ---@field line_hls { row: integer, hl: string }[] whole-line backgrounds (0-based rows)
 ---@field rows table<integer, table> 1-based line -> metadata given with the line
+---@field regions table<string, gg.ui.Region> named places of editable values (overlays anchor on them)
 local Doc = {}
 Doc.__index = Doc
 
 --- A new, empty document.
 ---@return gg.ui.Doc
 function M.new()
-  return setmetatable({ lines = {}, marks = {}, line_hls = {}, rows = {} }, Doc)
+  return setmetatable({ lines = {}, marks = {}, line_hls = {}, rows = {}, regions = {} }, Doc)
 end
 
 --- Number of lines so far.
@@ -102,6 +109,20 @@ function Doc:append(other)
   for l, info in pairs(other.rows) do
     self.rows[l + off] = info
   end
+  for id, r in pairs(other.regions or {}) do
+    self.regions[id] = { row = r.row + off, col = r.col, width = r.width, height = r.height }
+  end
+end
+
+--- Name the place of an editable value: `height` rows from line `lnum`
+--- (1-based), starting at byte column `col`, `width` cells wide.
+---@param id string
+---@param lnum integer
+---@param col integer
+---@param width integer
+---@param height? integer default 1
+function Doc:region(id, lnum, col, width, height)
+  self.regions[id] = { row = lnum - 1, col = col, width = width, height = height or 1 }
 end
 
 --- Append `n` copies of an empty line.

@@ -269,9 +269,12 @@ end
 X.MR_IID = 88
 
 -- a merge request that closes #214 and #211, with a WF label on #214
-function X.mr_get()
-  local e = X.replay("graphql/merge_requests/get.json", { operation = "MergeRequestGet" })
+function X.mr_get(over, opts)
+  local e = X.replay("graphql/merge_requests/get.json", { operation = "MergeRequestGet" }, opts)
   local mr = e.response.body.data.project.mergeRequest
+  for k, v in pairs(over or {}) do
+    mr[k] = v
+  end
   mr.iid = tostring(X.MR_IID)
   mr.title = "Rotate Terraform state backend credentials"
   mr.description = table.concat({ "Rotates the keys.", "", "Closes #214 and #211", "", "Thanks." }, string.char(10))
@@ -280,7 +283,42 @@ function X.mr_get()
   mr.reference = "!" .. X.MR_IID
   mr.referenceFull = X.PROJECT .. "!" .. X.MR_IID
   mr.webUrl = ("https://%s/%s/-/merge_requests/%d"):format(X.HOST, X.PROJECT, X.MR_IID)
+  for k, v in pairs(over or {}) do
+    mr[k] = v
+  end
   return e
+end
+
+-- an open merge request !88 with everything the view loads; checks and
+-- reviewers repeat (actions reload them)
+function X.open_mr_responses()
+  local out = X.mr_responses()
+  out[1] = X.mr_get({ state = "opened", mergedAt = vim.NIL }, { ["repeat"] = true })
+  out[2]["repeat"] = true
+  out[3]["repeat"] = true
+  return out
+end
+
+-- PUT / POST on merge request !88 (`suffix` e.g. "/merge"), answered with a
+-- REST merge request
+function X.mr_write(method, suffix, body, over, opts)
+  return {
+    request = { method = method, path = ("/api/v4/projects/%s/merge_requests/%d%s"):format(X.ENC, X.MR_IID, suffix or ""), body_contains = body },
+    response = opts and opts.status and { status = opts.status, body = { message = opts.message or "boom" } }
+      or { body = X.rest_mr(X.MR_IID, "Rotate Terraform state backend credentials", (over or {}).state or "opened", over) },
+  }
+end
+
+-- PUT on milestone 11, answered with a REST milestone
+function X.milestone_put(body, over)
+  local m = { id = 11, iid = 1, project_id = 7, title = "2026.11 Patch cycle", description = "Patch everything.", state = "active", start_date = "2026-11-02", due_date = "2026-11-20", updated_at = "2026-11-10T11:00:00Z", created_at = "2026-10-20T09:00:00Z", web_url = "https://gitlab.example.com/infra/ops/-/milestones/1" }
+  for k, v in pairs(over or {}) do
+    m[k] = v
+  end
+  return {
+    request = { method = "PUT", path = ("/api/v4/projects/%s/milestones/11"):format(X.ENC), body_contains = body },
+    response = { body = m },
+  }
 end
 
 -- the recorded commits, as one page
@@ -416,6 +454,109 @@ function X.trace(job_id, body, opts)
     ["repeat"] = opts["repeat"],
     request = { method = "GET", path = ("/api/v4/projects/%s/jobs/%d/trace"):format(X.ENC, job_id), query_contains = {} },
     response = { status = opts.status or 200, body = body, headers = opts.headers or { ["Content-Type"] = "text/plain" } },
+  }
+end
+
+-- Writes ---------------------------------------------------------------------
+
+-- a REST issue (the answer of PUT /issues/:iid) for #214
+function X.rest_issue(over)
+  local i = {
+    id = 1214,
+    iid = 214,
+    project_id = 7,
+    title = "Rotate Terraform state backend credentials",
+    description = X.DESCRIPTION,
+    state = "opened",
+    created_at = "2026-10-01T09:00:00Z",
+    updated_at = "2026-11-10T11:00:00Z",
+    labels = { "security", "terraform" },
+    milestone = { id = 11, iid = 1, title = "2026.11 Patch cycle", state = "active", due_date = "2026-11-20" },
+    assignees = { X.rest_user(2, "User") },
+    author = X.rest_user(1, "User One"),
+    type = "ISSUE",
+    issue_type = "issue",
+    user_notes_count = 2,
+    due_date = "2026-11-12",
+    confidential = false,
+    web_url = ("https://%s/%s/-/issues/214"):format(X.HOST, X.PROJECT),
+    references = { short = "#214", relative = "#214", full = X.PROJECT .. "#214" },
+  }
+  for k, v in pairs(over or {}) do
+    i[k] = v
+  end
+  return i
+end
+
+-- PUT /issues/214 answered with `over` applied; `body` must be in the request
+function X.issue_put(body, over, opts)
+  return {
+    ["repeat"] = opts and opts["repeat"],
+    request = { method = "PUT", path = ("/api/v4/projects/%s/issues/214"):format(X.ENC), body_contains = body },
+    response = opts and opts.status and { status = opts.status, body = { message = "boom" } } or { body = X.rest_issue(over) },
+  }
+end
+
+function X.members()
+  local nodes = {}
+  for n, name in pairs({ [1] = "Ann Example", [2] = "Bob Sample", [3] = "Cid Third" }) do
+    local u = X.user(n, name)
+    table.insert(nodes, { id = "gid://gitlab/ProjectMember/" .. n, accessLevel = { integerValue = 30, stringValue = "DEVELOPER" }, user = u })
+  end
+  table.sort(nodes, function(a, b)
+    return a.id < b.id
+  end)
+  return {
+    ["repeat"] = true,
+    request = { operation = "ProjectMembersList" },
+    response = { body = { data = { project = { projectMembers = { nodes = nodes, pageInfo = { hasNextPage = false, endCursor = vim.NIL } } } } } },
+  }
+end
+
+function X.labels_list()
+  local nodes = {}
+  for i, name in ipairs({ "security", "terraform", "docs", "WF:Doing" }) do
+    table.insert(nodes, { id = "gid://gitlab/ProjectLabel/" .. i, title = name, color = "#888888", textColor = "#FFFFFF", description = vim.NIL })
+  end
+  return {
+    ["repeat"] = true,
+    request = { operation = "LabelsList" },
+    response = { body = { data = { project = { labels = { nodes = nodes, pageInfo = { hasNextPage = false, endCursor = vim.NIL } } } } } },
+  }
+end
+
+function X.milestones_list()
+  return {
+    ["repeat"] = true,
+    request = { operation = "MilestonesList" },
+    response = {
+      body = {
+        data = {
+          project = {
+            milestones = {
+              nodes = { X.milestone_node(), X.milestone_node({ id = "gid://gitlab/Milestone/12", iid = "2", title = "2026.12 Cloud migration" }) },
+              pageInfo = { hasNextPage = false, endCursor = vim.NIL },
+            },
+          },
+        },
+      },
+    },
+  }
+end
+
+function X.dates_update(start, due)
+  return {
+    request = { operation = "WorkItemUpdateDates" },
+    response = {
+      body = {
+        data = {
+          workItemUpdate = {
+            errors = {},
+            workItem = { id = "gid://gitlab/WorkItem/9214", iid = "214", widgets = { { type = "START_AND_DUE_DATE", startDate = start or vim.NIL, dueDate = due or vim.NIL } } },
+          },
+        },
+      },
+    },
   }
 end
 

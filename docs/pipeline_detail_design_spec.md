@@ -32,7 +32,7 @@ Shared foundation: `docs/detail_views_design_spec.md`. Opened by `i` in the pipe
 ## Job log (the content window)
 
 - **Title:** `◐ job-name`, plus ` ● following ` while following a running job.
-- **Footer:** `[F] Follow • [/] Search • [za] Fold`.
+- **Footer:** `[F] Follow • [/] Search`.
 - **Parsing** (`detail/pipeline/log_model.lua`):
   - CRLF becomes LF. Inside a line, a `\r` keeps only the text after it (terminal redraw).
   - OSC, DCS and non-SGR CSI sequences and control bytes are removed. SGR colours become highlights (`GitlabAnsi*`; 256 and true colour are ignored).
@@ -51,7 +51,7 @@ Shared foundation: `docs/detail_views_design_spec.md`. Opened by `i` in the pipe
 |---|---|
 | graph | `h` / `l` stage (skips empty stages, keeps the job index), `j` / `k` job, `<CR>` into the log |
 | log | the usual motions and `/` search, `<Esc>` back to the graph |
-| both | `F` follow (to the end), `za` fold, `R` reload, `q` back |
+| both | `F` follow (to the end), `R` reload, `q` back |
 
 - **Default selection:** the first running job, else the first failed job that may not fail, else the first job.
 - **Following:** moving the cursor above the last line stops following.

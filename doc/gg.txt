@@ -442,6 +442,10 @@ gg.reviews.publish({args})                               *gg.reviews.publish()*
 gg.reviews.approve({args})                               *gg.reviews.approve()*
     `{ host, project, iid, sha? }`.
 
+gg.reviews.unapprove({args})                           *gg.reviews.unapprove()*
+    `{ host, project, iid }`. Withdraws your approval. Both resolve with
+    `{ approvals_required, approvals_left }`.
+
 ------------------------------------------------------------------------------
 MILESTONES                                                     *gg-milestones*
 
@@ -465,7 +469,8 @@ gg.milestones.merge_requests_all({args}, {opts})
 gg.milestones.create({args})                           *gg.milestones.create()*
 gg.milestones.update({args})                           *gg.milestones.update()*
     Project milestones. `update` takes `title`, `description`, `start_date`,
-    `due_date` and `state_event` ("close" or "activate").
+    `due_date` and `state_event` ("close" or "activate"). `false` clears a
+    date (sent as null; GitLab's docs do not describe clearing).
 
 Milestone issue counts                               *gg-milestone-issue-stats*
     Milestones read through GraphQL (`list`, `get`, and the `milestone` of
@@ -675,6 +680,17 @@ gg.ui.setup({opts})                                             *gg.ui.setup()*
         log_follow = "F",
         log_focus = "<CR>", graph_back = "<Esc>",
         graph_left = "h", graph_right = "l", graph_down = "j", graph_up = "k",
+        -- editing (see docs/edit_ressources.md for what each key will do)
+        edit_title = "gt", toggle_task = "x", edit_assignees = "ga",
+        edit_reviewers = "gr", edit_labels = "gl", edit_milestone = "gM",
+        edit_target_branch = "gB", edit_start_date = "gs", edit_due_date = "gd",
+        toggle_delete_branch = "gb", create_branch = "gb", create_mr = "gP",
+        comment = "i", reply = "gc", edit_comment = "gE", delete_comment = "gD",
+        toggle_resolved = "gX", submit = "<C-s>", submit_resolve = "<C-r>",
+        cancel_edit = "<Esc>", actions = "A",
+        retry_job = "r", play_job = "p", cancel_job = "X",
+        retry_pipeline = "gR", cancel_pipeline = "gX",
+        complete_next = "<Tab>", complete_prev = "<S-Tab>",
       },
       order = {},            -- { top?, milestones?, issues? } comparators
       pipeline_refresh_ms = 10000,    -- live refresh of active pipelines in
@@ -682,6 +698,8 @@ gg.ui.setup({opts})                                             *gg.ui.setup()*
       pipeline_detail_poll_ms = 4000, -- an active pipeline's detail view; 0 = off
       job_log_poll_ms = 1500,         -- tailing a running job's log; 0 = off
       user_colors = {},      -- { ["username"] = "GitlabUser1" } pins a colour
+      merge_squash = nil,    -- squash when merging; nil: the merge request's setting
+      merge_delete_source_branch = nil, -- nil: the merge request's setting
     })
 <
     `i` (and `I` for a milestone) opens the detail views, see
@@ -793,8 +811,8 @@ Detail views                                                  *gg-ui-detail*
     `i` on a row opens its detail view over the picker; detail views open
     each other (an issue's milestone, a merge request's pipeline, ...), and
     every jump can be undone with `q` (back, finally to the picker with its
-    tab, filter and selection) or `Q` (close everything). Read-only: they
-    show what GitLab has, nothing is changed from them.
+    tab, filter and selection) or `Q` (close everything). They also change
+    what they show, see |gg-ui-edit|.
 
     Layout: a header across the top (state pill, title, reference; its
     border carries the kind and reference, e.g. `issues › #214`, and who
@@ -849,11 +867,61 @@ Detail views                                                  *gg-ui-detail*
     selected job (the first running one, else the first failed one). Graph
     mode: `h` / `l` stage, `j` / `k` job, `<CR>` into the log. Log mode:
     the usual motions and `/`, `<Esc>` back to the graph. `F` follows a
-    running job's log, `za` folds a section. The log
+    running job's log. The log
     keeps the colours of the job; sections fold. While the view is shown,
     an active pipeline is fetched again every `pipeline_detail_poll_ms`,
     durations tick every second and a running job's log is tailed every
     `job_log_poll_ms` (only the new bytes).
+
+Editing                                                         *gg-ui-edit*
+    Every change shows "Updating …" and then "… updated" or the error
+    (|vim.notify()|); an optimistic change (a task) is undone on an error.
+    After a change, the screens below refresh when you go back (`q`), so the
+    tables show the new data. What applies depends on the state: a closed
+    issue or a merged merge request only takes labels and milestone; keys
+    that do not apply say why, and their hints are hidden.
+
+    Text in place: `i` in a Description tab replaces it with its markdown
+    (fetched again first) in the same window; `<C-s>` saves, `<Esc>` in
+    normal mode cancels. While editing, the box is orange and its footer
+    reads `[<C-s>] Save • [<Esc>] Cancel`. `x` toggles the task under the
+    cursor (`[x] toggle` shows on task lines).
+
+    Fields in an overlay laid over them: `gt` the title, `ga` assignees,
+    `gr` reviewers, `gl` labels, `gM` milestone, `gB` target branch,
+    `gs` / `gd` start / due date. Values are comma-separated; candidates for
+    the value at the cursor come up while you type, `<Tab>` / `<S-Tab>`
+    step through them; unknown names are skipped with a warning; an empty
+    milestone or date removes it. `<C-s>` or `<CR>` saves, `<Esc>` in normal
+    mode cancels. The keys show in the sidebar labels (`ASSIGNEE  [ga]`), on
+    a milestone in the header's bottom border (`[gs] Start • [gd] Due`).
+
+    Comments (Activity): the box at the end (`(XX) › write a new
+    comment…  [i] Comment`) opens with `i`; `gc` replies to the thread under
+    the cursor (below it; `@author` seeded), `<C-r>` posts and resolves;
+    `gE` edits and `gD` deletes (after `[y/N]`) your own comment; `gX`
+    resolves / unresolves the thread. `@` completes usernames. The comment
+    row under the cursor shows the keys that apply.
+
+    `A` opens the actions: close / reopen an issue or milestone; for a
+    merge request approve / revoke the approval, merge (asks first; squash
+    and deleting the source branch follow `merge_squash` /
+    `merge_delete_source_branch`, else the merge request), mark as draft /
+    ready, close (asks first) / reopen. `gb` on a merge request toggles
+    deleting the source branch on merge.
+
+    From an issue: `gb` creates a branch `<iid>-<title>` from the branch you
+    pick (default branch first); `gP` opens the new merge request form
+    (source: the issue's branch, target: the default branch, title
+    `Draft: Resolve "<title>"`, description `Closes #<iid>`, assignee: you).
+    `i` / `<CR>` edits the field under the cursor, `<C-s>` creates the merge
+    request and shows it, `q` drops the form.
+
+    Pipeline (graph mode): `r` retries the selected job, `p` plays a manual
+    job, `X` cancels a job (asks first); `gR` retries the pipeline's failed
+    jobs, `gX` cancels the pipeline (asks first). The hints in the header's
+    border show only what applies. After an action the pipeline is fetched
+    at once and polled for 10 more seconds.
 
 Highlights                                                  *gg-ui-highlights*
     All groups are defined with `default = true` and link to standard
@@ -886,6 +954,9 @@ Highlights                                                  *gg-ui-highlights*
     `GitlabStrip*` (readiness and date strips), `GitlabCommit*` and
     `GitlabChip<Type>` (commit types), `GitlabGraph*` (pipeline graph),
     `GitlabLog*` and `GitlabAnsi*` (job log).
+    Editing: `GitlabDetailBorderEditing` (the box being edited),
+    `GitlabDetailLabelEditing` (the sidebar label of the field being
+    edited), `GitlabFieldEdit` (the field overlay), `GitlabEditPlaceholder`.
     `GitlabIssueTitle` and `GitlabDue` take only the foreground of
     `Normal`, so the row highlight shows behind them.
     Key hints use `GitlabHintKey` (the `Function` colour, bold) for the

@@ -127,7 +127,7 @@ the head pipeline's stages and the diff size. The rows show at once; pipeline an
 with All/Running/Failed/Passed tabs. Active pipelines update in place every 10 s (`pipeline_refresh_ms`, `0` = off);
 `P` loads the next 50. `i` opens the pipeline. See `:help gg-ui-pipelines`.
 
-Detail views open over the picker and over each other; `q` goes back, `Q` closes everything. They are read-only:
+Detail views open over the picker and over each other; `q` goes back, `Q` closes everything:
 - **Issue**: description (markdown, task progress), activity (comments and events by day), assignees, labels,
   milestone, dates, related branches and merge requests. `gm` opens the milestone, `gp` the merge request.
 - **Milestone**: a date strip with the today marker, description, its issues and merge requests as tables, and
@@ -135,6 +135,11 @@ Detail views open over the picker and over each other; `q` goes back, `Q` closes
 - **Merge request**: a readiness strip (pipeline, conflicts, review, threads, draft), description with cards for the
   issues it closes, activity, changes, commits and its pipelines (live). `gp` opens the newest pipeline.
 - **Pipeline**: the stage/job graph and the selected job's log, tailed live while it runs (`F` follows).
+
+They also edit what they show (`:help gg-ui-edit`): `i` edits a description in place, `gt` / `ga` / `gr` / `gl` /
+`gM` / `gB` / `gs` / `gd` edit title, people, labels, milestone, target branch and dates in an overlay with completion,
+the Activity tab takes comments, replies, edits and resolves threads, `A` closes / reopens, approves and merges, the
+pipeline view retries, plays and cancels jobs, and an issue creates its branch (`gb`) or merge request (`gP`).
 
 See `:help gg-ui-detail`.
 

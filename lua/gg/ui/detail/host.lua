@@ -62,6 +62,7 @@ local SIDE_WIN_OPTS = {
 ---@field docs table<integer, gg.ui.Doc> buffer -> its last document
 ---@field ns integer
 ---@field closed boolean
+---@field editing { kind: "text"|"field"|"composer", id?: string }|nil an edit in progress
 local Host = {}
 Host.__index = Host
 
@@ -138,7 +139,15 @@ function M.new(opts)
   end)
   self:_chrome()
   ---@type gg.ui.Screen
-  self.screen = { group = self.group }
+  self.screen = {
+    group = self.group,
+    -- something changed in a view above this one: reload
+    refresh = function()
+      if self._on_refresh then
+        self._on_refresh()
+      end
+    end,
+  }
   return self
 end
 
@@ -250,12 +259,30 @@ function Host:map_later(key, name, desc, what)
   return { key = require("gg.ui.components.picker").first_key(self.keys[name]), desc = desc }
 end
 
---- Map the edit key in tab `key` and return its hint. Editing is not part
---- of the detail views yet: the key says so.
----@param key string
----@return gg.ui.Hint
-function Host:map_edit(key)
-  return self:map_later(key, "edit", "Edit", "editing")
+--- An edit starts: the content box turns orange for a text edit, its
+--- footer shows how to save or cancel. One edit at a time.
+---@param e { kind: "text"|"field"|"composer", id?: string }
+function Host:begin_edit(e)
+  self.editing = e
+  if e.kind == "text" then
+    self.group:set_border("content", "GitlabDetailBorderEditing")
+  end
+  local pk = require("gg.ui.components.picker").first_key
+  local hints = { { key = pk(self.keys.submit), desc = "Save" }, { key = pk(self.keys.cancel_edit), desc = "Cancel" } }
+  self._edit_footer = hint.chunks(vim.tbl_filter(function(h)
+    return h.key ~= nil
+  end, hints))
+  self:_chrome()
+end
+
+--- The edit ended: the border and footer are back.
+function Host:end_edit()
+  self.editing = nil
+  self._edit_footer = nil
+  if not self.closed then
+    self.group:set_border("content", nil)
+    self:_chrome()
+  end
 end
 
 --- Show tab `key` in the content window.
@@ -329,6 +356,9 @@ function Host:_chrome()
   local tail = self._tails and self._tails[self.active]
   if tail then
     footer = vim.list_extend(footer or {}, tail)
+  end
+  if self._edit_footer then
+    footer = self._edit_footer
   end
   -- no hints: no footer at all (a placeholder would break the border)
   footer = footer or ""
@@ -434,6 +464,38 @@ end
 function Host:sidebar_width()
   local f = self.sidebar_float
   return f and vim.api.nvim_win_is_valid(f.win) and vim.api.nvim_win_get_width(f.win) or nil
+end
+
+--- The window of a pane: "header", "content" or "sidebar" (nil when the
+--- sidebar is hidden).
+---@param pane "header"|"content"|"sidebar"
+---@return integer|nil
+function Host:pane_win(pane)
+  local f = self.group.members[pane]
+  return f and vim.api.nvim_win_is_valid(f.win) and f.win or nil
+end
+
+--- Where region `id` of a pane is on the screen: 0-based editor row and
+--- column of its first cell, its width and height. Nil when the pane or the
+--- region is not shown (scrolled away, sidebar hidden).
+---@param pane "header"|"content"|"sidebar"
+---@param id string
+---@return { row: integer, col: integer, width: integer, height: integer }|nil
+function Host:region_pos(pane, id)
+  local win = self:pane_win(pane)
+  if not win then
+    return nil
+  end
+  local d = self.docs[vim.api.nvim_win_get_buf(win)]
+  local r = d and d.regions and d.regions[id]
+  if not r then
+    return nil
+  end
+  local pos = vim.fn.screenpos(win, r.row + 1, r.col + 1)
+  if pos.row == 0 then
+    return nil
+  end
+  return { row = pos.row - 1, col = pos.col - 1, width = r.width, height = r.height }
 end
 
 --- The metadata of the line under the cursor in the active tab (see

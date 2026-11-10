@@ -114,6 +114,26 @@ T["header: title line, chips, strip, extra"] = function()
   eq(d.lines[2]:find("right", 1, true), nil)
 end
 
+T["regions: sidebar fields, header title, appended docs"] = function()
+  local d = sidebar.build({
+    { label = "Assignee", lines = {}, empty = "unassigned", id = "assignees" },
+    { label = "Branches", lines = { { { "src" } }, { { "dst" } } }, line_ids = { target = 2 } },
+    { label = "Dates", lines = { { { "x" } } }, ids = { "start", "due" } },
+  }, 32)
+  eq(d.regions.assignees, { row = 1, col = 1, width = 30, height = 1 })
+  eq(d.lines[d.regions.target.row + 1], " dst")
+  eq(d.regions.start, d.regions.due)
+  local outer = doc.new()
+  outer:blank()
+  outer:append(d)
+  eq(outer.regions.assignees.row, 2) -- shifted with the lines
+  local h = header.build({ width = 60, pill = chip.pill("●", "Open", "X"), title = "Hello", ref = "#1" })
+  local r = h.regions.title
+  eq(r.row, 1)
+  eq(h.lines[2]:sub(r.col + 1, r.col + 5), "Hello")
+  eq(r.width, 58 - 9 - 3) -- the room the title may take: inner width - pill and space - " #1"
+end
+
 T["header: tabs title"] = function()
   local t = header.tabs_title({ { key = "a", label = "Description" }, { key = "b", label = "Activity", count = 12 } }, "b")
   -- right after the border corner, like " Table " in the picker

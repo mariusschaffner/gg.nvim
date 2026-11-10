@@ -39,6 +39,13 @@ M.MODULES = {
 
 M.CURSOR_MARK = "▌"
 
+--- Which views a change of a kind affects (see `Stack:changed`).
+M.AFFECTS = {
+  issues = { issue = true, milestone = true },
+  merge_requests = { merge_request = true },
+  pipelines = { pipeline = true, merge_request = true },
+}
+
 local TABLE_WIN_OPTS = {
   cursorline = false, -- the row highlight is an overlay
   wrap = false,
@@ -194,6 +201,19 @@ function M.new(opts)
     resume = function()
       self:_each_view("resume")
       self:render()
+    end,
+    -- a detail view changed something: reload the loaded views it affects
+    refresh = function(_, kinds)
+      for _, view in pairs(self.views) do
+        local affected = M.AFFECTS[view.name] or {}
+        local hit = false
+        for kind in pairs(kinds) do
+          hit = hit or affected[kind] == true
+        end
+        if hit and view.status ~= "idle" and view.load then
+          view:load()
+        end
+      end
     end,
   })
   self.group:focus("table")

@@ -20,6 +20,12 @@ T["config: defaults and merge"] = function()
   eq(c.on_inspect_issue, nil) -- the detail views replaced the callbacks
   eq({ c.pipeline_refresh_ms, c.pipeline_detail_poll_ms, c.job_log_poll_ms, c.keymaps.inspect_pipeline }, { 10000, 4000, 1500, "i" })
   eq({ c.keymaps.close_all, c.keymaps.detail_next_tab, c.keymaps.open_item, c.keymaps.goto_milestone }, { "Q", "<Tab>", { "i", "<CR>" }, "gm" })
+  -- editing keys and merge defaults
+  eq({ c.keymaps.edit_title, c.keymaps.edit_labels, c.keymaps.submit, c.keymaps.actions, c.keymaps.retry_pipeline }, { "gt", "gl", "<C-s>", "A", "gR" })
+  eq({ c.merge_squash, c.merge_delete_source_branch }, { nil, nil })
+  eq(config.setup({ merge_squash = true, merge_delete_source_branch = false }), true)
+  eq({ config.get().merge_squash, config.get().merge_delete_source_branch }, { true, false })
+  config.setup()
   eq(config.setup({ pipeline_refresh_ms = 0 }), true) -- 0 turns the live refresh off
   eq({ config.setup({ page_size = 10, keymaps = { close = false, refresh = "r" } }) }, { true, nil })
   c = config.get()
@@ -40,6 +46,8 @@ T["config: validation keeps the previous options"] = function()
     { { on_inspect_issue = function() end }, "ui.on_inspect_issue" }, -- removed: unknown
     { { keymaps = { log_follow = 1 } }, "ui.keymaps.log_follow" },
     { { job_log_poll_ms = -1 }, "ui.job_log_poll_ms" },
+    { { merge_squash = "yes" }, "ui.merge_squash" },
+    { { keymaps = { edit_title = 1 } }, "ui.keymaps.edit_title" },
     { { pipeline_detail_poll_ms = 1.5 }, "ui.pipeline_detail_poll_ms" },
     { { pipeline_refresh_ms = -1 }, "ui.pipeline_refresh_ms" },
     { { pipeline_refresh_ms = 1.5 }, "ui.pipeline_refresh_ms" },

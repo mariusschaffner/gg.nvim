@@ -3,9 +3,14 @@
 ---
 --- The work items and merge requests are drawn by the issues and merge
 --- requests tables' own renderers (without the milestone grouping); `i` /
---- `<CR>` opens the row under the cursor, `L` / `H` switch their state tabs.
---- Read-only.
+--- `<CR>` opens the row under the cursor. Edits: `i` the description, `gt`
+--- the title, `gs` / `gd` the dates (over the header strip), `A` close /
+--- reopen.
+local confirm = require("gg.ui.components.confirm")
 local date = require("gg.ui.lib.date")
+local edit = require("gg.ui.detail.edit")
+local editing = require("gg.ui.detail.editing")
+local fields = require("gg.ui.detail.fields")
 local detail_table = require("gg.ui.components.detail_table")
 local doc = require("gg.ui.lib.doc")
 local gg = require("gg")
@@ -99,9 +104,177 @@ function M.open(ctx, item)
       open_desc = "Open merge request",
     }),
   }
-  self.edit_hint = self.h:map_edit("description")
+  self:_edit_keys()
   self:load()
   return self
+end
+
+---@private
+function View:_edit_keys()
+  local h, k = self.h, self.h.keys
+  h:map("description", k.edit, function()
+    self:edit_description()
+  end, "Edit the description")
+  h:map_all(k.edit_title, function()
+    self:edit_field("title")
+  end, "Edit the title")
+  h:map_all(k.edit_start_date, function()
+    self:edit_field("start_date")
+  end, "Edit the start date")
+  h:map_all(k.edit_due_date, function()
+    self:edit_field("due_date")
+  end, "Edit the due date")
+  h:map_all(k.actions, function()
+    self:actions()
+  end, "Actions")
+end
+
+-- the project a milestone can be changed in (group milestones cannot)
+---@private
+function View:_editable()
+  if not self.full then
+    return nil, "Still loading the milestone"
+  end
+  if self.milestone.group and not self.milestone.project then
+    return nil, "Group milestones are changed in their group"
+  end
+  return self.milestone.project or self.project
+end
+
+---@private
+function View:_update(project, fields_)
+  return gg.milestones.update(vim.tbl_extend("force", { host = self.ctx.host, project = project, id = self.milestone.id }, fields_))
+end
+
+-- take an update's answer (REST: fewer fields) into the milestone
+---@private
+function View:_take(result, sent)
+  for k, v in pairs(result or {}) do
+    if k ~= "project" and k ~= "group" then
+      self.milestone[k] = v
+    end
+  end
+  for k, v in pairs(sent or {}) do
+    if k ~= "state_event" then
+      self.milestone[k] = v ~= false and v or nil
+    end
+  end
+end
+
+---@private
+function View:_changed()
+  self.ctx.stack:changed("milestone")
+end
+
+--- `i`: edit the description in place (fetched again first).
+function View:edit_description()
+  local project, why = self:_editable()
+  if not project then
+    return edit.refuse(why)
+  end
+  local info = self.h:current()
+  editing.text(self.h, {
+    what = "description",
+    cursor = info and info.src,
+    load = function(cb)
+      gg.milestones.get({ host = self.ctx.host, id = self.milestone.id }):on_done(function(m, err)
+        cb(m and m.description or nil, err)
+      end)
+    end,
+    save = function(text)
+      return self:_update(project, { description = text })
+    end,
+    apply = function(m)
+      self:_take(m)
+    end,
+    changed = function()
+      self:_changed()
+    end,
+    render = function()
+      self:render()
+    end,
+  })
+end
+
+--- Edit "title", "start_date" or "due_date".
+---@param name string
+function View:edit_field(name)
+  local project, why = self:_editable()
+  if not project then
+    return edit.refuse(why)
+  end
+  local base = {
+    h = self.h,
+    changed = function()
+      self:_changed()
+    end,
+    render = function()
+      self:render()
+    end,
+  }
+  if name == "title" then
+    fields.title(vim.tbl_extend("force", base, {
+      text = self.milestone.title or "",
+      required = true,
+      save = function(t)
+        return self:_update(project, { title = t })
+      end,
+      apply = function(m)
+        self:_take(m)
+      end,
+    }))
+  else
+    fields.date(vim.tbl_extend("force", base, {
+      id = name,
+      label = name == "start_date" and "start date" or "due date",
+      pane = "header",
+      date = self.milestone[name],
+      save = function(value)
+        self._sent = { [name] = value }
+        return self:_update(project, { [name] = value })
+      end,
+      apply = function(m)
+        self:_take(m, self._sent)
+      end,
+    }))
+  end
+end
+
+--- `A`: close or reopen the milestone.
+function View:actions()
+  local project, why = self:_editable()
+  if not project then
+    return edit.refuse(why)
+  end
+  local closed = self.milestone.state == "closed"
+  local event = closed and "activate" or "close"
+  confirm.menu("Milestone %" .. tostring(self.milestone.id), {
+    {
+      label = closed and "Reopen milestone" or "Close milestone",
+      run = function()
+        edit.run({
+          what = "milestone",
+          busy = closed and "Reopening milestone…" or "Closing milestone…",
+          success = closed and "Milestone reopened" or "Milestone closed",
+          task = function()
+            return self:_update(project, { state_event = event })
+          end,
+          apply = function(m)
+            self:_take(m)
+          end,
+          alive = function()
+            return not self.h.closed
+          end,
+          changed = function()
+            self:_changed()
+          end,
+          render = function()
+            self:render()
+          end,
+        })
+      end,
+    },
+  })
 end
 
 ---@private
@@ -204,7 +377,15 @@ function View:render()
   end
   local data = self:_data()
   local body, title = render.header(data, h:header_width(), not h:has_sidebar())
-  h:set_header(body, title)
+  local k = h.keys
+  local editable = self:_editable() ~= nil
+  local date_hints = editable and vim.tbl_filter(function(x)
+    return x.key ~= nil
+  end, {
+    { key = picker.first_key(k.edit_start_date), desc = "Start" },
+    { key = picker.first_key(k.edit_due_date), desc = "Due" },
+  }) or {}
+  h:set_header(body, title, #date_hints > 0 and require("gg.ui.lib.hint").chunks(date_hints) or nil)
   if h:has_sidebar() then
     h:set_sidebar(render.sidebar(data, h:sidebar_width()))
   end
@@ -261,9 +442,9 @@ function View:render()
     retry_key = picker.first_key(h.keys.refresh) or false,
   }))
 
-  local k = h.keys
   local open = picker.first_key(k.open_item)
-  h:set_hints("description", { self.edit_hint })
+  local ek = picker.first_key(k.edit)
+  h:set_hints("description", editable and ek and { { key = ek, desc = "Edit" } } or {})
   h:set_hints("work_items", { { key = open, desc = "Issue" } })
   h:set_hints("merge_requests", { { key = open, desc = "Merge request" } })
 end

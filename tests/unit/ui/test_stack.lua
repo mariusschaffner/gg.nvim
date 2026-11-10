@@ -176,4 +176,38 @@ T["a hidden picker stays hidden across a resize"] = function()
   eq(vim.api.nvim_win_get_config(v.table_float.win).height, 30 - 1 - 3 - 2)
 end
 
+T["a change above refreshes the screens below when they are shown again"] = function()
+  local v = open_picker()
+  local loads = 0
+  local real = v.load
+  v.load = function(self)
+    loads = loads + 1
+    return real(self)
+  end
+  local log1, log2 = {}, {}
+  push(v, log1)
+  push(v, log2)
+  -- the top screen changed an issue
+  v.shell.stack:changed("issue")
+  eq(log1, {})
+  keys("q") -- back to the first detail view: it reloads
+  eq(log1, { "refresh" })
+  eq(loads, 0)
+  keys("q") -- back to the picker: the issues view reloads, once
+  eq(loads, 1)
+  keys("Q")
+  -- a kind the view does not show leaves it alone
+  v = open_picker()
+  loads = 0
+  real = v.load
+  v.load = function(self)
+    loads = loads + 1
+    return real(self)
+  end
+  push(v, {})
+  v.shell.stack:changed("pipeline")
+  keys("q")
+  eq(loads, 0)
+end
+
 return T

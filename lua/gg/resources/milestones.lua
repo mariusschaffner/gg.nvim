@@ -202,8 +202,8 @@ end
 ---@field id integer the milestone's global ID
 ---@field title? string
 ---@field description? string
----@field start_date? string YYYY-MM-DD
----@field due_date? string YYYY-MM-DD
+---@field start_date? string|false YYYY-MM-DD, or false to clear it (sent as null)
+---@field due_date? string|false YYYY-MM-DD, or false to clear it (sent as null)
 ---@field state_event? "close"|"activate"
 
 --- Update a project milestone (REST). At least one field.
@@ -216,8 +216,8 @@ function M.update(args)
     id = "id",
     title = "string?",
     description = "text?",
-    start_date = "date?",
-    due_date = "date?",
+    start_date = "date_or_false?",
+    due_date = "date_or_false?",
     state_event = common.enum(true, "close", "activate"),
   }
   local err = common.check(args, spec)
@@ -227,8 +227,10 @@ function M.update(args)
   local body = {
     title = args.title,
     description = args.description,
-    start_date = args.start_date,
-    due_date = args.due_date,
+    -- false clears a date: JSON null. The docs do not describe clearing;
+    -- GitLab's API treats a null date as "no date".
+    start_date = args.start_date == false and vim.NIL or args.start_date,
+    due_date = args.due_date == false and vim.NIL or args.due_date,
     state_event = args.state_event,
   }
   if next(body) == nil then

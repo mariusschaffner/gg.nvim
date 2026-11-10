@@ -56,6 +56,11 @@ M.LINKS = {
   { "GitlabPipelineSourceSchedule", "DiagnosticWarn" },
   -- detail views; dimmed text is plain gray (Comment's colour, never italic)
   { "GitlabDetailBorder", "GitlabTableBorder" },
+  -- while something is edited: its box border and its sidebar label
+  { "GitlabDetailBorderEditing", "DiagnosticWarn" },
+  { "GitlabDetailLabelEditing", "DiagnosticWarn" },
+  { "GitlabFieldEdit", "NormalFloat" },
+  { "GitlabEditPlaceholder", "GitlabDetailDim" },
   { "GitlabDetailTabActive", "GitlabPickerTitle" }, -- like the picker's " Table " title
   { "GitlabDetailBreadcrumb", "GitlabDetailDim" },
   { "GitlabDetailRef", "DiagnosticWarn" },

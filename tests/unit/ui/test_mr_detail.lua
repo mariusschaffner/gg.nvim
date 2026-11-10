@@ -86,7 +86,7 @@ T["readiness: gates and the blocking one"] = function()
   -- merged: green with neutral labels
   r = readiness.compute({ mr = { state = "merged", target_branch = "main" }, checks = { head_pipeline_status = "failed" } })
   eq(gate_states(r), { "pipeline:passed", "conflicts:passed" })
-  eq({ r.gates[1].label, r.merge.label }, { "Pipeline", "Merged into main" })
+  eq({ r.gates[1].label, r.merge.label }, { "", "Merged into main" }) -- the hint names the pipeline
 end
 
 T["readiness nodes and the strip"] = function()
@@ -203,7 +203,8 @@ T["view: header strip, sidebar, description cards"] = function()
   local hl = lines(g.members.header.buf)
   eq(hl[1], "")
   eq(vim.startswith(hl[2], "  ● Merged  Rotate Terraform state backend credentials !88"), true)
-  eq(vim.startswith(hl[5], " Pipeline "), true)
+  eq(hl[5]:find("Pipeline", 1, true), nil) -- only the hint below says pipeline
+  eq(hl[6]:find("[gp] pipeline", 1, true) ~= nil, true)
   eq(vim.endswith(hl[5], "Merged into main"), true)
   eq(hl[#hl], "")
   local side = table.concat(lines(g.members.sidebar.buf), "\n")
@@ -216,10 +217,10 @@ T["view: header strip, sidebar, description cards"] = function()
   eq(vim.startswith(c[5], "  ● #214  Rotate Terraform state backend credentials"), true)
   eq(vim.endswith(c[5], "WF:Review "), true)
   eq(vim.startswith(c[6], "  ● #211  WinRM over HTTPS"), true)
-  local footer = table.concat(vim.tbl_map(function(ch)
-    return ch[1]
-  end, vim.api.nvim_win_get_config(g.members.content.win).footer))
-  eq(footer, " [i] Edit ")
+  -- a merged merge request cannot be edited: no [i] Edit, no field keys
+  eq(vim.api.nvim_win_get_config(g.members.content.win).footer, nil)
+  eq(side:find("[ga]", 1, true), nil)
+  eq(side:find("[gl]", 1, true) ~= nil, true) -- labels and milestone stay editable
   -- <CR> on a card opens the issue
   local got
   local real = detail.issue

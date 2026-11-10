@@ -29,7 +29,7 @@ local M = {}
 ---@field detail_next_tab gg.ui.Keymap Detail: next tab (default "<Tab>")
 ---@field detail_prev_tab gg.ui.Keymap Detail: previous tab (default "<S-Tab>")
 ---@field open_item gg.ui.Keymap Detail: open the row or card under the cursor (default { "i", "<CR>" })
----@field edit gg.ui.Keymap Detail, Description tab: edit (default "i"; editing comes in a later version)
+---@field edit gg.ui.Keymap Detail, Description tab: edit the description in place (default "i")
 ---@field goto_milestone gg.ui.Keymap Issue detail: open the issue's milestone (default "gm")
 ---@field goto_mr gg.ui.Keymap Issue detail: open the linked merge request (default "gp")
 ---@field goto_pipeline gg.ui.Keymap Merge request detail: open the latest pipeline (default "gp")
@@ -42,6 +42,34 @@ local M = {}
 ---@field graph_right gg.ui.Keymap Pipeline detail: next stage (default "l")
 ---@field graph_down gg.ui.Keymap Pipeline detail: next job in the stage (default "j")
 ---@field graph_up gg.ui.Keymap Pipeline detail: previous job in the stage (default "k")
+---@field edit_title gg.ui.Keymap Detail: edit the title (default "gt")
+---@field toggle_task gg.ui.Keymap Description: toggle the task under the cursor (default "x")
+---@field edit_assignees gg.ui.Keymap Issue / merge request: edit the assignees (default "ga")
+---@field edit_reviewers gg.ui.Keymap Merge request: edit the reviewers (default "gr")
+---@field edit_labels gg.ui.Keymap Issue / merge request: edit the labels (default "gl")
+---@field edit_milestone gg.ui.Keymap Issue / merge request: edit the milestone (default "gM")
+---@field edit_target_branch gg.ui.Keymap Merge request: edit the target branch (default "gB")
+---@field edit_start_date gg.ui.Keymap Issue / milestone: edit the start date (default "gs")
+---@field edit_due_date gg.ui.Keymap Issue / milestone: edit the due date (default "gd")
+---@field toggle_delete_branch gg.ui.Keymap Merge request: toggle deleting the source branch on merge (default "gb")
+---@field create_branch gg.ui.Keymap Issue: create a branch for it (default "gb")
+---@field create_mr gg.ui.Keymap Issue: create a merge request for it (default "gP")
+---@field comment gg.ui.Keymap Activity: write a comment (default "i")
+---@field reply gg.ui.Keymap Activity: reply to the thread under the cursor (default "gc")
+---@field edit_comment gg.ui.Keymap Activity: edit your comment under the cursor (default "gE")
+---@field delete_comment gg.ui.Keymap Activity: delete your comment under the cursor (default "gD")
+---@field toggle_resolved gg.ui.Keymap Activity: resolve / unresolve the thread under the cursor (default "gX")
+---@field submit gg.ui.Keymap While editing: save / post (default "<C-s>")
+---@field submit_resolve gg.ui.Keymap Reply composer: post and resolve the thread (default "<C-r>")
+---@field cancel_edit gg.ui.Keymap While editing (normal mode): cancel (default "<Esc>")
+---@field actions gg.ui.Keymap Detail: the actions menu (close, reopen, merge, approve, …) (default "A")
+---@field retry_job gg.ui.Keymap Pipeline detail, graph: retry the selected job (default "r")
+---@field play_job gg.ui.Keymap Pipeline detail, graph: play the selected manual job (default "p")
+---@field cancel_job gg.ui.Keymap Pipeline detail, graph: cancel the selected job (default "X")
+---@field retry_pipeline gg.ui.Keymap Pipeline detail: retry the failed jobs (default "gR")
+---@field cancel_pipeline gg.ui.Keymap Pipeline detail: cancel the pipeline (default "gX")
+---@field complete_next gg.ui.Keymap Field edit: next completion (default "<Tab>")
+---@field complete_prev gg.ui.Keymap Field edit: previous completion (default "<S-Tab>")
 
 ---@class gg.ui.Order
 ---@field top? fun(a: gg.Issue, b: gg.Issue): boolean issues without a milestone
@@ -58,6 +86,8 @@ local M = {}
 ---@field pipeline_detail_poll_ms integer refresh interval of an active pipeline in its detail view; 0 = off
 ---@field job_log_poll_ms integer how often the log of a running job is tailed; 0 = off
 ---@field user_colors table<string, string> username -> highlight group (e.g. "GitlabUser1")
+---@field merge_squash boolean|nil squash when merging; nil: the merge request's own setting
+---@field merge_delete_source_branch boolean|nil delete the source branch when merging; nil: the merge request's own setting
 
 local function defaults()
   return {
@@ -98,6 +128,34 @@ local function defaults()
       graph_right = "l",
       graph_down = "j",
       graph_up = "k",
+      edit_title = "gt",
+      toggle_task = "x",
+      edit_assignees = "ga",
+      edit_reviewers = "gr",
+      edit_labels = "gl",
+      edit_milestone = "gM",
+      edit_target_branch = "gB",
+      edit_start_date = "gs",
+      edit_due_date = "gd",
+      toggle_delete_branch = "gb",
+      create_branch = "gb",
+      create_mr = "gP",
+      comment = "i",
+      reply = "gc",
+      edit_comment = "gE",
+      delete_comment = "gD",
+      toggle_resolved = "gX",
+      submit = "<C-s>",
+      submit_resolve = "<C-r>",
+      cancel_edit = "<Esc>",
+      actions = "A",
+      retry_job = "r",
+      play_job = "p",
+      cancel_job = "X",
+      retry_pipeline = "gR",
+      cancel_pipeline = "gX",
+      complete_next = "<Tab>",
+      complete_prev = "<S-Tab>",
     },
     order = {},
     pipeline_refresh_ms = 10000,
@@ -119,6 +177,12 @@ local function check_int(v, key, min, max)
   end
 end
 
+local function check_bool(v, key)
+  if v ~= nil and type(v) ~= "boolean" then
+    return fail(key, "must be true, false or nil (the merge request's own setting)")
+  end
+end
+
 local function check_fn(v, key)
   if v ~= nil and type(v) ~= "function" then
     return fail(key, "must be a function")
@@ -135,6 +199,8 @@ local TOP = {
   pipeline_detail_poll_ms = true,
   job_log_poll_ms = true,
   user_colors = true,
+  merge_squash = true,
+  merge_delete_source_branch = true,
 }
 
 local function is_key(v)
@@ -178,6 +244,8 @@ function M.validate(opts)
     or check_int(opts.pipeline_refresh_ms, "pipeline_refresh_ms", 0, 600000)
     or check_int(opts.pipeline_detail_poll_ms, "pipeline_detail_poll_ms", 0, 600000)
     or check_int(opts.job_log_poll_ms, "job_log_poll_ms", 0, 600000)
+    or check_bool(opts.merge_squash, "merge_squash")
+    or check_bool(opts.merge_delete_source_branch, "merge_delete_source_branch")
   if err then
     return err
   end

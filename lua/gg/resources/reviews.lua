@@ -227,4 +227,19 @@ function M.approve(args)
   end)
 end
 
+--- Withdraw the current user's approval of a merge request. GitLab answers
+--- with the approval state (201).
+---@param args { host: string, project: string|integer, iid: integer }
+---@return gg.Task resolves with { approvals_required: integer|nil, approvals_left: integer|nil }
+function M.unapprove(args)
+  return common.run(args, spec(), function()
+    local res, err = rest.request(args.host, "POST", mr_path(args, "/unapprove"), { body = vim.empty_dict() }):await()
+    if err then
+      return nil, err
+    end
+    local d = res.data or {}
+    return { approvals_required = tonumber(d.approvals_required), approvals_left = tonumber(d.approvals_left) }
+  end)
+end
+
 return M

@@ -208,7 +208,7 @@ T["view: header graph, the running job's log, following"] = function()
   local footer = table.concat(vim.tbl_map(function(c)
     return c[1]
   end, vim.api.nvim_win_get_config(win).footer))
-  eq(footer, " [F] Follow • [/] Search • [za] Fold ")
+  eq(footer, " [F] Follow • [/] Search ")
 end
 
 T["view: graph keys pick jobs; <CR> / <Esc> switch modes"] = function()
@@ -236,7 +236,7 @@ T["view: graph keys pick jobs; <CR> / <Esc> switch modes"] = function()
   local footer = table.concat(vim.tbl_map(function(c)
     return c[1]
   end, vim.api.nvim_win_get_config(g.members.header.win).footer))
-  eq(footer, " [<Esc>] Graph ")
+  eq(footer, " [<Esc>] Graph • [gX] Cancel pipeline ") -- the pipeline is running
   vim.api.nvim_win_set_cursor(win, { 1, 0 })
   keys("j")
   eq(vim.api.nvim_win_get_cursor(win)[1], 2)
@@ -244,7 +244,7 @@ T["view: graph keys pick jobs; <CR> / <Esc> switch modes"] = function()
   footer = table.concat(vim.tbl_map(function(c)
     return c[1]
   end, vim.api.nvim_win_get_config(g.members.header.win).footer))
-  eq(footer, " [h/l] Stage • [j/k] Job • [<CR>] Log ")
+  eq(footer, " [h/l] Stage • [j/k] Job • [<CR>] Log • [X] Cancel • [gX] Cancel pipeline ") -- molecule is running
   local traces = 0
   for _, r in ipairs(fake:requests()) do
     if r.path and r.path:find("/trace", 1, true) then
@@ -299,6 +299,74 @@ T["view: the job finishing fetches the rest of its log once"] = function()
     end
   end
   eq(n, 2)
+end
+
+T["view: job and pipeline actions, with confirmations"] = function()
+  local jobs = "/api/v4/projects/" .. X.ENC .. "/jobs/"
+  local job = function(id, name, st)
+    return { body = { id = id, name = name, status = st, stage = "test", allow_failure = false, web_url = "https://gitlab.example.com/x" } }
+  end
+  local notes = {}
+  local saved = { notify = vim.notify, input = vim.ui.input }
+  vim.notify = function(msg)
+    table.insert(notes, msg)
+  end
+  vim.ui.input = function(_, cb)
+    cb("y")
+  end
+  local ok, err = pcall(function()
+    local g, fake = open({
+      X.pipeline_graph(nil, { ["repeat"] = true }),
+      X.trace(102, X.LOG, { ["repeat"] = true }),
+      X.trace(103, "lint" .. string.char(10), { ["repeat"] = true }),
+      { request = { method = "POST", path = jobs .. "103/retry" }, response = job(105, "lint", "pending") },
+      { request = { method = "POST", path = jobs .. "104/play" }, response = job(104, "deploy-prod", "pending") },
+      { request = { method = "POST", path = jobs .. "102/cancel" }, response = job(102, "molecule", "canceled") },
+      { request = { method = "POST", path = "/api/v4/projects/" .. X.ENC .. "/pipelines/4821/cancel" }, response = { body = { id = 4821, status = "canceled", ref = "main", sha = "a1f3c9e0" } } },
+    }, { pipeline_detail_poll_ms = 0, job_log_poll_ms = 0 })
+    local function posted(path)
+      for _, r in ipairs(fake:requests()) do
+        if r.method == "POST" and r.path == path then
+          return true
+        end
+      end
+      return false
+    end
+    -- the failed lint job: [r] Retry in the hints, r retries it
+    keys("j")
+    local hfoot = table.concat(vim.tbl_map(function(c)
+      return c[1]
+    end, vim.api.nvim_win_get_config(g.members.header.win).footer))
+    eq(hfoot:find("[r] Retry", 1, true) ~= nil, true)
+    keys("r")
+    H.wait_for(function()
+      return posted(jobs .. "103/retry")
+    end)
+    -- the manual deploy job: play
+    keys("l")
+    keys("p")
+    H.wait_for(function()
+      return posted(jobs .. "104/play")
+    end)
+    -- the running molecule job: cancel asks first
+    keys("hk")
+    keys("X")
+    H.wait_for(function()
+      return posted(jobs .. "102/cancel")
+    end)
+    -- the pipeline: retry is refused while it runs, cancel asks first
+    keys("gR")
+    eq(notes[#notes], "gg.ui: Pipeline #4821 has no failed jobs to retry")
+    keys("gX")
+    H.wait_for(function()
+      return posted("/api/v4/projects/" .. X.ENC .. "/pipelines/4821/cancel")
+    end)
+    H.wait_for(function()
+      return vim.tbl_contains(notes, "gg.ui: Pipeline #4821 canceled")
+    end)
+  end)
+  vim.notify, vim.ui.input = saved.notify, saved.input
+  assert(ok, err)
 end
 
 return T

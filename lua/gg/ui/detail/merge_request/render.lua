@@ -41,6 +41,8 @@ end
 ---@field user_colors? table<string, string>
 ---@field me? string
 ---@field pipeline_key? string
+---@field keys? table<string, string|nil> first key of each edit keymap (sidebar hints)
+---@field editing? string the sidebar field being edited
 
 --- The readiness block for the header (or a loading / error line).
 ---@param data gg.ui.MrDetailData
@@ -133,6 +135,8 @@ local REVIEW = {
 function M.sidebar(data, width)
   local mr = data.mr
   local inner = sidebar.inner(width)
+  local keys = data.keys or {}
+  local open = mr.state == "opened" or mr.state == "locked"
   local opts = { overrides = data.user_colors, me = data.me }
   local assignees = vim.tbl_map(function(u)
     return avatar.segments(u, opts)
@@ -172,13 +176,16 @@ function M.sidebar(data, width)
         { { M.BRANCH .. " " .. (mr.source_branch or "?"), "GitlabBranchSource" } },
         { { "↳ ", "GitlabDetailMuted" }, { M.BRANCH .. " " .. (mr.target_branch or "?"), "GitlabDetailMuted" } },
       },
+      line_ids = { target_branch = 2 },
+      hint = open and keys.edit_target_branch,
+      editing = data.editing == "target_branch",
     },
-    { label = "Assignee", lines = assignees, empty = "unassigned" },
-    { label = "Reviewers", lines = reviewers, empty = "no reviewers" },
-    { label = "Labels", lines = chip.wrap(mr.labels or {}, inner, data.chip_hl), empty = "no labels" },
-    { label = "Milestone", lines = mr.milestone and { { { "◆ " .. mr.milestone.title, "GitlabMilestoneRef" } } } or {}, empty = "no milestone" },
+    { label = "Assignee", lines = assignees, empty = "unassigned", id = "assignees", hint = open and keys.edit_assignees, editing = data.editing == "assignees" },
+    { label = "Reviewers", lines = reviewers, empty = "no reviewers", id = "reviewers", hint = open and keys.edit_reviewers, editing = data.editing == "reviewers" },
+    { label = "Labels", lines = chip.wrap(mr.labels or {}, inner, data.chip_hl), empty = "no labels", id = "labels", hint = keys.edit_labels, editing = data.editing == "labels" },
+    { label = "Milestone", lines = mr.milestone and { { { "◆ " .. mr.milestone.title, "GitlabMilestoneRef" } } } or {}, empty = "no milestone", id = "milestone", hint = keys.edit_milestone, editing = data.editing == "milestone" },
     { divider = true },
-    { label = "On merge", lines = on_merge },
+    { label = "On merge", lines = on_merge, line_ids = { delete_branch = 1 }, hint = open and keys.toggle_delete_branch },
   }, width)
 end
 

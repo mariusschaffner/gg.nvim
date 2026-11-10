@@ -19,6 +19,9 @@ local layout = require("gg.ui.components.layout")
 
 local M = {}
 
+--- Rows a dock takes at the bottom of the content box (border, line, border).
+M.DOCK_ROWS = 3
+
 local CONTENT_WIN_OPTS = {
   wrap = false,
   number = false,
@@ -86,6 +89,7 @@ function M.new(opts)
     want_sidebar = opts.sidebar == true,
     bufs = {},
     docs = {},
+    docks = {}, -- tab key -> the box pinned to its bottom (false: none)
     header_h = 1,
     closed = false,
     _on_render = opts.on_render,
@@ -154,6 +158,9 @@ end
 ---@private
 function Host:_rects()
   local r = layout.detail({ header_h = self.header_h, sidebar = self.want_sidebar })
+  -- the dock: a one-line box over the last rows inside the content box
+  local c = r.content
+  r.dock = { row = c.row + c.height - M.DOCK_ROWS + 1, col = c.col + 1, width = math.max(1, c.width - 2), height = 1 }
   return r
 end
 
@@ -267,11 +274,17 @@ function Host:begin_edit(e)
   if e.kind == "text" then
     self.group:set_border("content", "GitlabDetailBorderEditing")
   end
-  local pk = require("gg.ui.components.picker").first_key
-  local hints = { { key = pk(self.keys.submit), desc = "Save" }, { key = pk(self.keys.cancel_edit), desc = "Cancel" } }
-  self._edit_footer = hint.chunks(vim.tbl_filter(function(h)
-    return h.key ~= nil
-  end, hints))
+  -- a composer has its own footer: the content box shows none meanwhile
+  if e.kind == "composer" then
+    self._edit_footer = ""
+  else
+    local pk = require("gg.ui.components.picker").first_key
+    local hints = { { key = pk(self.keys.submit), desc = "Save" }, { key = pk(self.keys.cancel_edit), desc = "Cancel" } }
+    self._edit_footer = hint.chunks(vim.tbl_filter(function(h)
+      return h.key ~= nil
+    end, hints))
+  end
+  self:_sync_dock()
   self:_chrome()
 end
 
@@ -281,7 +294,69 @@ function Host:end_edit()
   self._edit_footer = nil
   if not self.closed then
     self.group:set_border("content", nil)
+    self:_sync_dock()
     self:_chrome()
+  end
+end
+
+--- Pin `d` (one line) in a box to the bottom of tab `key`, inside the
+--- content box over its last rows, or drop it (`nil`). The tab's content
+--- ends with blank rows so nothing stays under the box, and the cursor
+--- keeps clear of it. Shown while the tab is, hidden during an edit.
+--- Call it before `set_content` of the tab.
+---@param key string
+---@param d gg.ui.Doc|nil
+function Host:set_dock(key, d)
+  self._dock_watch = self._dock_watch or {}
+  if d and not self._dock_watch[key] then
+    self._dock_watch[key] = true
+    local buf = self:buf(key)
+    vim.api.nvim_create_autocmd("CursorMoved", {
+      group = self.augroup,
+      buffer = buf,
+      callback = function()
+        local win = self.content_float.win
+        if not self.docks[key] or self.editing or vim.api.nvim_win_get_buf(win) ~= buf then
+          return
+        end
+        local max = vim.api.nvim_buf_line_count(buf) - M.DOCK_ROWS
+        local pos = vim.api.nvim_win_get_cursor(win)
+        if max >= 1 and pos[1] > max then
+          pcall(vim.api.nvim_win_set_cursor, win, { max, pos[2] })
+        end
+      end,
+    })
+  end
+  self.docks[key] = d or false
+  self:_sync_dock()
+end
+
+-- show the active tab's dock, or none
+---@private
+function Host:_sync_dock()
+  if self.closed then
+    return
+  end
+  local d = not self.editing and self.docks[self.active] or nil
+  local win = self.content_float.win
+  if d then
+    if not self.group.members.dock then
+      self.dock_float = self.group:add({
+        name = "dock",
+        focusable = false,
+        zindex = 60,
+        filetype = "gg_ui_detail_dock",
+        win_opts = SIDE_WIN_OPTS,
+      })
+    end
+    self:write(self.dock_float.buf, d)
+  elseif self.group.members.dock then
+    self.group:remove("dock")
+    self.dock_float = nil
+  end
+  if vim.api.nvim_win_is_valid(win) then
+    -- the cursor stays above the box (the rows under it are padding)
+    vim.wo[win].scrolloff = d and M.DOCK_ROWS or -1
   end
 end
 
@@ -299,6 +374,7 @@ function Host:show_tab(key)
       vim.api.nvim_set_option_value(o, v, { win = win })
     end
   end
+  self:_sync_dock()
   self:_chrome()
   if self._on_tab then
     self._on_tab(key)
@@ -406,6 +482,11 @@ function Host:set_content(key, d)
   local padded = doc.new()
   padded:blank()
   padded:append(d)
+  if self.docks[key] then
+    for _ = 1, M.DOCK_ROWS do
+      padded:blank()
+    end
+  end
   self:write(self:buf(key), padded)
 end
 
@@ -495,7 +576,10 @@ function Host:region_pos(pane, id)
   if pos.row == 0 then
     return nil
   end
-  return { row = pos.row - 1, col = pos.col - 1, width = r.width, height = r.height }
+  -- the pane's text area ends here (it does not scroll sideways)
+  local left = vim.fn.screenpos(win, r.row + 1, 1).col - 1
+  local limit = left >= 0 and (left + vim.api.nvim_win_get_width(win)) or nil
+  return { row = pos.row - 1, col = pos.col - 1, width = r.width, height = r.height, limit = limit }
 end
 
 --- The metadata of the line under the cursor in the active tab (see

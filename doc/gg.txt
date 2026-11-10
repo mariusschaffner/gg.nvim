@@ -896,8 +896,8 @@ Editing                                                         *gg-ui-edit*
     mode cancels. The keys show in the sidebar labels (`ASSIGNEE  [ga]`), on
     a milestone in the header's bottom border (`[gs] Start • [gd] Due`).
 
-    Comments (Activity): the box at the end (`(XX) › write a new
-    comment…  [i] Comment`) opens with `i`; `gc` replies to the thread under
+    Comments (Activity): a box pinned to the bottom of the tab (`MS › write
+    a new comment…  [i] Comment`) opens with `i` into the composer; `gc` replies to the thread under
     the cursor (below it; `@author` seeded), `<C-r>` posts and resolves;
     `gE` edits and `gD` deletes (after `[y/N]`) your own comment; `gX`
     resolves / unresolves the thread. `@` completes usernames. The comment
@@ -910,7 +910,9 @@ Editing                                                         *gg-ui-edit*
     ready, close (asks first) / reopen. `gb` on a merge request toggles
     deleting the source branch on merge.
 
-    From an issue: `gb` creates a branch `<iid>-<title>` from the branch you
+    From an issue (DEVELOPMENT in the sidebar shows `+ link branch [gb]` and
+    `+ link merge request [gP]` while there is none): `gb` creates a branch
+    `<iid>-<title>` from the branch you
     pick (default branch first); `gP` opens the new merge request form
     (source: the issue's branch, target: the default branch, title
     `Draft: Resolve "<title>"`, description `Closes #<iid>`, assignee: you).
@@ -956,7 +958,9 @@ Highlights                                                  *gg-ui-highlights*
     `GitlabLog*` and `GitlabAnsi*` (job log).
     Editing: `GitlabDetailBorderEditing` (the box being edited),
     `GitlabDetailLabelEditing` (the sidebar label of the field being
-    edited), `GitlabFieldEdit` (the field overlay), `GitlabEditPlaceholder`.
+    edited), `GitlabFieldEdit` (the field overlay), `GitlabEditPlaceholder`,
+    `GitlabDetailPlaceholder` (italic: "write a new comment…", "+ link
+    branch"), `GitlabCommentAvatar` (your initials in the comment box).
     `GitlabIssueTitle` and `GitlabDue` take only the foreground of
     `Normal`, so the row highlight shows behind them.
     Key hints use `GitlabHintKey` (the `Function` colour, bold) for the

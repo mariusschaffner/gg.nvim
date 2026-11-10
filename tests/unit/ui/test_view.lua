@@ -137,6 +137,21 @@ T["the cursor is hidden in the table only and restored on close"] = function()
   eq(vim.o.guicursor, before)
 end
 
+T["a detail view over the table shows the cursor; back hides it again"] = function()
+  local before = vim.o.guicursor
+  local v = ready(open())
+  keys("i")
+  H.wait_for(function()
+    return vim.bo[vim.api.nvim_get_current_buf()].filetype:find("gg_ui_detail", 1, true) ~= nil
+  end)
+  eq(vim.o.guicursor, before)
+  keys("q")
+  H.wait_for(function()
+    return vim.api.nvim_get_current_win() == v.table_float.win
+  end)
+  eq(vim.endswith(vim.o.guicursor, "n-v-ve:GitlabHiddenCursor"), true)
+end
+
 T["L / H switch tabs; the counts stay"] = function()
   local v = ready(open())
   keys("L")

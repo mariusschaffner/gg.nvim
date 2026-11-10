@@ -183,7 +183,9 @@ function M.new(opts)
     group = self.augroup,
     buffer = tbuf,
     callback = function(ev)
-      self:_hide_cursor(ev.event == "WinEnter")
+      -- a window opened from the table is entered while it still shows the
+      -- table's buffer: only the table window itself hides the cursor
+      self:_hide_cursor(ev.event == "WinEnter" and vim.api.nvim_get_current_win() == self.table_float.win)
     end,
   })
   self.group:on_resize(function()
@@ -195,10 +197,13 @@ function M.new(opts)
   self.stack = screens.new()
   self.stack:adopt({
     group = self.group,
+    -- covered by a detail view: the cursor shows again there
     suspend = function()
+      self:_hide_cursor(false)
       self:_each_view("suspend")
     end,
     resume = function()
+      self:_hide_cursor(vim.api.nvim_get_current_win() == self.table_float.win)
       self:_each_view("resume")
       self:render()
     end,

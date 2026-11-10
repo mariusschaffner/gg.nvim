@@ -78,8 +78,7 @@ local function open(extra)
   keys("<Tab>")
   local win = g.members.content.win
   H.wait_for(function()
-    local l = lines(vim.api.nvim_win_get_buf(win))
-    return l[#l]:find("write a new comment", 1, true) ~= nil
+    return g.members.dock ~= nil and lines(g.members.dock.buf)[1]:find("write a new comment", 1, true) ~= nil
   end)
   return g, fake, win
 end
@@ -114,11 +113,33 @@ T["the box at the end; i posts a new comment and follows it"] = function()
       response = { status = 201, body = { id = "new1", individual_note = true, notes = { rest_note(9, "Hello there") } } },
     },
   })
-  local l = lines(vim.api.nvim_win_get_buf(win))
-  eq(vim.startswith(l[#l], "  (AE) › write a new comment…"), true)
-  eq(vim.endswith(l[#l], "[i] Comment"), true)
+  -- the box is pinned inside the bottom of the Activity box, not in the timeline
+  local dock = g.members.dock
+  local dl = lines(dock.buf)[1]
+  eq(vim.startswith(dl, "  AE  › write a new comment…"), true)
+  eq(vim.endswith(dl, "[i] Comment"), true)
+  eq(vim.fn.strdisplaywidth(dl), vim.api.nvim_win_get_width(dock.win) - 1) -- one column of margin
+  local tl = lines(vim.api.nvim_win_get_buf(win))
+  eq(tl[#tl]:find("write a new comment", 1, true), nil)
+  eq({ tl[#tl], tl[#tl - 1], tl[#tl - 2] }, { "", "", "" }) -- room for the box
+  local dpos, cpos = vim.api.nvim_win_get_position(dock.win), vim.api.nvim_win_get_position(win)
+  eq(dpos[1] + 1 + 1, cpos[1] + vim.api.nvim_win_get_height(win)) -- its bottom border on the last row
+  eq(dpos[2], cpos[2] + 1) -- inside the content box's left border
+  -- the cursor stays above the box
+  keys("G")
+  vim.api.nvim_exec_autocmds("CursorMoved", { buffer = vim.api.nvim_win_get_buf(win) })
+  eq(vim.api.nvim_win_get_cursor(win)[1], #tl - 3)
+  eq(vim.wo[win].scrolloff, 3)
+  -- other tabs have no box
+  keys("<S-Tab>")
+  eq(g.members.dock, nil)
+  keys("<Tab>")
+  eq(g.members.dock ~= nil, true)
   keys("i")
   local cw = composer_set("Hello there")
+  eq(g.members.dock, nil) -- the composer takes its place
+  local content_foot = vim.api.nvim_win_get_config(win).footer
+  eq(content_foot == nil or content_foot == "" or #content_foot == 0, true) -- no Save / Cancel under the box
   local cfg = vim.api.nvim_win_get_config(cw)
   eq(cfg.title[1][1], " Comment ")
   local foot = table.concat(vim.tbl_map(function(c)
@@ -247,8 +268,7 @@ T["a closed issue takes no comments"] = function()
   H.wait_for(function()
     return (lines(vim.api.nvim_win_get_buf(win))[2] or ""):find("YESTERDAY", 1, true) ~= nil
   end)
-  local l = lines(vim.api.nvim_win_get_buf(win))
-  eq(l[#l]:find("write a new comment", 1, true), nil)
+  eq(g.members.dock, nil) -- no comment box on a closed issue
   keys("i")
   eq(last_note(), "gg.ui: Commenting is closed")
 end

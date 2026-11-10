@@ -183,19 +183,37 @@ function M.sidebar(data, width)
 
   local dev = {}
   local loading = (not data.branches or data.branches.status == "loading") or (not data.mrs or data.mrs.status == "loading")
+  -- nothing linked yet (open issue): "+ link branch   [gb]"
+  local function link(what, key)
+    if not (open and key) then
+      return {}
+    end
+    return { sidebar.spread({ { "+ link " .. what, "GitlabDetailPlaceholder" } }, { { "[" .. key .. "]", "GitlabHintKey" } }, inner) }
+  end
   if loading then
     dev = { { { "Loading…", "GitlabDetailMuted" } } }
   else
-    vim.list_extend(dev, loadable_lines(data.branches, inner, function(list)
+    local branches = loadable_lines(data.branches, inner, function(list)
+      if #list == 0 then
+        return link("branch", keys.create_branch)
+      end
       return vim.tbl_map(function(b)
         return { { M.BRANCH .. " " .. b.name, "GitlabBranchSource" } }
       end, list)
-    end))
-    vim.list_extend(dev, loadable_lines(data.mrs, inner, function(list)
+    end)
+    local mrs = loadable_lines(data.mrs, inner, function(list)
+      if #list == 0 then
+        return link("merge request", keys.create_mr)
+      end
       return vim.tbl_map(function(mr)
         return { { "!" .. mr.iid, "GitlabDetailMuted" }, { " " .. (mr.title or ""), MR_HL[mr.state] or "GitlabDetailValue" } }
       end, list)
-    end))
+    end)
+    vim.list_extend(dev, branches)
+    if #branches > 0 and #mrs > 0 then
+      table.insert(dev, {})
+    end
+    vim.list_extend(dev, mrs)
   end
 
   return sidebar.build({

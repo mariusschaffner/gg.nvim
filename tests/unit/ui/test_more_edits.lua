@@ -144,6 +144,10 @@ T["milestone: gt, gd over the strip, A close; hints in the header border"] = fun
   local pos = vim.api.nvim_win_get_config(ow)
   local hdr = vim.api.nvim_win_get_position(g.members.header.win)
   eq(pos.row, hdr[1] + 1 + 3) -- border + blank + title + blank: the tick line
+  -- the label is at the right end: the overlay moves left, full width, inside the header
+  local inner_right = hdr[2] + 1 + vim.api.nvim_win_get_width(g.members.header.win)
+  eq(pos.width, require("gg.ui.components.field_edit").MIN_WIDTH)
+  eq(pos.col + pos.width <= inner_right, true)
   keys("<C-s>")
   H.wait_for(function()
     return vim.endswith(lines(g.members.header.buf)[4], "27.11.│")

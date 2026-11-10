@@ -10,7 +10,6 @@ local date = require("gg.ui.lib.date")
 local edit = require("gg.ui.detail.edit")
 local editing = require("gg.ui.detail.editing")
 local edits = require("gg.ui.detail.edits")
-local user_hl = require("gg.ui.lib.user_hl")
 local gg = require("gg")
 local model = require("gg.ui.detail.activity.model")
 local picker = require("gg.ui.components.picker")
@@ -210,7 +209,7 @@ function Tab:_compose(o)
   })
 end
 
---- `i`: write a new comment (the box docked at the end of the timeline).
+--- `i`: write a new comment (the composer docked at the bottom of the tab).
 function Tab:comment()
   return self:_compose({
     what = "comment",
@@ -479,12 +478,13 @@ function Tab:render()
     utc_offset = date.utc_offset(),
     user_colors = self.host.cfg.user_colors,
     keys = { expand = open[#open], fold = picker.first_key(k.toggle_fold) },
-    dock = self:_open() and self.status == "ready" and {
-      initials = avatar.initials(self.me_name or self.me or "you"),
-      hl = self.me and user_hl.group(self.me, self.host.cfg.user_colors) or "GitlabDetailMuted",
-      key = picker.first_key(k.comment),
-    } or nil,
   })
+  -- the collapsed comment box, pinned to the bottom of the tab
+  local dock = self:_open() and self.status == "ready" and render.dock({
+    initials = avatar.initials(self.me_name or self.me or "you"),
+    key = picker.first_key(k.comment),
+  }, self.host:content_width() - 2) or nil
+  self.host:set_dock(o.tab, dock)
   self.host:set_content(o.tab, d)
 end
 

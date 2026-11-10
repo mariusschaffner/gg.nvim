@@ -207,4 +207,38 @@ T["load error shows in the description; R retries"] = function()
   eq(table.concat(buf_lines(side.buf), "\n"):find("!88", 1, true) ~= nil, true)
 end
 
+T["DEVELOPMENT offers to link a branch and a merge request (open issues)"] = function()
+  local render = require("gg.ui.detail.issue.render")
+  local function dev(state, branches, mrs)
+    local d = render.sidebar({
+      issue = { iid = 1, state = state, labels = {}, assignees = {} },
+      branches = { status = "ready", value = branches },
+      mrs = { status = "ready", value = mrs },
+      keys = { create_branch = "gb", create_mr = "gP" },
+    }, 34)
+    local out, on = {}, false
+    for _, l in ipairs(d.lines) do
+      on = on or l:find("DEVELOPMENT", 1, true) ~= nil
+      if on then
+        table.insert(out, l)
+      end
+    end
+    return out, d
+  end
+  local l, d = dev("opened", {}, {})
+  eq(l, { " DEVELOPMENT", " + link branch               [gb]", "", " + link merge request        [gP]" })
+  -- italic gray text, the key in the hint colour
+  local hls = {}
+  for _, m in ipairs(d.marks) do
+    hls[m.hl] = true
+  end
+  eq({ hls.GitlabDetailPlaceholder, hls.GitlabHintKey }, { true, true })
+  -- a linked branch replaces its line
+  l = dev("opened", { { name = "1-x" } }, {})
+  eq(l, { " DEVELOPMENT", " ⎇ 1-x", "", " + link merge request        [gP]" })
+  -- closed: nothing to offer
+  l = dev("closed", {}, {})
+  eq(l[2], " no branch or merge request")
+end
+
 return T

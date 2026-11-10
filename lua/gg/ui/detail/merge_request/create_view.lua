@@ -172,6 +172,7 @@ function View:_field(id, text, opts, apply)
     row = pos.row,
     col = pos.col,
     width = pos.width,
+    limit = pos.limit,
     text = text,
     keys = h.keys,
     group = h.group,

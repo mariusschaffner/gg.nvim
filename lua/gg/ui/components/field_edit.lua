@@ -17,6 +17,7 @@ M.MIN_WIDTH = 24
 ---@field row integer 0-based editor row
 ---@field col integer 0-based editor column
 ---@field width integer
+---@field limit? integer 0-based editor column the overlay must end before (default: the editor's width); a field near it moves left
 ---@field text string the current value
 ---@field multi? boolean comma-separated values
 ---@field keys gg.ui.Keymaps
@@ -33,6 +34,18 @@ M.MIN_WIDTH = 24
 local Field = {}
 Field.__index = Field
 
+--- Where the overlay goes: at least `MIN_WIDTH` wide, ending before
+--- `limit`; a field too close to `limit` moves the overlay left.
+---@param col integer
+---@param width integer
+---@param limit integer
+---@return integer col
+---@return integer width
+function M.place(col, width, limit)
+  width = math.min(math.max(M.MIN_WIDTH, width), math.max(1, limit))
+  return math.max(0, math.min(col, limit - width)), width
+end
+
 local function keys_of(k)
   return require("gg.ui.components.picker").lhs_list(k)
 end
@@ -46,12 +59,11 @@ function M.open(opts)
   vim.bo[buf].swapfile = false
   local text = tostring(opts.text or ""):gsub("[\r\n]", " ")
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, { text })
-  local width = math.max(M.MIN_WIDTH, opts.width)
-  width = math.min(width, math.max(1, vim.o.columns - opts.col - 1))
+  local col, width = M.place(opts.col, opts.width, math.min(opts.limit or vim.o.columns, vim.o.columns))
   local win = vim.api.nvim_open_win(buf, true, {
     relative = "editor",
     row = opts.row,
-    col = opts.col,
+    col = col,
     width = width,
     height = 1,
     style = "minimal",

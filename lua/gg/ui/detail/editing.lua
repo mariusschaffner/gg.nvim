@@ -105,6 +105,7 @@ function M.field(h, opts)
     row = pos.row,
     col = pos.col,
     width = pos.width,
+    limit = pos.limit,
     text = opts.text,
     multi = opts.multi,
     complete = opts.complete,

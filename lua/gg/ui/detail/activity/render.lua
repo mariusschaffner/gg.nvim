@@ -37,7 +37,6 @@ M.REPLY_INDENT = 4
 ---@field utc_offset? integer
 ---@field user_colors? table<string, string>
 ---@field keys { expand?: string, fold?: string }
----@field dock? { initials: string, hl: string, key?: string } the collapsed comment box at the end
 
 -- split text into verb / object / reference segments
 local function event_segments(s)
@@ -275,7 +274,6 @@ function M.render(input)
   local items = input.items or {}
   if #items == 0 then
     d:text(" No activity yet.", "GitlabDetailMuted")
-    M.dock(d, input, width)
     return d
   end
   for _, item in ipairs(items) do
@@ -292,29 +290,25 @@ function M.render(input)
       thread_rows(d, item, input)
     end
   end
-  M.dock(d, input, width)
   return d
 end
 
---- The collapsed comment box: "(XX) › write a new comment…   [i] Comment".
----@param d gg.ui.Doc
----@param input gg.ui.ActivityRenderInput
----@param width integer
-function M.dock(d, input, width)
-  local dk = input.dock
-  if not dk then
-    return
-  end
-  d:blank()
-  local l = line.new():add("  "):add("(" .. dk.initials .. ")", dk.hl):add(" › ", "GitlabDetailMuted")
-  l:add("write a new comment…", "GitlabEditPlaceholder")
+--- The collapsed comment box pinned to the bottom of the tab:
+--- " MS  › write a new comment…        [i] Comment".
+---@param dk { initials: string, key?: string }
+---@param width integer inner width of the box
+---@return gg.ui.Doc
+function M.dock(dk, width)
+  local d = doc.new()
+  local l = line.new():add(" "):add(" " .. dk.initials .. " ", "GitlabCommentAvatar"):add(" › ", "GitlabDetailMuted")
+  l:add("write a new comment…", "GitlabDetailPlaceholder")
   if dk.key then
-    local right = "[" .. dk.key .. "] Comment"
-    l:pad_to(math.max(l.cells + 2, width - text.width(right) - 1))
+    local right = "[" .. dk.key .. "] Comment "
+    l:pad_to(math.max(l.cells + 2, width - text.width(right)))
     l:add("[" .. dk.key .. "]", "GitlabHintKey"):add(" Comment", "GitlabHintText")
   end
-  local lnum = d:line(l, { kind = "dock" })
-  d:line_hl(lnum, "GitlabCard")
+  d:line(l, { kind = "dock" })
+  return d
 end
 
 return M

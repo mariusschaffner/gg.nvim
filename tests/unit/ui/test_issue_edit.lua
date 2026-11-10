@@ -315,6 +315,11 @@ T["field overlay: completion of the value at the cursor, save and cancel"] = fun
   })
   vim.cmd("stopinsert")
   eq(vim.api.nvim_win_get_config(f.win).width, 24) -- at least MIN_WIDTH
+  -- near the limit the overlay moves left instead of shrinking
+  local place = require("gg.ui.components.field_edit").place
+  eq({ place(4, 10, 100) }, { 4, 24 })
+  eq({ place(90, 8, 100) }, { 76, 24 })
+  eq({ place(5, 8, 20) }, { 0, 20 })
   keys("<Esc>")
   eq(closed, { false })
 end

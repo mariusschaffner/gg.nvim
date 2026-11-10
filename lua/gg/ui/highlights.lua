@@ -173,6 +173,7 @@ M.PILLS = {
   { "GitlabChipRefactor", "Special" },
   { "GitlabChipRevert", "DiagnosticError" },
   { "GitlabChipOther", "Comment" },
+  { "GitlabCommentAvatar", "Function" },
 }
 
 local function resolved(name)
@@ -199,6 +200,8 @@ function M.define()
   vim.api.nvim_set_hl(0, "GitlabCurrentUser", { bold = true, default = true })
   -- detail views: plain gray for dimmed text, bright text and bold names
   vim.api.nvim_set_hl(0, "GitlabDetailDim", { fg = resolved("Comment").fg, default = true })
+  -- what is not there yet: "write a new comment…", "+ link branch"
+  vim.api.nvim_set_hl(0, "GitlabDetailPlaceholder", { fg = resolved("Comment").fg, italic = true, default = true })
   vim.api.nvim_set_hl(0, "GitlabDetailTitle", { fg = normal_fg, bold = true, default = true })
   vim.api.nvim_set_hl(0, "GitlabDetailValue", { fg = normal_fg, default = true })
   vim.api.nvim_set_hl(0, "GitlabTimelineActor", { fg = normal_fg, bold = true, default = true })

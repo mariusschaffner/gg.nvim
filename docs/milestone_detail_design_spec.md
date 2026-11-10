@@ -41,7 +41,7 @@ Shared foundation: `docs/detail_views_design_spec.md`. Opened by `I` in the issu
 ## Tabs
 
 1. **Description:** markdown, as in the issue view. Footer: `[i] Edit`.
-2. **Work items:** the issues table (`gg.ui.issues.render`) without the milestone column. One table of every issue (no Open / Closed / All line). `i` / `<CR>` opens the issue; footer `[i] Issue`. The tab label carries the count.
+2. **Work items:** the issues table (`gg.ui.issues.render`) without the milestone column. One table of every issue (no Open / Closed / All line). `i` / `<CR>` opens the issue; footer `[i] Issue`. The tab titles carry no counts.
 3. **Merge requests:** the merge requests table (`gg.ui.merge_requests.render`), with pipeline and diff cells from `gg.merge_requests.summaries`. One table of every merge request (no state line); `i` / `<CR>` opens the merge request.
 
 ## Sidebar

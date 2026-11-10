@@ -127,7 +127,10 @@ T["host: tabs swap buffers, R reloads, the sidebar follows the width"] = functio
   eq(h:has_sidebar(), true)
   eq(h:sidebar_width(), 32)
   local title = vim.api.nvim_win_get_config(h.content_float.win).title
-  eq(title[2], { " One ", "GitlabDetailTabActive" })
+  eq(title[1], { " One ", "GitlabDetailTabActive" })
+  -- nothing in the footer until there are hints: the border stays whole
+  eq(vim.api.nvim_win_get_config(h.content_float.win).footer, nil)
+  eq(vim.api.nvim_get_hl(0, { name = "GitlabDetailTabActive" }).link, "GitlabPickerTitle")
   local d = doc.new()
   d:text("hello", "X", { kind = "greeting" })
   d:text("world")

@@ -266,14 +266,6 @@ function View:render()
   h:set_hints("description", { self.edit_hint })
   h:set_hints("work_items", { { key = open, desc = "Issue" } })
   h:set_hints("merge_requests", { { key = open, desc = "Merge request" } })
-  local tabs = vim.deepcopy(M.TABS)
-  if self.issues.status == "ready" then
-    tabs[2].count = #self.issues.value
-  end
-  if self.mrs.status == "ready" then
-    tabs[3].count = #self.mrs.value
-  end
-  h:set_tabs(tabs)
 end
 
 return M

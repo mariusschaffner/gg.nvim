@@ -56,6 +56,7 @@ M.LINKS = {
   { "GitlabPipelineSourceSchedule", "DiagnosticWarn" },
   -- detail views; dimmed text is plain gray (Comment's colour, never italic)
   { "GitlabDetailBorder", "GitlabTableBorder" },
+  { "GitlabDetailTabActive", "GitlabPickerTitle" }, -- like the picker's " Table " title
   { "GitlabDetailBreadcrumb", "GitlabDetailDim" },
   { "GitlabDetailRef", "DiagnosticWarn" },
   { "GitlabDetailMeta", "GitlabDetailDim" },
@@ -193,7 +194,6 @@ function M.define()
   vim.api.nvim_set_hl(0, "GitlabCurrentUser", { bold = true, default = true })
   -- detail views: plain gray for dimmed text, bright text and bold names
   vim.api.nvim_set_hl(0, "GitlabDetailDim", { fg = resolved("Comment").fg, default = true })
-  vim.api.nvim_set_hl(0, "GitlabDetailTabActive", { fg = normal_fg, bold = true, default = true })
   vim.api.nvim_set_hl(0, "GitlabDetailTitle", { fg = normal_fg, bold = true, default = true })
   vim.api.nvim_set_hl(0, "GitlabDetailValue", { fg = normal_fg, default = true })
   vim.api.nvim_set_hl(0, "GitlabTimelineActor", { fg = normal_fg, bold = true, default = true })

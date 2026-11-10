@@ -116,7 +116,7 @@ T["opens on top, loads the issue, renders header, description and sidebar"] = fu
   eq(table.concat(sl, "\n"):find("!88 Rotate Terraform", 1, true) ~= nil, true)
   -- tabs in the content title, hints in its footer
   local cfg = vim.api.nvim_win_get_config(content.win)
-  eq(chunks_text(cfg.title), "  Description   Activity 2  ")
+  eq(chunks_text(cfg.title), " Description   Activity 2  ")
   eq(chunks_text(cfg.footer), " [i] Edit ")
   -- the edit key only says that editing comes later
   local notes = {}
@@ -150,7 +150,7 @@ T["Activity loads on first show; za folds a thread"] = function()
   eq(vim.startswith(l[6], "  ▎ AE Ann Example  09:00  you"), true)
   eq(vim.startswith(l[8], "      └─ ▎ BS Bob Sample  09:30"), true)
   -- no key hints under the timeline
-  eq(chunks_text(vim.api.nvim_win_get_config(content.win).footer), " ")
+  eq(vim.api.nvim_win_get_config(content.win).footer, nil) -- no footer, an unbroken border
   vim.api.nvim_win_set_cursor(content.win, { 7, 0 })
   keys("za")
   l = buf_lines(vim.api.nvim_win_get_buf(content.win))

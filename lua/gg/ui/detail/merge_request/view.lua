@@ -119,6 +119,8 @@ function M.open(ctx, item)
   end, "Open issue")
   -- after open_item: in the description `i` edits, `<CR>` opens a card
   self.edit_hint = self.h:map_edit("description")
+  -- a file's diff comes with the review view; until then the key says so
+  self.file_hint = self.h:map_later("changes", "open_item", "File", "opening a file")
   self:load()
   return self
 end
@@ -178,10 +180,7 @@ function View:_mount_pipelines()
   h:map(tab, k.next_page, function()
     ctrl:next_page()
   end, "Load more")
-  h:set_hints(tab, {
-    { key = picker.first_key(k.open_item), desc = "Pipeline" },
-    { key = picker.first_key(k.next_page), desc = "More" },
-  })
+  h:set_hints(tab, { { key = picker.first_key(k.open_item), desc = "Pipeline" } })
 end
 
 ---@private
@@ -324,9 +323,6 @@ function View:_tabs()
   if self.stats.status == "ready" then
     tabs[3].count = #self.stats.value
   end
-  if self.commits.status == "ready" then
-    tabs[4].count = #self.commits.value
-  end
   if self.pipelines.status == "ready" then
     tabs[5].count = #self.pipelines.pipelines .. (self.pipelines.next_cursor and "+" or "")
   end
@@ -370,9 +366,8 @@ function View:render()
   }))
   local k = h.keys
   h:set_hints("description", { self.edit_hint })
-  h:set_hints("changes", { { key = picker.first_key(k.goto_pipeline), desc = "Pipeline" } })
-  local tally = self.commits.status == "ready" and commits.tally(self.commits.value) or ""
-  h:set_hints("commits", { { key = picker.first_key(k.goto_pipeline), desc = "Pipeline" } }, tally ~= "" and { { " " .. tally .. " ", "GitlabHintText" } } or nil)
+  h:set_hints("changes", { self.file_hint })
+  h:set_hints("commits", {})
   self:_tabs()
   if self.activity.status ~= "idle" then
     self.activity:render()

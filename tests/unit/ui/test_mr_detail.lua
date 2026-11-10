@@ -141,7 +141,7 @@ T["changes: bars, paths, table"] = function()
   eq(changes.render({ width = 60, status = "ready", files = {} }).lines, { " No changes." })
 end
 
-T["commits: parse, tally, render"] = function()
+T["commits: parse, render, separators"] = function()
   eq(commits.parse("feat(ui): add things"), { type = "feat", scope = "ui", breaking = false, subject = "add things" })
   eq(commits.parse("fix!: urgent"), { type = "fix", breaking = true, subject = "urgent" })
   eq(commits.parse("Merge branch 'feature-x' into 'main'"), { type = "merge", subject = "feature-x → main", breaking = false })
@@ -151,14 +151,20 @@ T["commits: parse, tally, render"] = function()
     { sha = "b2", short_sha = "b2b2b2b2", title = "fix: two", authored_date = "2026-11-09T08:00:00Z", author_name = "Bob" },
     { sha = "c3", short_sha = "c3c3c3c3", title = "feat: three", authored_date = "2026-11-09T07:00:00Z" },
   }
-  eq(commits.tally(list), "2 feat · 1 fix")
   local d = commits.render({ width = 60, status = "ready", commits = list, today = X.TODAY, utc_offset = 0 })
   eq(vim.startswith(d.lines[1], "──── TODAY · 10.11.2026 ─"), true)
   eq(vim.startswith(d.lines[2], " ○   feat "), true)
   eq(vim.endswith(d.lines[2], "08:00  Ann  a1a1a1a1"), true)
   eq(d.lines[3], " │   one")
-  eq(d.lines[4], "")
+  eq(d.lines[4], "") -- no rule before the next day
   eq(vim.startswith(d.lines[5], "──── YESTERDAY · 09.11.2026"), true)
+  eq(d.lines[7], " │   two")
+  -- a rule between commits of a day; the graph line runs through it
+  eq(d.lines[8], " │  " .. string.rep("─", 56))
+  eq(d.rows[8], { kind = "separator" })
+  eq(vim.startswith(d.lines[9], " ○   feat "), true)
+  eq(d.lines[10], " │   three")
+  eq(#d.lines, 10)
 end
 
 local function keys(k)
@@ -242,25 +248,34 @@ T["view: Changes, Commits, Activity tabs"] = function()
   end)
   local a = lines(vim.api.nvim_win_get_buf(win))
   eq(a[6]:find("⎇ package.json:27  ✓ resolved thread", 1, true) ~= nil, true)
-  local afoot = table.concat(vim.tbl_map(function(ch)
-    return ch[1]
-  end, vim.api.nvim_win_get_config(win).footer))
-  eq(afoot, " ") -- no key hints under the activity
+  -- no key hints under the activity, and no footer breaking the border
+  eq(vim.api.nvim_win_get_config(win).footer, nil)
   keys("<Tab>")
   local c = lines(vim.api.nvim_win_get_buf(win))
   eq(c[3]:find("internal/commands/mr/view.go", 1, true) ~= nil, true)
   eq(vim.startswith(c[6], "   2 files changed"), true)
+  local cfoot = table.concat(vim.tbl_map(function(ch)
+    return ch[1]
+  end, vim.api.nvim_win_get_config(win).footer))
+  eq(cfoot, " [i] File ")
+  -- opening a file comes with the review view: the key says so
+  local notes = {}
+  local notify = vim.notify
+  vim.notify = function(msg)
+    table.insert(notes, msg)
+  end
+  keys("i")
+  vim.notify = notify
+  eq(notes, { "gg.ui: opening a file is not available yet" })
   keys("<Tab>")
   local m = lines(vim.api.nvim_win_get_buf(win))
   eq(m[4], " │   return false on any stat error, not just missing")
-  local footer = table.concat(vim.tbl_map(function(ch)
-    return ch[1]
-  end, vim.api.nvim_win_get_config(win).footer))
-  eq(footer, " [gp] Pipeline  1 fix ")
+  -- no hints and no type counts under the commits
+  eq(vim.api.nvim_win_get_config(win).footer, nil)
   local title = table.concat(vim.tbl_map(function(ch)
     return ch[1]
   end, vim.api.nvim_win_get_config(win).title))
-  eq(title, "  Description   Activity 3   Changes 2   Commits 1   Pipelines  ")
+  eq(title, " Description   Activity 3   Changes 2   Commits   Pipelines  ") -- no commit count
 end
 
 T["view: Pipelines tab is the pipelines table of this MR; i opens one; q stops it"] = function()
@@ -277,7 +292,7 @@ T["view: Pipelines tab is the pipelines table of this MR; i opens one; q stops i
   local footer = table.concat(vim.tbl_map(function(ch)
     return ch[1]
   end, vim.api.nvim_win_get_config(win).footer))
-  eq(footer, " [i] Pipeline • [P] More ")
+  eq(footer, " [i] Pipeline ")
   for _, r in ipairs(fake:requests()) do
     if r.operation == "PipelinesListMr" then
       eq(r.variables.iid, tostring(X.MR_IID))

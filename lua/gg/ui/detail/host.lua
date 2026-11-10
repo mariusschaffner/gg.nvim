@@ -115,7 +115,6 @@ function M.new(opts)
     enter = true,
     buf = self:buf(self.active),
     title = " ",
-    footer = " ",
     win_opts = CONTENT_WIN_OPTS,
     winhighlight = "CursorLine:GitlabCursorLine",
   })
@@ -237,15 +236,26 @@ function Host:_shared_maps()
   end
 end
 
+--- Map keymap `name` in tab `key` to a feature that comes later (the key
+--- says so) and return its hint `[<key>] <desc>`.
+---@param key string
+---@param name string a keymap option, e.g. "edit"
+---@param desc string
+---@param what string e.g. "editing"
+---@return gg.ui.Hint
+function Host:map_later(key, name, desc, what)
+  self:map(key, self.keys[name], function()
+    vim.notify(("gg.ui: %s is not available yet"):format(what), vim.log.levels.INFO)
+  end, desc)
+  return { key = require("gg.ui.components.picker").first_key(self.keys[name]), desc = desc }
+end
+
 --- Map the edit key in tab `key` and return its hint. Editing is not part
 --- of the detail views yet: the key says so.
 ---@param key string
 ---@return gg.ui.Hint
 function Host:map_edit(key)
-  self:map(key, self.keys.edit, function()
-    vim.notify("gg.ui: editing is not available yet", vim.log.levels.INFO)
-  end, "Edit")
-  return { key = require("gg.ui.components.picker").first_key(self.keys.edit), desc = "Edit" }
+  return self:map_later(key, "edit", "Edit", "editing")
 end
 
 --- Show tab `key` in the content window.
@@ -320,7 +330,8 @@ function Host:_chrome()
   if tail then
     footer = vim.list_extend(footer or {}, tail)
   end
-  footer = footer or " "
+  -- no hints: no footer at all (a placeholder would break the border)
+  footer = footer or ""
   float.set_text(win, { title = title, footer = footer })
 end
 
@@ -378,7 +389,7 @@ function Host:set_header(d, title, footer)
   end
   self:write(self.header_float.buf, d)
   local h = math.max(1, #d.lines)
-  float.set_text(self.header_float.win, { title = title, footer = footer or " " })
+  float.set_text(self.header_float.win, { title = title, footer = footer or "" })
   if h ~= self.header_h then
     self.header_h = h
     self.group:relayout()

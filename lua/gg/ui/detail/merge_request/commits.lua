@@ -5,8 +5,11 @@
 ---   ──── 21.10.2026 ─────────────────────────────────────────────
 ---    ○  feat   ui                          14:02  Ann Example  abcd1234
 ---    │   add the detail views
+---    │  ─────────────────────────────────────────────────────────────
 ---    ◇  merge                              13:10  Ann Example  ef01ab23
 ---    │   feature-x → main
+---
+--- A rule separates the commits of a day; the graph line runs through it.
 local date = require("gg.ui.lib.date")
 local doc = require("gg.ui.lib.doc")
 local line = require("gg.ui.lib.line")
@@ -61,30 +64,6 @@ function M.parse(title)
   return { subject = title, breaking = false }
 end
 
---- "3 feat · 2 fix · 1 merge": commit types, most frequent first.
----@param commits gg.Commit[]
----@return string
-function M.tally(commits)
-  local counts, order = {}, {}
-  for _, c in ipairs(commits) do
-    local t = M.parse(c.title).type or "other"
-    if not counts[t] then
-      counts[t] = 0
-      table.insert(order, t)
-    end
-    counts[t] = counts[t] + 1
-  end
-  table.sort(order, function(a, b)
-    if counts[a] ~= counts[b] then
-      return counts[a] > counts[b]
-    end
-    return a < b
-  end)
-  return table.concat(vim.tbl_map(function(t)
-    return ("%d %s"):format(counts[t], t)
-  end, order), " · ")
-end
-
 ---@class gg.ui.CommitsInput
 ---@field width integer
 ---@field status "loading"|"ready"|"error"
@@ -112,10 +91,13 @@ function M.render(input)
     return d
   end
   local width = math.max(40, input.width)
+  local function day_of(c)
+    return date.local_day(c.authored_date or c.committed_date, input.utc_offset)
+  end
   local last_day
-  for _, c in ipairs(commits) do
+  for i, c in ipairs(commits) do
     local at = c.authored_date or c.committed_date
-    local day = date.local_day(at, input.utc_offset)
+    local day = day_of(c)
     if day and not date.same_day(day, last_day) then
       if last_day then
         d:blank()
@@ -155,6 +137,10 @@ function M.render(input)
       line.new():add(" "):add("│", "GitlabTimelineGuide"):add("   "):add(text.truncate(p.subject, width - 6), p.type == "merge" and "GitlabDetailMuted" or "GitlabDetailValue"),
       { kind = "commit", sha = c.sha }
     )
+    local nxt = commits[i + 1]
+    if nxt and date.same_day(day_of(nxt), day) then
+      d:line(line.new():add(" "):add("│", "GitlabTimelineGuide"):add("  "):add(text.rep("─", width - 4), "GitlabSeparator"), { kind = "separator" })
+    end
   end
   return d
 end

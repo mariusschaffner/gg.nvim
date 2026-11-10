@@ -91,13 +91,15 @@ end
 ---@field label string
 ---@field count? integer|string
 
---- Tab bar chunks for a window title: " Description  Activity 12 ", the
---- active tab bold and bright, the others gray (no background).
+--- Tab bar chunks for a window title: " Description   Activity 12 ",
+--- starting right after the border's corner like " Table " in the picker.
+--- The active tab in the picker's title colour, the others gray (no
+--- background).
 ---@param tabs gg.ui.TabSpec[]
 ---@param active string
 ---@return gg.ui.Chunk[]
 function M.tabs_title(tabs, active)
-  local out = { { " ", M.BORDER_HL } }
+  local out = {}
   for i, t in ipairs(tabs) do
     if i > 1 then
       table.insert(out, { " ", M.BORDER_HL })

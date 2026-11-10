@@ -161,7 +161,7 @@ T["view: header strip, sidebar buckets, description"] = function()
   local tabs = table.concat(vim.tbl_map(function(c)
     return c[1]
   end, vim.api.nvim_win_get_config(g.members.content.win).title))
-  eq(tabs, "  Description   Work items 6   Merge requests 2  ")
+  eq(tabs, " Description   Work items   Merge requests  ") -- no counts
 end
 
 T["view: work items and merge requests tables open their detail views"] = function()

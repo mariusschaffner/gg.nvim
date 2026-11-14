@@ -268,14 +268,14 @@ end
 
 --- An edit starts: the content box turns orange for a text edit, its
 --- footer shows how to save or cancel. One edit at a time.
----@param e { kind: "text"|"field"|"composer", id?: string }
+---@param e { kind: "text"|"field"|"choice"|"composer", id?: string }
 function Host:begin_edit(e)
   self.editing = e
   if e.kind == "text" then
     self.group:set_border("content", "GitlabDetailBorderEditing")
   end
-  -- a composer has its own footer: the content box shows none meanwhile
-  if e.kind == "composer" then
+  -- a composer or a choice has its own footer: the content box shows none meanwhile
+  if e.kind == "composer" or e.kind == "choice" then
     self._edit_footer = ""
   else
     local pk = require("gg.ui.components.picker").first_key

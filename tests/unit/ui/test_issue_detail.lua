@@ -5,6 +5,7 @@ local config = require("gg.ui.config")
 local date = require("gg.ui.lib.date")
 local detail = require("gg.ui.detail")
 local stack = require("gg.ui.components.stack")
+local sel = require("tests.support.select")
 local eq = MiniTest.expect.equality
 
 local s -- the stack under test
@@ -239,6 +240,62 @@ T["DEVELOPMENT offers to link a branch and a merge request (open issues)"] = fun
   -- closed: nothing to offer
   l = dev("closed", {}, {})
   eq(l[2], " no branch or merge request")
+end
+
+T["gb creates a branch; an input drawn in its own window does not close the view"] = function()
+  local responses = X.issue_responses({ branches = {} })
+  local list = X.branches({ "main", "release" })
+  list.response.body[1].default = true
+  table.insert(responses, list)
+  local path = "/api/v4/projects/" .. X.ENC .. "/repository/branches"
+  table.insert(responses, {
+    request = { method = "POST", path = path, query = { branch = "214-rotate", ref = "main" } },
+    response = { status = 201, body = { name = "214-rotate", default = false, protected = false, merged = false, commit = { id = "abc", title = "wip", committed_date = X.NOW } } },
+  })
+  local notes = {}
+  vim.notify = function(msg)
+    table.insert(notes, msg)
+  end
+  local outside = vim.api.nvim_get_current_win()
+  local _, fake = open(responses)
+  H.wait_for(function()
+    local _, content, side = wins()
+    return #buf_lines(content.buf) > 2 and table.concat(buf_lines(side.buf), "\n"):find("link branch", 1, true) ~= nil
+  end)
+  local _, content, side = wins()
+  -- like a picker plugin: a float of its own takes the focus; the answer
+  -- comes later, after it closed and left the focus in the editor window
+  local saved_input = vim.ui.input
+  local default
+  vim.ui.input = function(opts, cb)
+    default = opts.default
+    local win = vim.api.nvim_open_win(vim.api.nvim_create_buf(false, true), true, { relative = "editor", row = 1, col = 1, width = 10, height = 1 })
+    vim.defer_fn(function()
+      vim.api.nvim_win_close(win, true)
+      vim.api.nvim_set_current_win(outside)
+      vim.schedule(function()
+        cb("214-rotate")
+      end)
+    end, 30)
+  end
+  keys("gb")
+  -- the branch to start from: the views' own list
+  local offered
+  local ok, err = pcall(function()
+    offered = sel.offered()
+    sel.choose("main  (default)")
+    H.wait_for(function()
+      return table.concat(buf_lines(side.buf), "\n"):find("⎇ 214-rotate", 1, true) ~= nil
+    end)
+  end)
+  vim.ui.input = saved_input
+  eq({ ok, err }, { true })
+  eq(offered, { "main  (default)", "release" })
+  eq(default, "214-rotate-terraform-state-backend-credentials")
+  eq(fake:last().query, { branch = "214-rotate", ref = "main" })
+  eq(notes[#notes], "gg.ui: Branch created: 214-rotate (from main)")
+  eq(s:is_closed(), false)
+  eq(vim.api.nvim_get_current_win(), content.win)
 end
 
 return T

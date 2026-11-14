@@ -114,6 +114,34 @@ T["float_group: leaving to an outside window closes the group there"] = function
   eq(vim.api.nvim_get_current_win(), outside)
 end
 
+T["float_group: held while a prompt in its own window has the focus"] = function()
+  local outside = vim.api.nvim_get_current_win()
+  local g = group_with_two()
+  g:focus("a")
+  local release = float_group.hold()
+  -- a picker: its own float takes the focus, then it closes and leaves the
+  -- focus in a window outside the group
+  local pick = vim.api.nvim_open_win(vim.api.nvim_create_buf(false, true), true, { relative = "editor", row = 1, col = 1, width = 10, height = 1 })
+  H.flush(20)
+  eq(g:is_closed(), false)
+  vim.api.nvim_win_close(pick, true)
+  vim.api.nvim_set_current_win(outside)
+  H.flush(20)
+  eq(g:is_closed(), false)
+  release()
+  eq(vim.api.nvim_get_current_win(), g.members.a.win)
+  release() -- idempotent
+  H.flush(20)
+  eq(g:is_closed(), false)
+  -- not held any more: leaving closes it again
+  vim.api.nvim_set_current_win(outside)
+  H.wait_for(function()
+    return g:is_closed()
+  end)
+  -- no group has the focus: nothing to hold
+  float_group.hold()()
+end
+
 local function list_fixture()
   local buf = vim.api.nvim_create_buf(false, true)
   vim.api.nvim_win_set_buf(0, buf)
@@ -209,6 +237,105 @@ T["prompt: debounced on_change, placeholder, counter, single line"] = function()
   vim.api.nvim_exec_autocmds("TextChanged", { buffer = buf })
   eq(vim.api.nvim_buf_get_lines(buf, 0, -1, false), { "a b" })
   p:destroy()
+end
+
+T["select: static filter, ticking several, the cursor on the current one"] = function()
+  local chooser = require("gg.ui.components.select")
+  local words = { "alpha", "beta", "alphabet", "gamma" }
+  local function id(w)
+    return w
+  end
+  local load = chooser.static(words, id)
+  local got
+  load("", function(items)
+    got = items
+  end)
+  eq(got, words)
+  load("PH", function(items)
+    got = items
+  end)
+  eq(got, { "alpha", "alphabet" })
+  load("bet", function(items)
+    got = items
+  end)
+  eq(got, { "beta", "alphabet" }) -- what starts with it first
+  eq(chooser.centered(3, 40), { row = math.floor((vim.o.lines - vim.o.cmdheight - 8) / 2), col = math.floor((vim.o.columns - 40) / 2), width = 40 })
+
+  local function line(w)
+    return " " .. w
+  end
+  local function buf_lines(pk)
+    return vim.api.nvim_buf_get_lines(pk.list_float.buf, 0, -1, false)
+  end
+  -- several: ticked in order, kept while the filter hides them
+  local picked, closed
+  local pk = chooser.open({
+    title = "Words",
+    row = 1,
+    col = 2,
+    width = 40,
+    multi = true,
+    fit = true,
+    debounce_ms = 0,
+    selected = { "gamma" },
+    load = load,
+    line = line,
+    key = id,
+    on_pick = function(items)
+      picked = items
+    end,
+    on_close = function(p)
+      closed = p
+    end,
+  })
+  eq(buf_lines(pk), { "   alpha", "   beta", "   alphabet", " ✓ gamma" })
+  eq(vim.api.nvim_win_get_height(pk.list_float.win), 4)
+  pk:toggle() -- alpha, and on to beta
+  eq(pk.index, 2)
+  vim.api.nvim_buf_set_lines(pk.prompt_float.buf, 0, -1, false, { "bet" })
+  vim.api.nvim_exec_autocmds("TextChangedI", { buffer = pk.prompt_float.buf })
+  eq(buf_lines(pk), { "   beta", "   alphabet" })
+  eq(vim.api.nvim_win_get_height(pk.list_float.win), 2) -- fits the matches
+  pk:toggle()
+  eq(pk:selection(), { "gamma", "alpha", "beta" })
+  pk:move(-1)
+  pk:toggle() -- beta again: unticked
+  pk:pick()
+  eq({ picked, closed, pk.closed }, { { "gamma", "alpha" }, true, true })
+  eq(vim.api.nvim_win_is_valid(pk.prompt_float.win), false)
+
+  -- one: the cursor starts on the current value, the list keeps its height
+  pk = chooser.open({
+    title = "Word",
+    row = 1,
+    col = 2,
+    width = 40,
+    current = "alphabet",
+    load = load,
+    line = line,
+    key = id,
+    on_pick = function(item)
+      picked = item
+    end,
+  })
+  eq(pk.index, 3)
+  eq(vim.api.nvim_win_get_height(pk.list_float.win), chooser.MAX_ROWS)
+  pk:toggle() -- nothing to tick
+  pk:pick()
+  eq(picked, "alphabet")
+
+  -- no room: a single choice asks vim.ui.select, several are refused
+  local saved = { select = vim.ui.select, notify = vim.notify }
+  local note
+  vim.notify = function(msg)
+    note = msg
+  end
+  closed = nil
+  eq(chooser.open({ title = "Words", row = vim.o.lines - 2, col = 0, width = 40, multi = true, load = load, line = line, on_pick = id, on_close = function(p)
+    closed = p
+  end }), nil)
+  vim.ui.select, vim.notify = saved.select, saved.notify
+  eq({ note, closed }, { "gg.ui: No room to choose: Words", false })
 end
 
 return T

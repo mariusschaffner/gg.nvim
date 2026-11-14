@@ -10,6 +10,8 @@ M.LINKS = {
   { "GitlabPickerBorderActive", "Function" },
   { "GitlabPickerTitle", "FloatTitle" },
   { "GitlabPickerFooter", "Comment" },
+  -- a ticked item of a multiple choice (gg.ui.components.select)
+  { "GitlabSelectTick", "DiagnosticOk" },
   { "GitlabPickerPrompt", "Function" },
   { "GitlabTab", "Comment" },
   { "GitlabTabActive", "PmenuSel" },

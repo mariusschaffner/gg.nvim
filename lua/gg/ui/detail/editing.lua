@@ -2,6 +2,7 @@
 --- description), a field edited in an overlay (a title, a sidebar value, a
 --- date), completion sources loaded once per view, and cursor hints. Every
 --- change goes through `gg.ui.detail.edit.run`.
+local chooser = require("gg.ui.components.select")
 local edit = require("gg.ui.detail.edit")
 local field_edit = require("gg.ui.components.field_edit")
 local text_edit = require("gg.ui.components.text_edit")
@@ -137,6 +138,99 @@ function M.field(h, opts)
       })
     end,
     on_close = function()
+      h:end_edit()
+      opts.render()
+    end,
+  })
+end
+
+M.CHOICE_WIDTH = 44 -- the least outer width of a choice's picker
+
+---@class gg.ui.ChoiceEditing
+---@field what string "labels"
+---@field title string the picker's title ("Labels")
+---@field id? string the sidebar field drawn as being edited
+---@field pane "header"|"content"|"sidebar"
+---@field region string
+---@field load fun(query: string, cb: fun(items: any[]))
+---@field line fun(item: any): string, gg.ui.SelectMark[]|nil
+---@field key fun(item: any): string
+---@field multi? boolean
+---@field selected? any[] the items ticked at first (`multi`)
+---@field current? string the key of the current value
+---@field fit? boolean
+---@field payload fun(picked: any): any, string|nil the payload, or nil and why not
+---@field unchanged? fun(picked: any): boolean nothing to send
+---@field save fun(payload: any): gg.Task
+---@field apply fun(result: any)
+---@field changed? fun()
+---@field render fun()
+
+--- Choose a field's value from a filtered list laid over its region (see
+--- `gg.ui.components.select`).
+---@param h gg.ui.DetailHost
+---@param opts gg.ui.ChoiceEditing
+function M.choice(h, opts)
+  if h.editing then
+    return edit.refuse("Finish the current edit first")
+  end
+  local pos = h:region_pos(opts.pane, opts.region)
+  if not pos then
+    return edit.refuse(("The %s field is not visible"):format(opts.what))
+  end
+  -- the prompt's text sits on the field's; a field near the pane's right
+  -- edge moves the picker left
+  local width = math.max(M.CHOICE_WIDTH, pos.width + 2)
+  local col = pos.col - 1
+  if pos.limit then
+    col = math.min(col, pos.limit + 1 - width)
+  end
+  h:begin_edit({ kind = "choice", id = opts.id })
+  opts.render()
+  return chooser.open({
+    title = opts.title,
+    row = pos.row - 1,
+    col = math.max(0, col),
+    width = width,
+    group = h.group,
+    load = opts.load,
+    line = opts.line,
+    key = opts.key,
+    text = opts.key,
+    multi = opts.multi,
+    selected = opts.selected,
+    current = opts.current,
+    fit = opts.fit,
+    on_pick = function(picked)
+      if h.closed then
+        return
+      end
+      if opts.unchanged and opts.unchanged(picked) then
+        vim.notify(("gg.ui: %s unchanged"):format(opts.what:gsub("^%l", string.upper)), vim.log.levels.INFO)
+        return
+      end
+      local payload, why = opts.payload(picked)
+      if payload == nil then
+        return edit.refuse(why or ("Invalid %s"):format(opts.what))
+      end
+      edit.run({
+        what = opts.what,
+        task = function()
+          return opts.save(payload)
+        end,
+        apply = opts.apply,
+        changed = opts.changed,
+        -- the list is gone by now: redraw with the result
+        render = opts.render,
+        alive = function()
+          return not h.closed
+        end,
+      })
+    end,
+    on_close = function()
+      if h.closed then
+        return
+      end
       h:end_edit()
       opts.render()
     end,

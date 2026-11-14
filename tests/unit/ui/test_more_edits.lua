@@ -5,6 +5,8 @@ local config = require("gg.ui.config")
 local date = require("gg.ui.lib.date")
 local detail = require("gg.ui.detail")
 local edits = require("gg.ui.detail.edits")
+local chooser = require("gg.ui.components.select")
+local sel = require("tests.support.select")
 local stack = require("gg.ui.components.stack")
 local eq = MiniTest.expect.equality
 
@@ -73,24 +75,16 @@ local function overlay_set(text)
   return win
 end
 
--- pick menu entries by label; answer confirmations with `answer`
-local function choose(label, answer)
-  local offered
-  vim.ui.select = function(items, opts, cb)
-    offered = vim.tbl_map(opts.format_item, items)
-    for _, it in ipairs(items) do
-      if opts.format_item(it) == label then
-        return cb(it)
-      end
-    end
-    cb(nil)
-  end
+-- press `key` and pick the menu entry `label`; answer its confirmation
+-- with `answer`. Returns what the menu offered.
+local function choose(key, label, answer)
   vim.ui.input = function(_, cb)
     cb(answer or "y")
   end
-  return function()
-    return offered
-  end
+  keys(key)
+  local offered = sel.offered()
+  sel.choose(label)
+  return offered
 end
 
 local function ctx()
@@ -160,9 +154,7 @@ T["milestone: gt, gd over the strip, A close; hints in the header border"] = fun
   eq(last_note(), "gg.ui: Title cannot be empty")
   keys("<Esc>")
   -- A: close
-  local offered = choose("Close milestone")
-  keys("A")
-  eq(offered(), { "Close milestone" })
+  eq(choose("A", "Close milestone"), { "Close milestone" })
   H.wait_for(function()
     return lines(g.members.header.buf)[2]:find("Closed", 1, true) ~= nil
   end)
@@ -213,7 +205,7 @@ T["merge request: field keys in the sidebar; gr, gB, gb"] = function()
   local g, fake = open_mr({
     X.mr_write("PUT", "", { reviewer_ids = { 2, 3 } }, { reviewers = { X.rest_user(2), X.rest_user(3) } }),
     X.mr_write("PUT", "", { target_branch = "release" }, { target_branch = "release" }),
-    { request = { method = "GET", path = ("/api/v4/projects/%s/repository/branches"):format(X.ENC) }, response = { body = {} }, ["repeat"] = true },
+    X.branches({ "main", "release" }),
     X.mr_write("PUT", "", { remove_source_branch = true }, { should_remove_source_branch = true }),
   })
   local side = table.concat(lines(g.members.sidebar.buf), "\n")
@@ -226,20 +218,41 @@ T["merge request: field keys in the sidebar; gr, gB, gb"] = function()
   eq(foot, " [i] Edit ")
   -- reviewers: the requested ones are seeded
   keys("gr")
-  local ow = overlay_set("user-2, user-3")
-  keys("<C-s>")
+  local ow = sel.wait()
+  eq(vim.api.nvim_win_get_config(ow).title[1][1], " Reviewers ")
+  local raw, ticked = sel.offered(nil, true), {}
+  for i, text in ipairs(sel.offered()) do
+    if vim.startswith(raw[i], " " .. chooser.TICK) then
+      ticked[vim.split(text, "  ", { plain = true })[1]] = true
+    end
+  end
+  eq(ticked["user-2"], true)
+  eq(ticked["user-3"], nil)
+  -- leave user-2, add user-3, drop anyone else
+  for name in pairs(ticked) do
+    if name ~= "user-2" then
+      sel.toggle(name)
+    end
+  end
+  sel.toggle("user-3")
+  sel.accept()
   H.wait_for(function()
     local w = written(fake)
     return w and w.json and w.json.reviewer_ids ~= nil
   end)
   eq(written(fake).json.reviewer_ids, { 2, 3 })
+  eq(vim.api.nvim_win_is_valid(ow), false)
+  -- target branch: the project's branches, as in the creation popup
   H.wait_for(function()
-    return not vim.api.nvim_win_is_valid(ow)
+    return vim.api.nvim_get_current_win() == g.members.content.win
   end)
-  -- target branch
   keys("gB")
-  overlay_set("release")
-  keys("<C-s>")
+  eq(vim.api.nvim_win_get_config((sel.wait())).title[1][1], " Target branch ")
+  H.wait_for(function()
+    return sel.offered()[1] ~= "Loading…"
+  end)
+  eq(#sel.offered(), 2)
+  sel.choose("⎇ release")
   H.wait_for(function()
     return table.concat(lines(g.members.sidebar.buf), "\n"):find("⎇ release", 1, true) ~= nil
   end)
@@ -258,13 +271,11 @@ T["merge request: A offers what applies; merge asks first"] = function()
     X.mr_write("PUT", "/merge", { squash = true, should_remove_source_branch = true }, { state = "merged" }),
   })
   -- user-1 (you) has approved in the fixture: revoke instead of approve
-  local offered = choose("Merge (squash), delete the source branch", "n")
-  keys("A")
-  eq(offered(), { "Revoke approval", "Merge (squash), delete the source branch", "Mark as draft", "Close" })
+  local offered = choose("A", "Merge (squash), delete the source branch", "n")
+  eq(offered, { "Revoke approval", "Merge (squash), delete the source branch", "Mark as draft", "Close" })
   H.flush(30)
   eq(written(fake), nil) -- answered "n": nothing sent
-  choose("Merge (squash), delete the source branch", "y")
-  keys("A")
+  choose("A", "Merge (squash), delete the source branch", "y")
   H.wait_for(function()
     return lines(g.members.header.buf)[2]:find("Merged", 1, true) ~= nil
   end)
@@ -289,9 +300,7 @@ T["merge request: approve and errors are reported"] = function()
   H.wait_for(function()
     return table.concat(lines(g.members.sidebar.buf), "\n"):find("pending", 1, true) ~= nil
   end)
-  local offered = choose("Approve")
-  keys("A")
-  eq(offered()[1], "Approve")
+  eq(choose("A", "Approve")[1], "Approve")
   H.wait_for(function()
     return last_note() and last_note():find("failed", 1, true) ~= nil
   end)
@@ -327,8 +336,7 @@ T["issue: A closes and the picker below refreshes"] = function()
   H.wait_for(function()
     return lines(g.members.content.buf)[2] == " Rotate the credentials of the state backend."
   end)
-  choose("Close issue")
-  keys("A")
+  choose("A", "Close issue")
   H.wait_for(function()
     return lines(g.members.header.buf)[2]:find("Closed", 1, true) ~= nil
   end)

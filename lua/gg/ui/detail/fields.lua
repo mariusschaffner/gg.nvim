@@ -1,17 +1,22 @@
 --- The field editors the issue, merge request and milestone views share:
 --- title, people (assignees, reviewers), labels, milestone, dates and the
---- target branch. Each opens an overlay over its field (see
---- `gg.ui.detail.editing.field`) and turns what was typed into a payload.
+--- target branch. What is typed (a title, a date) is edited in an overlay
+--- over its field (`gg.ui.detail.editing.field`); what is chosen (people,
+--- labels, a milestone, a branch) in a filtered list over it
+--- (`gg.ui.detail.editing.choice`). Either way the result is a payload.
+local chooser = require("gg.ui.components.select")
 local edit = require("gg.ui.detail.edit")
 local editing = require("gg.ui.detail.editing")
 local edits = require("gg.ui.detail.edits")
 local gg = require("gg")
+local ref_picker = require("gg.ui.create.ref_picker")
+local refs = require("gg.ui.create.refs")
 
 local M = {}
 
-M.LIMIT = 500 -- members, labels, milestones loaded for completion
+M.LIMIT = 500 -- members, labels, milestones loaded to choose from
 
---- Completion sources of a project, loaded on first use.
+--- What a project offers to choose from, loaded on first use.
 ---@param host string
 ---@param project string
 ---@return { members: gg.ui.Source, labels: gg.ui.Source, milestones: gg.ui.Source }
@@ -36,12 +41,6 @@ function M.sources(host, project)
   }
 end
 
-local function skipped(unknown)
-  if #unknown > 0 then
-    edit.refuse("Skipping unrecognized: " .. table.concat(unknown, ", "))
-  end
-end
-
 ---@class gg.ui.FieldCommon
 ---@field h gg.ui.DetailHost
 ---@field save fun(payload: any): gg.Task
@@ -56,6 +55,45 @@ local function common(o, extra)
     changed = o.changed,
     render = o.render,
   }, extra)
+end
+
+-- `first` and then `rest`, each item once by `key` (case-insensitive)
+local function merged(first, rest, key)
+  local out, seen = {}, {}
+  for _, list in ipairs({ first or {}, rest or {} }) do
+    for _, item in ipairs(list) do
+      local k = key(item):lower()
+      if not seen[k] then
+        seen[k] = true
+        table.insert(out, item)
+      end
+    end
+  end
+  return out
+end
+
+local function names(items, key)
+  return vim.tbl_map(key, items or {})
+end
+
+-- " head  note": the note dimmed
+local function line_of(head, note, hl)
+  head = " " .. head
+  local marks = { { 0, #head, hl or "GitlabDetailValue" } }
+  if not note or note == "" then
+    return head, marks
+  end
+  local line = head .. "  " .. note:gsub("%c", " ")
+  table.insert(marks, { #head, #line, "GitlabDetailDim" })
+  return line, marks
+end
+
+local function username(u)
+  return u.username
+end
+
+local function label_name(l)
+  return l.name
 end
 
 --- The title, over the header's title. `required`: an empty title is
@@ -79,109 +117,133 @@ function M.title(o)
   }))
 end
 
---- People (assignees or reviewers): usernames, comma-separated, completed
---- from the project's members; the payload is their ids.
+--- People (assignees or reviewers): ticked in a list of the project's
+--- members (the current ones first); the payload is their ids.
 ---@param o gg.ui.FieldCommon|{ what: string, id: string, users: gg.User[], source: gg.ui.Source }
 function M.people(o)
   o.source:get(function(members, err)
     if err then
       return edit.refuse(("Cannot load the project members: %s"):format(err.message or tostring(err)))
     end
-    local current = vim.tbl_map(function(u)
-      return u.username
+    local current = names(o.users, username)
+    -- the member's entry for who is set already; someone who is no member
+    -- (any more) stays in the list as they are
+    local by = {}
+    for _, m in ipairs(members or {}) do
+      by[m.username:lower()] = m
+    end
+    local set = vim.tbl_map(function(u)
+      return by[u.username:lower()] or u
     end, o.users or {})
-    editing.field(o.h, common(o, {
+    local all = merged(set, members, username)
+    editing.choice(o.h, common(o, {
       what = o.what,
+      title = (o.what:gsub("^%l", string.upper)),
       id = o.id,
       pane = "sidebar",
       region = o.id,
-      text = table.concat(current, ", "),
       multi = true,
-      complete = o.source.complete,
-      unchanged = function(t)
-        local a, r = edits.diff(current, edits.split(t))
+      fit = true,
+      selected = set,
+      key = username,
+      load = chooser.static(all, function(u)
+        return u.username .. " " .. (u.name or "")
+      end),
+      line = function(u)
+        return line_of(u.username, u.name)
+      end,
+      unchanged = function(picked)
+        local a, r = edits.diff(current, names(picked, username))
         return #a == 0 and #r == 0
       end,
-      parse = function(t)
-        local found, unknown = edits.resolve(edits.split(t), members, function(u)
-          return u.username
-        end)
-        skipped(unknown)
+      payload = function(picked)
         return vim.tbl_map(function(u)
           return u.id
-        end, found)
+        end, picked)
       end,
     }))
   end)
 end
 
---- Labels, comma-separated, completed from the project's labels; the
---- payload is `{ add, remove }` (names).
+--- Labels: ticked in a list of the project's labels (the current ones
+--- first); the payload is `{ add, remove }` (names).
 ---@param o gg.ui.FieldCommon|{ labels: gg.Label[], source: gg.ui.Source }
 function M.labels(o)
-  o.source:get(function(all, err)
+  o.source:get(function(labels, err)
     if err then
       return edit.refuse(("Cannot load the labels: %s"):format(err.message or tostring(err)))
     end
-    local current = vim.tbl_map(function(l)
-      return l.name
-    end, o.labels or {})
-    editing.field(o.h, common(o, {
+    local current = names(o.labels, label_name)
+    local all = merged(o.labels, labels, label_name)
+    editing.choice(o.h, common(o, {
       what = "labels",
+      title = "Labels",
       id = "labels",
       pane = "sidebar",
       region = "labels",
-      text = table.concat(current, ", "),
       multi = true,
-      complete = o.source.complete,
-      unchanged = function(t)
-        local a, r = edits.diff(current, edits.split(t))
+      fit = true,
+      selected = o.labels,
+      key = label_name,
+      load = chooser.static(all, label_name),
+      line = function(l)
+        return line_of(l.name, l.description)
+      end,
+      unchanged = function(picked)
+        local a, r = edits.diff(current, names(picked, label_name))
         return #a == 0 and #r == 0
       end,
-      parse = function(t)
-        local found, unknown = edits.resolve(edits.split(t), all, function(l)
-          return l.name
-        end)
-        skipped(unknown)
-        local add, remove = edits.diff(current, vim.tbl_map(function(l)
-          return l.name
-        end, found))
+      payload = function(picked)
+        local add, remove = edits.diff(current, names(picked, label_name))
         return { add = add, remove = remove }
       end,
     }))
   end)
 end
 
---- The milestone: a title of an active milestone, or empty to remove it;
---- the payload is its id or false.
+local NO_MILESTONE = { none = true, title = "No milestone" }
+
+local function milestone_key(m)
+  return m.none and "none" or tostring(m.id)
+end
+
+--- The milestone: one of the active milestones, or none; the payload is
+--- its id or false.
 ---@param o gg.ui.FieldCommon|{ milestone: gg.MilestoneRef|nil, source: gg.ui.Source }
 function M.milestone(o)
-  o.source:get(function(all, err)
+  o.source:get(function(milestones, err)
     if err then
       return edit.refuse(("Cannot load the milestones: %s"):format(err.message or tostring(err)))
     end
-    local current = o.milestone and o.milestone.title or ""
-    editing.field(o.h, common(o, {
+    local current = o.milestone and milestone_key(o.milestone) or "none"
+    -- the current one stays in the list when it is no longer active
+    local all = merged({ NO_MILESTONE }, merged(milestones, { o.milestone }, milestone_key), milestone_key)
+    editing.choice(o.h, common(o, {
       what = "milestone",
+      title = "Milestone",
       id = "milestone",
       pane = "sidebar",
       region = "milestone",
-      text = current,
-      complete = o.source.complete,
-      unchanged = function(t)
-        return t:lower() == current:lower()
+      fit = true,
+      current = current,
+      key = milestone_key,
+      load = chooser.static(all, function(m)
+        return m.title
+      end),
+      line = function(m)
+        if m.none then
+          return line_of(m.title, nil, "GitlabDetailDim")
+        end
+        return line_of(m.title, m.due_date and ("due " .. m.due_date) or nil)
       end,
-      parse = function(t)
-        if t == "" then
+      unchanged = function(m)
+        return milestone_key(m) == current
+      end,
+      payload = function(m)
+        if m.none then
           return false
         end
-        local found = edits.resolve({ t }, all, function(m)
-          return m.title
-        end)
-        if not found[1] then
-          return nil, "Unknown milestone: " .. t
-        end
-        return found[1].id
+        return m.id
       end,
     }))
   end)
@@ -211,31 +273,27 @@ function M.date(o)
   }))
 end
 
---- The target branch of a merge request, completed from the project's
+--- The target branch of a merge request, chosen among the project's
 --- branches (searched as you type).
 ---@param o gg.ui.FieldCommon|{ branch: string, host: string, project: string }
 function M.target_branch(o)
-  return editing.field(o.h, common(o, {
+  return editing.choice(o.h, common(o, {
     what = "target branch",
+    title = "Target branch",
     id = "target_branch",
     pane = "sidebar",
     region = "target_branch",
-    text = o.branch or "",
-    complete = function(query, cb)
-      gg.branches.list({ host = o.host, project = o.project, search = query ~= "" and query or nil }, { per_page = 50 }):on_done(function(page)
-        cb(vim.tbl_map(function(b)
-          return { word = b.name, menu = b.default and "default" or nil }
-        end, page and page.items or {}))
-      end)
+    current = o.branch,
+    key = function(b)
+      return b.name
     end,
-    unchanged = function(t)
-      return t == (o.branch or "")
+    load = refs.loader({ host = o.host, project = o.project }),
+    line = ref_picker.line,
+    unchanged = function(b)
+      return b.name == (o.branch or "")
     end,
-    parse = function(t)
-      if t == "" then
-        return nil, "The target branch cannot be empty"
-      end
-      return t
+    payload = function(b)
+      return b.name
     end,
   }))
 end

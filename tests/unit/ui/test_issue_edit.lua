@@ -2,10 +2,12 @@
 -- title / assignees / labels / milestone / dates in overlays.
 local H = require("tests.helpers")
 local X = require("tests.support.detail_data")
+local chooser = require("gg.ui.components.select")
 local config = require("gg.ui.config")
 local date = require("gg.ui.lib.date")
 local detail = require("gg.ui.detail")
 local edits = require("gg.ui.detail.edits")
+local sel = require("tests.support.select")
 local stack = require("gg.ui.components.stack")
 local eq = MiniTest.expect.equality
 
@@ -212,20 +214,23 @@ T["gt edits the title over the header"] = function()
   eq(vim.api.nvim_get_current_win(), g.members.content.win)
 end
 
-T["ga, gl, gM: completion, payloads, unknown values"] = function()
+T["ga, gl, gM: chosen from a list over the field; payloads"] = function()
   local g, fake = open({
     X.issue_put({ assignee_ids = { 3 } }, { assignees = { X.rest_user(3, "Cid Third") } }),
     X.issue_put({ add_labels = "docs", remove_labels = "terraform" }, { labels = { "security", "docs" } }),
     X.issue_put({ milestone_id = 0 }, { milestone = vim.NIL }),
   })
-  -- assignees: completion from the members, ids sent
+  -- assignees: the members to tick, the current ones first and ticked
   keys("ga")
-  H.wait_for(function()
-    return vim.api.nvim_win_get_config(vim.api.nvim_get_current_win()).zindex == 200
-  end)
+  local prompt_win, list_win = sel.wait()
   eq(table.concat(lines(g.members.sidebar.buf), "\n"):find("ASSIGNEE", 1, true) ~= nil, true)
-  local ow = overlay_set("user-3, nobody")
-  local field = require("gg.ui.components.field_edit")
+  eq(vim.api.nvim_win_get_config(prompt_win).title[1][1], " Assignees ")
+  eq(footer(list_win), " [<Tab>] Toggle • [<CR>] Apply ")
+  -- the prompt lies over the field: its text one row and column inside
+  -- over the sidebar, not wider than its right border
+  local sp, pc = vim.api.nvim_win_get_position(g.members.sidebar.win), vim.api.nvim_win_get_config(prompt_win)
+  eq(pc.row >= sp[1] and pc.row < sp[1] + vim.api.nvim_win_get_height(g.members.sidebar.win), true)
+  eq(pc.col + pc.width + 2, sp[2] + 1 + vim.api.nvim_win_get_width(g.members.sidebar.win) + 1)
   -- the label is orange while edited
   local marks = vim.api.nvim_buf_get_extmarks(g.members.sidebar.buf, -1, 0, -1, { details = true })
   local orange = false
@@ -233,41 +238,59 @@ T["ga, gl, gM: completion, payloads, unknown values"] = function()
     orange = orange or m[4].hl_group == "GitlabDetailLabelEditing"
   end
   eq(orange, true)
-  keys("<C-s>")
+  local raw = sel.offered(nil, true)
+  eq(#raw >= 3, true) -- the members, and who is assigned without being one
+  for i, text in ipairs(sel.offered()) do
+    if vim.startswith(raw[i], " " .. chooser.TICK) then
+      sel.toggle(vim.split(text, "  ", { plain = true })[1]) -- untick who is assigned
+    end
+  end
+  sel.toggle("user-3")
+  sel.accept()
   H.wait_for(function()
     return table.concat(lines(g.members.sidebar.buf), "\n"):find("Cid Third", 1, true) ~= nil
   end)
   eq(fake:last().json.assignee_ids, { 3 })
-  local warned = false
-  for _, n in ipairs(notes) do
-    warned = warned or n[1] == "gg.ui: Skipping unrecognized: nobody"
-  end
-  eq(warned, true)
-  eq(vim.api.nvim_win_is_valid(ow), false)
-  _ = field
+  eq(vim.api.nvim_win_is_valid(prompt_win), false)
+  eq(vim.api.nvim_win_is_valid(list_win), false)
+  eq(vim.api.nvim_get_current_win(), g.members.content.win)
+  -- nothing changed: nothing is sent
+  local sent = #fake:requests()
+  keys("ga")
+  sel.wait()
+  sel.accept()
+  eq(last_note(), "gg.ui: Assignees unchanged")
+  eq(#fake:requests(), sent)
   -- labels: add / remove
   keys("gl")
-  overlay_set("security, docs")
-  keys("<C-s>")
+  eq(sel.offered(nil, true), { " " .. chooser.TICK .. " security", " " .. chooser.TICK .. " terraform", "   docs", "   WF:Doing" })
+  sel.toggle("terraform")
+  sel.toggle("docs")
+  sel.accept()
   H.wait_for(function()
     return fake:last().json.add_labels ~= nil
   end)
   eq({ fake:last().json.add_labels, fake:last().json.remove_labels }, { "docs", "terraform" })
-  -- milestone: unknown is refused (the overlay stays), empty removes it
+  -- milestone: one of the list, the cursor on the current one; none removes it
   H.wait_for(function()
     return vim.api.nvim_get_current_win() == g.members.content.win
   end)
   keys("gM")
-  ow = overlay_set("no such milestone")
-  keys("<C-s>")
-  eq(last_note(), "gg.ui: Unknown milestone: no such milestone")
-  eq(vim.api.nvim_win_is_valid(ow), true)
-  overlay_set("")
-  keys("<C-s>")
+  _, list_win = sel.wait()
+  eq(sel.offered()[1], "No milestone")
+  eq(vim.api.nvim_win_get_cursor(list_win)[1] > 1, true)
+  sel.choose("No milestone")
   H.wait_for(function()
     return fake:last().json.milestone_id ~= nil
   end)
   eq(fake:last().json.milestone_id, 0)
+  -- <Esc> dismisses the list; nothing is sent
+  sent = #fake:requests()
+  keys("gl")
+  sel.wait()
+  sel.cancel()
+  eq(vim.api.nvim_get_current_win(), g.members.content.win)
+  eq(#fake:requests(), sent)
 end
 
 T["field overlay: completion of the value at the cursor, save and cancel"] = function()

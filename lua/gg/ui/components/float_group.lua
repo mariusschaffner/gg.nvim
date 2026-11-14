@@ -9,9 +9,14 @@
 --- * `hide` / `show` keep the group alive while another screen covers it
 ---   (see `gg.ui.components.stack`); while hidden, leaving the group does
 ---   not close it.
+--- * `hold` keeps it open while a prompt outside the group has the focus.
 local float = require("gg.ui.components.float")
 
 local M = {}
+
+-- the open groups, so a prompt can hold the one that has the focus
+---@type table<gg.ui.FloatGroup, true>
+local live = setmetatable({}, { __mode = "k" })
 
 ---@class gg.ui.GroupMemberSpec : gg.ui.FloatSpec
 ---@field name string
@@ -59,7 +64,9 @@ function M.new(opts)
     _specs = {},
     _closed_au = {},
     _labels = {},
+    _holds = 0,
   }, Group)
+  live[self] = true
   self._augroup = vim.api.nvim_create_augroup(("gg.ui.group.%s"):format(tostring(self):match("0x%x+") or vim.uv.hrtime()), { clear = true })
   return self
 end
@@ -133,7 +140,8 @@ function Group:_watch(name, f)
       group = self._augroup,
       callback = function()
         vim.schedule(function()
-          if self._closed or self._hidden then
+          -- held: a prompt has the focus for now (see `hold`)
+          if self._closed or self._hidden or self._holds > 0 then
             return
           end
           local cur = vim.api.nvim_get_current_win()
@@ -168,6 +176,74 @@ end
 function Group:allow(win, allowed)
   self._guests = self._guests or {}
   self._guests[win] = allowed ~= false or nil
+end
+
+-- is `win` one of the group's windows (a member or an allowed overlay)?
+---@private
+function Group:_owns(win)
+  return self:name_of(win) ~= nil or (self._guests ~= nil and self._guests[win] == true)
+end
+
+-- bring the focus back into the group: to `win` when it is still one of the
+-- group's windows, else to the first member that takes the focus
+---@private
+function Group:_refocus(win)
+  if self._closed or self._hidden or self:_owns(vim.api.nvim_get_current_win()) then
+    return
+  end
+  if not (win and vim.api.nvim_win_is_valid(win) and self:_owns(win)) then
+    win = nil
+    for _, name in ipairs(self._order) do
+      local f = self.members[name]
+      if self._specs[name].focusable and vim.api.nvim_win_is_valid(f.win) then
+        win = f.win
+        break
+      end
+    end
+  end
+  if win then
+    vim.api.nvim_set_current_win(win)
+    self:_paint()
+  end
+end
+
+--- Keep the group open while something outside it has the focus for a
+--- moment: a prompt (`vim.ui.select`, `vim.ui.input`) that a plugin draws in
+--- its own window. Call the returned function when the prompt is over; the
+--- focus then returns to the window that had it.
+---@return fun() release
+function Group:hold()
+  local win = vim.api.nvim_get_current_win()
+  self._holds = self._holds + 1
+  local released = false
+  return function()
+    if released then
+      return
+    end
+    released = true
+    self:_refocus(win)
+    -- the prompt's windows may close only after its callback: stay held
+    -- until the window events of this tick are through
+    vim.schedule(function()
+      self._holds = self._holds - 1
+      if self._holds == 0 then
+        self:_refocus(win)
+      end
+    end)
+  end
+end
+
+--- Hold the open group that has the focus (see `Group:hold`); a no-op when
+--- the current window belongs to none.
+---@return fun() release
+function M.hold()
+  local cur = vim.api.nvim_get_current_win()
+  for g in pairs(live) do
+    if not g._closed and not g._hidden and g:_owns(cur) then
+      return g:hold()
+    end
+  end
+  return function() end
 end
 
 --- Draw member `name`'s border in `hl` (focused or not) until it is reset
@@ -328,6 +404,7 @@ function Group:close(opts)
     return
   end
   self._closed = true
+  live[self] = nil
   pcall(vim.api.nvim_del_augroup_by_id, self._augroup)
   for _, name in ipairs(self._order) do
     local f = self.members[name]

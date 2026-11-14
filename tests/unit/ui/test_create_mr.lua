@@ -121,9 +121,11 @@ T["gB / gd pick a branch from a filtered list; the generated title follows"] = f
   local prompt_win = vim.api.nvim_get_current_win()
   eq(vim.bo[vim.api.nvim_win_get_buf(prompt_win)].filetype, "gg_ui_ref_prompt")
   eq(P.title(prompt_win), " Target branch ")
-  -- below the target field, as wide as it
+  -- over the target field, as wide as it; the matches drop down from it
   local pc, fc = vim.api.nvim_win_get_config(prompt_win), vim.api.nvim_win_get_config(m.field_target.win)
-  eq({ pc.row, pc.col, pc.width }, { fc.row + 3, fc.col, fc.width })
+  eq({ pc.row, pc.col, pc.width }, { fc.row, fc.col, fc.width })
+  local lc = vim.api.nvim_win_get_config(list_win)
+  eq({ lc.row, lc.col, lc.width }, { fc.row + 3, fc.col, fc.width })
   -- the default branch first, then by name, with the commit dimmed
   eq(P.lines(vim.api.nvim_win_get_buf(list_win)), {
     " ⎇ main  1a2b3c4d  tidy up main",

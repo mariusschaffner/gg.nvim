@@ -1,5 +1,5 @@
 --- Branches and tags for the creation popups: the matches the ref picker
---- lists, and the picker opened below a field of the popup.
+--- lists, and the picker opened over a field of the popup.
 local gg = require("gg")
 local ref_picker = require("gg.ui.create.ref_picker")
 
@@ -61,7 +61,7 @@ function M.loader(ctx, tags)
   end
 end
 
---- Open the ref picker below field `id` of popup `p`; `on_pick(item)` gets
+--- Open the ref picker over field `id` of popup `p`; `on_pick(item)` gets
 --- the choice (default: it becomes the field's value).
 ---@param p gg.ui.CreatePopup
 ---@param id string
@@ -74,7 +74,8 @@ function M.pick(p, id, opts)
   p.data.ref_picker = true
   ref_picker.open({
     title = opts.title,
-    row = rect.row + 3,
+    -- the prompt takes the field's place; the matches drop down from it
+    row = rect.row,
     col = rect.col,
     width = rect.width + 2,
     group = p.group,

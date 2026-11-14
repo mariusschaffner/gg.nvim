@@ -183,7 +183,7 @@ function View:create_branch()
     return edit.refuse("A branch is already linked: " .. linked[1].name)
   end
   self:_branches(function(list)
-    vim.ui.select(list, {
+    confirm.select(list, {
       prompt = "Create branch from",
       format_item = function(b)
         return b.default and (b.name .. "  (default)") or b.name
@@ -192,7 +192,7 @@ function View:create_branch()
       if not from then
         return
       end
-      vim.ui.input({ prompt = "Branch name: ", default = edits.branch_name(self.iid, self.issue.title) }, function(name)
+      confirm.input({ prompt = "Branch name: ", default = edits.branch_name(self.iid, self.issue.title) }, function(name)
         name = name and vim.trim(name) or ""
         if name == "" then
           return
@@ -244,7 +244,7 @@ function View:create_mr()
     return open(linked[1].name)
   end
   self:_branches(function(list)
-    vim.ui.select(vim.tbl_filter(function(b)
+    confirm.select(vim.tbl_filter(function(b)
       return not b.default
     end, list), {
       prompt = "Source branch",
@@ -625,7 +625,7 @@ function View:goto_mr()
   if #mrs == 1 then
     return open(mrs[1])
   end
-  vim.ui.select(mrs, {
+  confirm.select(mrs, {
     prompt = "Linked merge requests",
     format_item = function(mr)
       return ("!%d %s"):format(mr.iid, mr.title or "")

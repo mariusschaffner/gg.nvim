@@ -5,6 +5,7 @@ local config = require("gg.ui.config")
 local date = require("gg.ui.lib.date")
 local detail = require("gg.ui.detail")
 local stack = require("gg.ui.components.stack")
+local sel = require("tests.support.select")
 local eq = MiniTest.expect.equality
 
 local s
@@ -75,16 +76,16 @@ T["gb creates a branch named after the issue from the branch picked"] = function
       response = { status = 201, body = branch("214-rotate-terraform-state-backend-credentials") },
     },
   }))
-  local offered, default
-  vim.ui.select = function(items, opts, cb)
-    offered = vim.tbl_map(opts.format_item, items)
-    cb(items[1])
-  end
+  local default
   vim.ui.input = function(opts, cb)
     default = opts.default
     cb(opts.default)
   end
   keys("gb")
+  local prompt_win = sel.wait()
+  eq(vim.api.nvim_win_get_config(prompt_win).title[1][1], " Create branch from ")
+  local offered = sel.offered()
+  sel.accept() -- the first one
   H.wait_for(function()
     return table.concat(lines(g.members.sidebar.buf), "\n"):find("⎇ 214-rotate-terraform-state", 1, true) ~= nil
   end)

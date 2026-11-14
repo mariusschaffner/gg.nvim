@@ -39,7 +39,8 @@ lua/gg/
                       pipelines, jobs, artifacts, registry, labels, users, notes ...)
   ui/                 optional UI layer (see "UI layer" below)
     lib/              pure helpers: display-width text, line builder, dates, hints
-    components/       reusable UI pieces: layout, floats, prompt, list buffer, tabs
+    components/       reusable UI pieces: layout, floats, prompt, list buffer, tabs,
+                      select (the filtered list every choice is made in)
     issues/           issues picker: filter, model, paginate, columns, render (pure) + view
     merge_requests/   merge requests picker view (same split)
     pipelines/        pipelines picker view (same split; also mounted in the MR detail view)

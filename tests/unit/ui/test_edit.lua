@@ -4,6 +4,7 @@ local H = require("tests.helpers")
 local confirm = require("gg.ui.components.confirm")
 local edit = require("gg.ui.detail.edit")
 local task = require("gg.core.task")
+local sel = require("tests.support.select")
 local eq = MiniTest.expect.equality
 
 local saved = {}
@@ -134,12 +135,6 @@ end
 
 T["confirm.menu: picks, confirms when asked, empty says so"] = function()
   local ran = {}
-  local pick
-  vim.ui.select = function(items, opts, cb)
-    eq(opts.prompt, "Actions")
-    eq(opts.format_item(items[1]), "Close")
-    cb(items[pick])
-  end
   vim.ui.input = function(_, cb)
     cb("y")
   end
@@ -151,13 +146,31 @@ T["confirm.menu: picks, confirms when asked, empty says so"] = function()
       table.insert(ran, "reopen")
     end },
   }
-  pick = 1
+  local home = vim.api.nvim_get_current_win()
   confirm.menu("Actions", items)
-  pick = 2
+  local prompt_win, list_win = sel.wait()
+  eq(vim.api.nvim_win_get_config(prompt_win).title[1][1], " Actions ")
+  eq(sel.offered(), { "Close", "Reopen" })
+  eq(vim.api.nvim_win_get_height(list_win), 2) -- as high as the entries
+  sel.choose("Close")
+  eq(vim.api.nvim_get_current_win(), home)
   confirm.menu("Actions", items)
-  pick = nil
+  sel.choose("Reopen")
   confirm.menu("Actions", items)
+  sel.cancel()
   eq(ran, { "close", "reopen" })
+  -- an editor too small for the list: vim.ui.select
+  local lines_ = vim.o.lines
+  vim.o.lines = 5
+  local asked
+  vim.ui.select = function(list, opts, cb)
+    asked = { opts.prompt, vim.tbl_map(opts.format_item, list) }
+    cb(list[2])
+  end
+  confirm.menu("Actions", items)
+  vim.o.lines = lines_
+  eq(asked, { "Actions", { "Close", "Reopen" } })
+  eq(ran, { "close", "reopen", "reopen" })
   confirm.menu("Actions", {})
   eq(notes[#notes][1], "gg.ui: no actions available")
 end

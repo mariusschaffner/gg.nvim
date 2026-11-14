@@ -100,16 +100,8 @@ local function overlay_set(text)
   return win
 end
 
-T["edits: split, token, diff, resolve, match, toggle_task, branch_name, date"] = function()
-  eq(edits.split(" a, @b ,, A ,~c "), { "a", "b", "c" })
-  eq({ edits.token("ann, bo", 7, true) }, { 5, "bo" })
-  eq({ edits.token("ann, @bo", 8, true) }, { 6, "bo" })
-  eq({ edits.token("2026.1", 6, false) }, { 0, "2026.1" })
+T["edits: diff, match, toggle_task, branch_name, date"] = function()
   eq({ edits.diff({ "a", "B" }, { "b", "c" }) }, { { "c" }, { "a" } })
-  local found, unknown = edits.resolve({ "ANN", "zed" }, { { n = "ann" }, { n = "bob" } }, function(x)
-    return x.n
-  end)
-  eq({ found, unknown }, { { { n = "ann" } }, { "zed" } })
   local c = { { word = "docs" }, { word = "security" }, { word = "user-1", menu = "Ann Example" } }
   -- prefixes first, then substrings of the word or its menu text
   eq(edits.match("s", c), { { word = "security" }, { word = "docs" }, { word = "user-1", menu = "Ann Example" } })
@@ -226,11 +218,10 @@ T["ga, gl, gM: chosen from a list over the field; payloads"] = function()
   eq(table.concat(lines(g.members.sidebar.buf), "\n"):find("ASSIGNEE", 1, true) ~= nil, true)
   eq(vim.api.nvim_win_get_config(prompt_win).title[1][1], " Assignees ")
   eq(footer(list_win), " [<Tab>] Toggle • [<CR>] Apply ")
-  -- the prompt lies over the field: its text one row and column inside
-  -- over the sidebar, not wider than its right border
+  -- the prompt lies over the field, exactly as wide as the inside of the sidebar
   local sp, pc = vim.api.nvim_win_get_position(g.members.sidebar.win), vim.api.nvim_win_get_config(prompt_win)
   eq(pc.row >= sp[1] and pc.row < sp[1] + vim.api.nvim_win_get_height(g.members.sidebar.win), true)
-  eq(pc.col + pc.width + 2, sp[2] + 1 + vim.api.nvim_win_get_width(g.members.sidebar.win) + 1)
+  eq({ pc.col, pc.width + 2 }, { sp[2] + 1, vim.api.nvim_win_get_width(g.members.sidebar.win) })
   -- the label is orange while edited
   local marks = vim.api.nvim_buf_get_extmarks(g.members.sidebar.buf, -1, 0, -1, { details = true })
   local orange = false
@@ -293,20 +284,15 @@ T["ga, gl, gM: chosen from a list over the field; payloads"] = function()
   eq(#fake:requests(), sent)
 end
 
-T["field overlay: completion of the value at the cursor, save and cancel"] = function()
+T["field overlay: placement, save and cancel"] = function()
   local cfg = config.get()
-  local asked, closed, saved_text = {}, {}, nil
+  local closed, saved_text = {}, nil
   local f = require("gg.ui.components.field_edit").open({
     row = 2,
     col = 4,
     width = 30,
-    text = "security, d",
-    multi = true,
+    text = "A title",
     keys = cfg.keymaps,
-    complete = function(query, cb)
-      table.insert(asked, query)
-      cb({ { word = "docs" }, { word = "security" }, { word = "dev" } })
-    end,
     on_save = function(t, done)
       saved_text = t
       done(true)
@@ -318,14 +304,8 @@ T["field overlay: completion of the value at the cursor, save and cancel"] = fun
   vim.cmd("stopinsert")
   local cfgw = vim.api.nvim_win_get_config(f.win)
   eq({ cfgw.row, cfgw.col, cfgw.width, cfgw.height, cfgw.zindex }, { 2, 4, 30, 1, 200 })
-  f:complete_now()
-  eq(asked, { "d" })
-  -- "security" is typed already
-  eq(vim.tbl_map(function(c)
-    return c.word
-  end, f.last_items), { "docs", "dev" })
   keys("<C-s>")
-  eq({ saved_text, closed }, { "security, d", { true } })
+  eq({ saved_text, closed }, { "A title", { true } })
   eq(vim.api.nvim_win_is_valid(f.win), false)
   -- cancel with <Esc> in normal mode
   closed = {}

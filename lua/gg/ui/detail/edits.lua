@@ -1,48 +1,7 @@
---- The pure side of editing: parsing what was typed into a field, the
---- payloads for GitLab, task toggles, branch names, completion matching and
---- which actions apply. Pure.
+--- The pure side of editing: what a choice changes, dates typed into a
+--- field, task toggles, branch names, completion matching (mentions in a
+--- comment) and which actions apply. Pure.
 local M = {}
-
---- The values of a comma-separated field: trimmed, empty ones dropped,
---- duplicates (case-insensitive) dropped, in order. A leading "@" or "~"
---- (usernames, labels) is dropped too.
----@param text string|nil
----@return string[]
-function M.split(text)
-  local out, seen = {}, {}
-  for part in tostring(text or ""):gmatch("[^,]+") do
-    local v = vim.trim(part):gsub("^[@~]", "")
-    v = vim.trim(v)
-    local key = v:lower()
-    if v ~= "" and not seen[key] then
-      seen[key] = true
-      table.insert(out, v)
-    end
-  end
-  return out
-end
-
---- The value being typed at byte column `col` (0-based, the cursor) of a
---- field line: its start column (0-based) and the text so far, without the
---- leading spaces (and "@" / "~"). Single-value fields use the whole line.
----@param line string
----@param col integer
----@param multi boolean
----@return integer start
----@return string query
-function M.token(line, col, multi)
-  local before = line:sub(1, col)
-  local start = 0
-  if multi then
-    local comma = before:match(".*(),")
-    if comma then
-      start = comma
-    end
-  end
-  local lead = before:sub(start + 1):match("^%s*[@~]?")
-  start = start + #lead
-  return start, before:sub(start + 1)
-end
 
 --- What a set of names changes: the added and the removed ones
 --- (case-insensitive, original spelling kept).
@@ -73,39 +32,12 @@ function M.diff(old, new)
   return added, removed
 end
 
---- Find typed `names` among `items` by `key(item)` (case-insensitive).
----@generic T
----@param names string[]
----@param items T[]
----@param key fun(item: T): string|nil
----@return T[] found in the order typed
----@return string[] unknown the names without a match
-function M.resolve(names, items, key)
-  local by = {}
-  for _, it in ipairs(items or {}) do
-    local k = key(it)
-    if k then
-      by[k:lower()] = by[k:lower()] or it
-    end
-  end
-  local found, unknown = {}, {}
-  for _, n in ipairs(names) do
-    local it = by[n:lower()]
-    if it then
-      table.insert(found, it)
-    else
-      table.insert(unknown, n)
-    end
-  end
-  return found, unknown
-end
-
 ---@class gg.ui.Candidate
 ---@field word string inserted
 ---@field menu? string shown beside it (e.g. the user's name)
 
 --- The candidates matching `query`: prefixes first, then substrings
---- (case-insensitive), at most `max`; `exclude` drops already typed values.
+--- (case-insensitive), at most `max`; `exclude` drops some by their word.
 ---@param query string
 ---@param candidates gg.ui.Candidate[]
 ---@param exclude? string[]

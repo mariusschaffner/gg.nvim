@@ -25,18 +25,12 @@ function M.sources(host, project)
   return {
     members = editing.source(function()
       return gg.users.project_members_all(args, { limit = M.LIMIT })
-    end, function(u)
-      return { word = u.username, menu = u.name }
     end),
     labels = editing.source(function()
       return gg.labels.list_all(args, { limit = M.LIMIT })
-    end, function(l)
-      return { word = l.name }
     end),
     milestones = editing.source(function()
       return gg.milestones.list_all({ host = host, project = project, state = "active" }, { limit = M.LIMIT })
-    end, function(m)
-      return { word = m.title }
     end),
   }
 end
@@ -76,16 +70,11 @@ local function names(items, key)
   return vim.tbl_map(key, items or {})
 end
 
--- " head  note": the note dimmed
-local function line_of(head, note, hl)
-  head = " " .. head
-  local marks = { { 0, #head, hl or "GitlabDetailValue" } }
-  if not note or note == "" then
-    return head, marks
-  end
-  local line = head .. "  " .. note:gsub("%c", " ")
-  table.insert(marks, { #head, #line, "GitlabDetailDim" })
-  return line, marks
+-- one line of a list: the value alone (no description, name or date), so
+-- the list stays as narrow as the field
+local function line_of(value, hl)
+  local line = " " .. value
+  return line, { { 0, #line, hl or "GitlabDetailValue" } }
 end
 
 local function username(u)
@@ -146,11 +135,12 @@ function M.people(o)
       fit = true,
       selected = set,
       key = username,
+      -- the name is not shown, but typing it finds its user all the same
       load = chooser.static(all, function(u)
         return u.username .. " " .. (u.name or "")
       end),
       line = function(u)
-        return line_of(u.username, u.name)
+        return line_of(u.username)
       end,
       unchanged = function(picked)
         local a, r = edits.diff(current, names(picked, username))
@@ -187,7 +177,7 @@ function M.labels(o)
       key = label_name,
       load = chooser.static(all, label_name),
       line = function(l)
-        return line_of(l.name, l.description)
+        return line_of(l.name)
       end,
       unchanged = function(picked)
         local a, r = edits.diff(current, names(picked, label_name))
@@ -231,10 +221,7 @@ function M.milestone(o)
         return m.title
       end),
       line = function(m)
-        if m.none then
-          return line_of(m.title, nil, "GitlabDetailDim")
-        end
-        return line_of(m.title, m.due_date and ("due " .. m.due_date) or nil)
+        return line_of(m.title, m.none and "GitlabDetailDim" or nil)
       end,
       unchanged = function(m)
         return milestone_key(m) == current

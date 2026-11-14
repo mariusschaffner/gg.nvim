@@ -137,7 +137,8 @@ Detail views open over the picker and over each other; `q` goes back, `Q` closes
 - **Pipeline**: the stage/job graph and the selected job's log, tailed live while it runs (`F` follows).
 
 They also edit what they show (`:help gg-ui-edit`): `i` edits a description in place, `gt` / `ga` / `gr` / `gl` /
-`gM` / `gB` / `gs` / `gd` edit title, people, labels, milestone, target branch and dates in an overlay with completion,
+`gM` / `gB` / `gs` / `gd` edit title and dates in an overlay and choose people, labels, milestone and target branch
+from a filtered list laid over the field,
 the Activity tab takes comments, replies, edits and resolves threads, `A` closes / reopens, approves and merges, the
 pipeline view retries, plays and cancels jobs, and an issue creates its branch (`gb`) or merge request (`gP`).
 

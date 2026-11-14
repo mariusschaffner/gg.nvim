@@ -68,8 +68,6 @@ local M = {}
 ---@field cancel_job gg.ui.Keymap Pipeline detail, graph: cancel the selected job (default "X")
 ---@field retry_pipeline gg.ui.Keymap Pipeline detail: retry the failed jobs (default "gR")
 ---@field cancel_pipeline gg.ui.Keymap Pipeline detail: cancel the pipeline (default "gX")
----@field complete_next gg.ui.Keymap Field edit: next completion (default "<Tab>")
----@field complete_prev gg.ui.Keymap Field edit: previous completion (default "<S-Tab>")
 ---@field create gg.ui.Keymap Table: create an issue / a merge request / run a pipeline (default "c")
 ---@field create_milestone gg.ui.Keymap Issues table: create a milestone (default "C")
 ---@field create_next_field gg.ui.Keymap Creation popup: next float (default "<Tab>")
@@ -167,8 +165,6 @@ local function defaults()
       cancel_job = "X",
       retry_pipeline = "gR",
       cancel_pipeline = "gX",
-      complete_next = "<Tab>",
-      complete_prev = "<S-Tab>",
       create = "c",
       create_milestone = "C",
       create_next_field = "<Tab>",

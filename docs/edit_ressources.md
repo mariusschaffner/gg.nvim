@@ -223,7 +223,6 @@ Two more rules:
   | `cancel_job` | `X` |
   | `retry_pipeline` | `gR` |
   | `cancel_pipeline` | `gX` (pipeline view) |
-  | `complete_next` / `complete_prev` | `<Tab>` / `<S-Tab>` |
 
 - **Existing keymaps:**
   - `edit` (`i`) stops being a placeholder.

@@ -1,6 +1,7 @@
 --- The editing glue the detail views share: a text edited in place (a
---- description), a field edited in an overlay (a title, a sidebar value, a
---- date), completion sources loaded once per view, and cursor hints. Every
+--- description), a field edited in an overlay (a title, a date) or chosen
+--- from a list (people, labels, a milestone, a branch), the lists to choose
+--- from loaded once per view, and cursor hints. Every
 --- change goes through `gg.ui.detail.edit.run`.
 local chooser = require("gg.ui.components.select")
 local edit = require("gg.ui.detail.edit")
@@ -80,8 +81,6 @@ end
 ---@field pane "header"|"content"|"sidebar"
 ---@field region string
 ---@field text string the current value as text
----@field multi? boolean
----@field complete? fun(query: string, cb: fun(items: gg.ui.Candidate[]))
 ---@field parse fun(text: string): any, string|nil the payload, or nil and why not
 ---@field unchanged? fun(text: string): boolean nothing to send
 ---@field save fun(payload: any): gg.Task
@@ -108,8 +107,6 @@ function M.field(h, opts)
     width = pos.width,
     limit = pos.limit,
     text = opts.text,
-    multi = opts.multi,
-    complete = opts.complete,
     keys = h.keys,
     group = h.group,
     on_save = function(text, done)
@@ -144,7 +141,7 @@ function M.field(h, opts)
   })
 end
 
-M.CHOICE_WIDTH = 44 -- the least outer width of a choice's picker
+M.CHOICE_MIN_WIDTH = 20 -- a narrower field still gets a picker this wide
 
 ---@class gg.ui.ChoiceEditing
 ---@field what string "labels"
@@ -178,9 +175,9 @@ function M.choice(h, opts)
   if not pos then
     return edit.refuse(("The %s field is not visible"):format(opts.what))
   end
-  -- the prompt's text sits on the field's; a field near the pane's right
-  -- edge moves the picker left
-  local width = math.max(M.CHOICE_WIDTH, pos.width + 2)
+  -- as wide as the field, the prompt's text on the field's; a field near
+  -- the pane's right edge moves the picker left
+  local width = math.max(M.CHOICE_MIN_WIDTH, pos.width + 2)
   local col = pos.col - 1
   if pos.limit then
     col = math.min(col, pos.limit + 1 - width)
@@ -192,6 +189,7 @@ function M.choice(h, opts)
     row = pos.row - 1,
     col = math.max(0, col),
     width = width,
+    min_width = M.CHOICE_MIN_WIDTH,
     group = h.group,
     load = opts.load,
     line = opts.line,
@@ -239,14 +237,11 @@ end
 
 ---@class gg.ui.Source
 ---@field get fun(self: gg.ui.Source, cb: fun(items: any[]|nil, err: gg.Error|nil))
----@field complete fun(query: string, cb: fun(items: gg.ui.Candidate[]))
 
 --- A list loaded once (on first use) and reused, e.g. the project's labels.
---- `to_candidate` turns an item into a completion candidate.
 ---@param load fun(): gg.Task resolves with `{ items }` or a list
----@param to_candidate fun(item: any): gg.ui.Candidate
 ---@return gg.ui.Source
-function M.source(load, to_candidate)
+function M.source(load)
   local items, waiting, loading = nil, {}, false
   local src = {}
   function src.get(_, cb)
@@ -268,11 +263,6 @@ function M.source(load, to_candidate)
       for _, f in ipairs(w) do
         f(items, err)
       end
-    end)
-  end
-  function src.complete(_, cb)
-    src:get(function(list)
-      cb(vim.tbl_map(to_candidate, list or {}))
     end)
   end
   return src

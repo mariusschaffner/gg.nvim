@@ -712,7 +712,6 @@ gg.ui.setup({opts})                                             *gg.ui.setup()*
         cancel_edit = "<Esc>", actions = "A",
         retry_job = "r", play_job = "p", cancel_job = "X",
         retry_pipeline = "gR", cancel_pipeline = "gX",
-        complete_next = "<Tab>", complete_prev = "<S-Tab>",
         -- creation popups (|gg-ui-create|)
         create = "c", create_milestone = "C",
         create_next_field = "<Tab>", create_prev_field = "<S-Tab>",
@@ -919,14 +918,19 @@ Editing                                                         *gg-ui-edit*
     reads `[<C-s>] Save • [<Esc>] Cancel`. `x` toggles the task under the
     cursor (`[x] toggle` shows on task lines).
 
-    Fields in an overlay laid over them: `gt` the title, `ga` assignees,
-    `gr` reviewers, `gl` labels, `gM` milestone, `gB` target branch,
-    `gs` / `gd` start / due date. Values are comma-separated; candidates for
-    the value at the cursor come up while you type, `<Tab>` / `<S-Tab>`
-    step through them; unknown names are skipped with a warning; an empty
-    milestone or date removes it. `<C-s>` or `<CR>` saves, `<Esc>` in normal
-    mode cancels. The keys show in the sidebar labels (`ASSIGNEE  [ga]`), on
-    a milestone in the header's bottom border (`[gs] Start • [gd] Due`).
+    Typed fields in an overlay laid over them: `gt` the title, `gs` / `gd`
+    start / due date (an empty date removes it). `<C-s>` or `<CR>` saves,
+    `<Esc>` in normal mode cancels.
+
+    Chosen fields in a filtered list laid over them, as wide as the
+    sidebar: `ga` assignees, `gr` reviewers, `gl` labels (`<Tab>` ticks,
+    `<CR>` applies what is ticked), `gM` milestone (`No milestone` removes
+    it) and `gB` target branch (`<CR>` picks). Typing filters, `<C-n>` /
+    `<C-p>` or the arrows move, `<Esc>` cancels. The `A` menu and the
+    branch choices of an issue use the same list, centred.
+
+    The keys show in the sidebar labels (`ASSIGNEE  [ga]`), on a milestone
+    in the header's bottom border (`[gs] Start • [gd] Due`).
 
     Comments (Activity): a box pinned to the bottom of the tab (`MS › write
     a new comment…  [i] Comment`) opens with `i` into the composer; `gc` replies to the thread under

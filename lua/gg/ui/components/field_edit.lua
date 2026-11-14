@@ -2,15 +2,11 @@
 --- a borderless float in the field's place, seeded with its current text.
 ---
 --- `submit` (`<C-s>`) or `<CR>` saves, `cancel_edit` (`<Esc>` in normal
---- mode) or leaving the window cancels. With `complete`, candidates for the
---- value at the cursor come up while typing (debounced) and on
---- `complete_next` / `complete_prev` (`<Tab>` / `<S-Tab>`), which also step
---- through them. Multi-value fields are comma-separated.
-local edits = require("gg.ui.detail.edits")
-
+--- mode) or leaving the window cancels. What is chosen rather than typed
+--- (people, labels, a milestone, a branch) goes through
+--- `gg.ui.components.select` instead.
 local M = {}
 
-M.DEBOUNCE_MS = 150
 M.MIN_WIDTH = 24
 
 ---@class gg.ui.FieldEditOpts
@@ -19,9 +15,7 @@ M.MIN_WIDTH = 24
 ---@field width integer
 ---@field limit? integer 0-based editor column the overlay must end before (default: the editor's width); a field near it moves left
 ---@field text string the current value
----@field multi? boolean comma-separated values
 ---@field keys gg.ui.Keymaps
----@field complete? fun(query: string, cb: fun(items: gg.ui.Candidate[])) candidates for the value being typed
 ---@field on_save fun(text: string, done: fun(ok: boolean)) keep editing unless done(true)
 ---@field on_close fun(saved: boolean)
 ---@field group? gg.ui.FloatGroup the view's windows (the overlay may take the focus)
@@ -30,7 +24,6 @@ M.MIN_WIDTH = 24
 ---@field win integer
 ---@field buf integer
 ---@field closed boolean
----@field last_items gg.ui.Candidate[]|nil the last candidates offered (tests)
 local Field = {}
 Field.__index = Field
 
@@ -91,41 +84,14 @@ function M.open(opts)
     self:save()
   end)
   map("i", "<CR>", function()
-    if vim.fn.pumvisible() == 1 then
-      return "<C-y>"
-    end
-    vim.schedule(function()
-      self:save()
-    end)
-    return ""
-  end, { expr = true })
-  map("i", opts.keys.complete_next, function()
-    if vim.fn.pumvisible() == 1 then
-      return "<C-n>"
-    end
-    vim.schedule(function()
-      self:complete_now()
-    end)
-    return ""
-  end, { expr = true })
-  map("i", opts.keys.complete_prev, function()
-    return vim.fn.pumvisible() == 1 and "<C-p>" or ""
-  end, { expr = true })
+    self:save()
+  end)
   self.augroup = vim.api.nvim_create_augroup(("gg.ui.field.%d"):format(win), { clear = true })
-  if opts.complete then
-    vim.api.nvim_create_autocmd("TextChangedI", {
-      group = self.augroup,
-      buffer = buf,
-      callback = function()
-        self:_debounce()
-      end,
-    })
-  end
   vim.api.nvim_create_autocmd("WinLeave", {
     group = self.augroup,
     buffer = buf,
     callback = function()
-      -- the completion menu does not leave the window; anything else cancels
+      -- leaving the overlay cancels
       vim.schedule(function()
         if not self.closed and not self.saving and vim.api.nvim_get_current_win() ~= self.win then
           self:cancel()
@@ -148,54 +114,11 @@ function Field:text()
 end
 
 ---@private
-function Field:_debounce()
-  if self.timer then
-    self.timer:stop()
-  else
-    self.timer = vim.uv.new_timer()
-  end
-  self.timer:start(M.DEBOUNCE_MS, 0, vim.schedule_wrap(function()
-    self:complete_now()
-  end))
-end
-
---- Ask for the candidates of the value at the cursor and offer them.
-function Field:complete_now()
-  if self.closed or not self.opts.complete then
-    return
-  end
-  local line = self:text()
-  local col = vim.api.nvim_win_is_valid(self.win) and vim.api.nvim_win_get_cursor(self.win)[2] or #line
-  if vim.api.nvim_get_mode().mode:sub(1, 1) ~= "i" then
-    col = #line
-  end
-  local start, query = edits.token(line, col, self.opts.multi == true)
-  local typed = self.opts.multi and edits.split(line:sub(1, start)) or {}
-  self.opts.complete(query, function(items)
-    if self.closed then
-      return
-    end
-    items = edits.match(query, items or {}, typed)
-    self.last_items = items
-    if #items > 0 and vim.api.nvim_get_current_win() == self.win and vim.api.nvim_get_mode().mode:sub(1, 1) == "i" then
-      vim.fn.complete(start + 1, vim.tbl_map(function(c)
-        return { word = c.word, menu = c.menu, dup = 0 }
-      end, items))
-    end
-  end)
-end
-
----@private
 function Field:_finish(saved)
   if self.closed then
     return
   end
   self.closed = true
-  if self.timer then
-    self.timer:stop()
-    self.timer:close()
-    self.timer = nil
-  end
   pcall(vim.api.nvim_del_augroup_by_id, self.augroup)
   if self.opts.group then
     self.opts.group:allow(self.win, false)

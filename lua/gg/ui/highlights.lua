@@ -50,6 +50,14 @@ M.LINKS = {
   -- bar's "━" cells are drawn in that colour (Diff* groups carry a background)
   { "GitlabDiffAdd", "GitlabPipelineSuccess" },
   { "GitlabDiffDelete", "GitlabPipelineFailed" },
+  -- the review: whole-line tints of added and removed lines, the line numbers
+  { "GitlabDiffAddLine", "DiffAdd" },
+  { "GitlabDiffDeleteLine", "DiffDelete" },
+  { "GitlabDiffLineNr", "LineNr" },
+  { "GitlabDiffHunk", "GitlabDetailDim" },
+  { "GitlabDiffGap", "GitlabDetailDim" },
+  { "GitlabDiffViewed", "DiagnosticOk" },
+  { "GitlabDiffCurrent", "Function" },
   -- pipelines
   { "GitlabRefDefault", "Special" },
   { "GitlabRefTag", "Constant" },
@@ -100,6 +108,8 @@ M.LINKS = {
   { "GitlabBadgeResolved", "DiagnosticOk" },
   { "GitlabBadgeUnresolved", "DiagnosticWarn" },
   { "GitlabBadgeContext", "Special" },
+  { "GitlabBadgePending", "DiagnosticWarn" },
+  { "GitlabBadgeOutdated", "GitlabDetailDim" },
   { "GitlabReaction", "GitlabDetailDim" },
   -- strips (merge readiness, milestone dates)
   { "GitlabStripDone", "DiagnosticOk" },

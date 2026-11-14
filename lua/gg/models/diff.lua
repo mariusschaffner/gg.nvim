@@ -58,6 +58,69 @@ local M = {}
 ---@field real_size string|nil
 ---@field diff_refs gg.DiffRefs the version as diff refs (for positioned comments)
 
+---@class gg.DiffLine
+---@field kind "context"|"add"|"delete"
+---@field old_line integer|nil line number before the change (context, delete)
+---@field new_line integer|nil line number after the change (context, add)
+---@field text string the line without its diff marker
+---@field no_newline boolean|nil the file does not end with a newline here
+
+---@class gg.DiffHunk
+---@field old_start integer
+---@field old_count integer
+---@field new_start integer
+---@field new_count integer
+---@field section string the text after the second `@@` (often a function name)
+---@field header string the whole `@@ ... @@` line
+---@field lines gg.DiffLine[]
+
+--- Parse the unified diff text of one file into hunks with old and new line
+--- numbers per line. Anything before the first hunk header is skipped.
+---@param diff string|nil
+---@return gg.DiffHunk[]
+function M.parse(diff)
+  local hunks = {}
+  if type(diff) ~= "string" or diff == "" then
+    return hunks
+  end
+  local hunk, old, new
+  for raw in (diff:gsub("\r\n", "\n") .. "\n"):gmatch("([^\n]*)\n") do
+    local os_, oc, ns, nc, section = raw:match("^@@ %-(%d+),?(%d*) %+(%d+),?(%d*) @@ ?(.*)$")
+    if os_ then
+      old, new = tonumber(os_), tonumber(ns)
+      hunk = {
+        old_start = old,
+        old_count = oc == "" and 1 or tonumber(oc),
+        new_start = new,
+        new_count = nc == "" and 1 or tonumber(nc),
+        section = section,
+        header = raw,
+        lines = {},
+      }
+      table.insert(hunks, hunk)
+    elseif hunk then
+      local c, text = raw:sub(1, 1), raw:sub(2)
+      if c == "+" then
+        table.insert(hunk.lines, { kind = "add", new_line = new, text = text })
+        new = new + 1
+      elseif c == "-" then
+        table.insert(hunk.lines, { kind = "delete", old_line = old, text = text })
+        old = old + 1
+      elseif c == " " then
+        table.insert(hunk.lines, { kind = "context", old_line = old, new_line = new, text = text })
+        old, new = old + 1, new + 1
+      elseif c == "\\" then
+        local last = hunk.lines[#hunk.lines]
+        if last then
+          last.no_newline = true
+        end
+      end
+    end
+  end
+  -- the split leaves one empty string after the last newline: not a line
+  return hunks
+end
+
 --- Map a GraphQL Commit node.
 ---@param node table|nil
 ---@param ctx? { origin?: string }

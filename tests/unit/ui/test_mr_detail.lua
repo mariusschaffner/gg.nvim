@@ -258,16 +258,21 @@ T["view: Changes, Commits, Activity tabs"] = function()
   local cfoot = table.concat(vim.tbl_map(function(ch)
     return ch[1]
   end, vim.api.nvim_win_get_config(win).footer))
-  eq(cfoot, " [i] File ")
-  -- opening a file comes with the review view: the key says so
-  local notes = {}
-  local notify = vim.notify
-  vim.notify = function(msg)
-    table.insert(notes, msg)
+  eq(cfoot, " [i] File • [gd] Review ")
+  -- a file opens the review on it; gd opens it from anywhere
+  local opened = {}
+  local real = detail.review
+  detail.review = function(_, mr_, opts)
+    table.insert(opened, { mr_.iid, opts.path or false })
   end
-  keys("i")
-  vim.notify = notify
-  eq(notes, { "gg.ui: opening a file is not available yet" })
+  vim.api.nvim_win_set_cursor(win, { 3, 0 })
+  local ok, err = pcall(function()
+    keys("i")
+    keys("gd")
+  end)
+  detail.review = real
+  assert(ok, err)
+  eq(opened, { { 88, "internal/commands/mr/view.go" }, { 88, false } })
   keys("<Tab>")
   local m = lines(vim.api.nvim_win_get_buf(win))
   eq(m[4], " │   return false on any stat error, not just missing")

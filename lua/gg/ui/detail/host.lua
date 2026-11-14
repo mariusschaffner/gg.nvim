@@ -50,6 +50,9 @@ local SIDE_WIN_OPTS = {
 ---@field name string e.g. "issue" (filetype "gg_ui_detail_issue")
 ---@field tabs? gg.ui.TabSpec[] nil: one unnamed content buffer
 ---@field sidebar? boolean wants a sidebar
+---@field sidebar_left? boolean the sidebar sits left of the content
+---@field sidebar_focus? boolean the sidebar takes the focus and has a cursor line
+---@field on_sidebar? fun(float: gg.ui.Float) the sidebar was (re)created: map its keys
 ---@field on_render? fun() redraw everything (resize, colourscheme, sidebar change)
 ---@field on_refresh? fun() `R`
 ---@field on_tab? fun(key: string) a tab became active
@@ -87,6 +90,9 @@ function M.new(opts)
     tabs = opts.tabs or { { key = "main", label = "" } },
     named_tabs = opts.tabs ~= nil,
     want_sidebar = opts.sidebar == true,
+    sidebar_left = opts.sidebar_left == true,
+    sidebar_focus = opts.sidebar_focus == true,
+    _on_sidebar = opts.on_sidebar,
     bufs = {},
     docs = {},
     docks = {}, -- tab key -> the box pinned to its bottom (false: none)
@@ -157,7 +163,7 @@ end
 
 ---@private
 function Host:_rects()
-  local r = layout.detail({ header_h = self.header_h, sidebar = self.want_sidebar })
+  local r = layout.detail({ header_h = self.header_h, sidebar = self.want_sidebar, left = self.sidebar_left })
   -- the dock: a one-line box over the last rows inside the content box
   local c = r.content
   r.dock = { row = c.row + c.height - M.DOCK_ROWS + 1, col = c.col + 1, width = math.max(1, c.width - 2), height = 1 }
@@ -177,11 +183,15 @@ function Host:_sync_sidebar()
   if want and not self:has_sidebar() then
     self.sidebar_float = self.group:add({
       name = "sidebar",
-      focusable = false,
+      focusable = self.sidebar_focus,
       filetype = "gg_ui_detail_sidebar",
-      win_opts = SIDE_WIN_OPTS,
+      win_opts = self.sidebar_focus and CONTENT_WIN_OPTS or SIDE_WIN_OPTS,
+      winhighlight = self.sidebar_focus and "CursorLine:GitlabCursorLine" or nil,
     })
     self.group:relayout()
+    if self._on_sidebar then
+      self._on_sidebar(self.sidebar_float)
+    end
   elseif not want and self:has_sidebar() then
     self.group:remove("sidebar")
     self.sidebar_float = nil
@@ -438,13 +448,32 @@ function Host:_chrome()
   end
   -- no hints: no footer at all (a placeholder would break the border)
   footer = footer or ""
-  float.set_text(win, { title = title, footer = footer })
+  if not (self._title_right or self._footer_right) then
+    float.set_text(win, { title = title, footer = footer })
+    return
+  end
+  float.set_text(win, {
+    title = title,
+    footer = footer,
+    title_right = self._title_right,
+    footer_right = not self._edit_footer and self._footer_right or nil,
+    label_hl = (self.editing and self.editing.kind == "text") and "GitlabDetailBorderEditing" or "GitlabDetailBorder",
+  })
 end
 
 --- Set the content window's title (views without tabs).
 ---@param title string|gg.ui.Chunk[]
 function Host:set_title(title)
   self._title = title
+  self:_chrome()
+end
+
+--- Set the right-hand labels of the content window's border: next to the
+--- title and next to the footer (nil: none).
+---@param title_right gg.ui.Chunk[]|nil
+---@param footer_right gg.ui.Chunk[]|nil
+function Host:set_right(title_right, footer_right)
+  self._title_right, self._footer_right = title_right, footer_right
   self:_chrome()
 end
 

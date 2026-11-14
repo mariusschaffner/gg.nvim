@@ -23,8 +23,11 @@ M.MAX_HEIGHT = 10
 ---@field placeholder? string
 ---@field keys gg.ui.Keymaps
 ---@field resolve? boolean offer "post & resolve"
+---@field labels? { submit?: string, resolve?: string } footer texts (default "Post", "Post & resolve")
+---@field alt? { key: gg.ui.Keymap, desc: string } a second way to submit (`on_submit` gets `alt = true`)
+---@field allow_empty? boolean an empty text may be submitted
 ---@field mentions? fun(): gg.ui.Candidate[] usernames to complete after "@"
----@field on_submit fun(text: string, resolve: boolean, done: fun(ok: boolean))
+---@field on_submit fun(text: string, resolve: boolean, done: fun(ok: boolean), alt: boolean)
 ---@field on_close fun(posted: boolean)
 ---@field group? gg.ui.FloatGroup
 
@@ -83,6 +86,11 @@ function M.open(opts)
       self:submit(true)
     end)
   end
+  if opts.alt then
+    map({ "n", "i" }, opts.alt.key, function()
+      self:submit(false, true)
+    end)
+  end
   map("n", opts.keys.cancel_edit, function()
     self:cancel()
   end)
@@ -134,9 +142,13 @@ end
 ---@private
 function Composer:_footer()
   local o = self.opts
-  local hints = { { key = first(o.keys.submit), desc = "Post" } }
+  local labels = o.labels or {}
+  local hints = { { key = first(o.keys.submit), desc = labels.submit or "Post" } }
   if o.resolve then
-    table.insert(hints, { key = first(o.keys.submit_resolve), desc = "Post & resolve" })
+    table.insert(hints, { key = first(o.keys.submit_resolve), desc = labels.resolve or "Post & resolve" })
+  end
+  if o.alt then
+    table.insert(hints, { key = first(o.alt.key), desc = o.alt.desc })
   end
   table.insert(hints, { key = first(o.keys.cancel_edit), desc = "Cancel" })
   local chunks = hint.chunks(vim.tbl_filter(function(h)
@@ -219,14 +231,15 @@ function Composer:_finish(posted)
   self.opts.on_close(posted)
 end
 
---- Post (and resolve). Empty text is refused.
+--- Post (and resolve). Empty text is refused unless `allow_empty`.
 ---@param resolve boolean
-function Composer:submit(resolve)
+---@param alt? boolean submitted with the `alt` key
+function Composer:submit(resolve, alt)
   if self.closed or self.saving then
     return
   end
   local text = vim.trim(self:text())
-  if text == "" then
+  if text == "" and not self.opts.allow_empty then
     vim.notify("gg.ui: the comment is empty", vim.log.levels.WARN)
     return
   end
@@ -237,7 +250,7 @@ function Composer:submit(resolve)
     if ok then
       self:_finish(true)
     end
-  end)
+  end, alt == true)
 end
 
 --- Close without posting.

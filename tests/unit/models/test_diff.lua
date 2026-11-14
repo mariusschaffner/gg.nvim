@@ -8,6 +8,26 @@ T["count_lines skips file headers and context"] = function()
   eq({ diff.count_lines("") }, { 0, 0 })
 end
 
+T["parse: hunks with old and new line numbers"] = function()
+  local hunks = diff.parse("--- a/x\n+++ b/x\n@@ -3,4 +3,5 @@ function f()\n a\n-b\n+B\n+C\n d\n@@ -20 +21,0 @@\n-z\n\\ No newline at end of file\n")
+  eq(#hunks, 2)
+  local h = hunks[1]
+  eq({ h.old_start, h.old_count, h.new_start, h.new_count, h.section }, { 3, 4, 3, 5, "function f()" })
+  eq(h.lines[1], { kind = "context", old_line = 3, new_line = 3, text = "a" })
+  eq(h.lines[2], { kind = "delete", old_line = 4, text = "b" })
+  eq(h.lines[3], { kind = "add", new_line = 4, text = "B" })
+  eq(h.lines[4], { kind = "add", new_line = 5, text = "C" })
+  eq(h.lines[5], { kind = "context", old_line = 5, new_line = 6, text = "d" })
+  eq({ hunks[2].old_count, hunks[2].new_count, hunks[2].section }, { 1, 0, "" })
+  eq(hunks[2].lines, { { kind = "delete", old_line = 20, text = "z", no_newline = true } })
+end
+
+T["parse: empty and CRLF"] = function()
+  eq(diff.parse(""), {})
+  eq(diff.parse(nil), {})
+  eq(diff.parse("@@ -1 +1 @@\r\n-a\r\n+b\r\n")[1].lines[2], { kind = "add", new_line = 1, text = "b" })
+end
+
 T["stat: collapsed diffs have nil counts"] = function()
   local f = diff.file_from_rest({ old_path = "a", new_path = "a", diff = "", collapsed = true })
   eq(diff.stat(f), { path = "a", status = "modified" })

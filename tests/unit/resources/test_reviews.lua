@@ -69,6 +69,29 @@ T["create_draft, edit_draft, delete_draft"] = function()
   eq(fake:last().method, "DELETE")
 end
 
+T["create_draft, edit_draft: a position is checked and gets the SHAs of the latest version"] = function()
+  local fake = H.fake({ "rest/notes/write.json" })
+  local base = "/api/v4/projects/my-group%2Fmy-project/merge_requests/12/draft_notes"
+  fake:add({ request = { path = base, method = "POST" }, response = { status = 201, body = { id = 9, note = "x" } } })
+  fake:add({ request = { path = base .. "/9", method = "PUT" }, response = { body = { id = 9, note = "x" } } })
+  H.await(reviews.create_draft(with({ note = "x", position = { new_path = "src/a.lua", new_line = 5 } })))
+  eq(fake:last().json.position, {
+    new_path = "src/a.lua",
+    old_path = "src/a.lua",
+    new_line = 5,
+    position_type = "text",
+    base_sha = "eeb57dffe83deb686a60a71c16c32f71046868fd",
+    start_sha = "eeb57dffe83deb686a60a71c16c32f71046868fd",
+    head_sha = "33e2ee8579fda5bc36accc9c6fbd0b4fefda9e30",
+  })
+  local n = #fake:requests()
+  H.await(reviews.edit_draft(with({ draft_id = 9, position = { new_path = "a", position_type = "file", base_sha = "b", start_sha = "s", head_sha = "h" } })))
+  eq(#fake:requests(), n + 1)
+  eq(fake:last().json.position.position_type, "file")
+  eq(select(2, H.await(reviews.create_draft(with({ note = "x", position = { new_line = 5 } })))).details.key, "position.new_path")
+  eq(select(2, H.await(reviews.edit_draft(with({ draft_id = 9, position = { new_path = "a", bogus = 1 } })))).details.key, "position.bogus")
+end
+
 T["discard_drafts: stops at the first error and reports how many were deleted"] = function()
   local fake = H.fake({ "rest/reviews/drafts.json" })
   local _, err = H.await(reviews.discard_drafts(MR, { limit = 10, per_page = 2 }))

@@ -54,4 +54,14 @@ function M.pipeline(ctx, pipeline)
   return push(ctx, "gg.ui.detail.pipeline.view", pipeline)
 end
 
+--- Open the review of merge request `mr`: its diff, threads and pending
+--- comments (`iid` is required). `opts.path` is the file to start on.
+---@param ctx gg.ui.DetailCtx
+---@param mr gg.MergeRequest|{ iid: integer, project?: string }
+---@param opts? { path?: string }
+---@return gg.ui.Screen|nil
+function M.review(ctx, mr, opts)
+  return push(ctx, "gg.ui.detail.review.view", { mr = mr, path = opts and opts.path or nil })
+end
+
 return M

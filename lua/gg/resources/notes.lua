@@ -14,7 +14,6 @@
 local common = require("gg.resources.common")
 local gid = require("gg.models.gid")
 local graphql = require("gg.graphql.client")
-local mr_changes = require("gg.resources.mr_changes")
 local note_model = require("gg.models.note")
 local rest = require("gg.rest.client")
 local task = require("gg.core.task")
@@ -173,48 +172,6 @@ function M.list_all(args, opts)
   return notes_all(args, opts)
 end
 
----@class gg.NewPosition
----@field new_path string
----@field old_path? string defaults to new_path
----@field new_line? integer
----@field old_line? integer
----@field position_type? "text"|"image"|"file" default "text"
----@field base_sha? string looked up from the latest diff version when missing
----@field start_sha? string
----@field head_sha? string
----@field line_range? table REST line_range for multi-line comments
-
-local POSITION_KEYS = {
-  new_path = "string",
-  old_path = "string",
-  new_line = "number",
-  old_line = "number",
-  position_type = "string",
-  base_sha = "string",
-  start_sha = "string",
-  head_sha = "string",
-  line_range = "table",
-}
-
-local function check_position(p)
-  if type(p) ~= "table" then
-    return common.invalid("position", "must be a table")
-  end
-  for k, v in pairs(p) do
-    local want = POSITION_KEYS[k]
-    if not want then
-      return common.invalid("position." .. tostring(k), "is not a known position field")
-    end
-    if type(v) ~= want then
-      return common.invalid("position." .. k, "must be a " .. want)
-    end
-  end
-  if type(p.new_path) ~= "string" or p.new_path == "" then
-    return common.invalid("position.new_path", "is required")
-  end
-  return nil
-end
-
 ---@class gg.NoteAddArgs : gg.NoteableArgs
 ---@field body string
 ---@field position? gg.NewPosition merge requests only: a diff comment
@@ -232,7 +189,7 @@ function M.add(args)
     if args.noteable ~= "merge_request" then
       return task.failed(common.invalid("position", "only applies to merge requests"))
     end
-    local perr = check_position(args.position)
+    local perr = common.check_position(args.position)
     if perr then
       return task.failed(perr)
     end
@@ -240,18 +197,10 @@ function M.add(args)
   return task.run(function()
     local body = { body = args.body }
     if args.position then
-      local p = vim.deepcopy(args.position)
-      if not (p.base_sha and p.start_sha and p.head_sha) then
-        local version, verr = mr_changes.latest_version({ host = args.host, project = args.project, iid = args.iid }):await()
-        if not version then
-          return nil, verr
-        end
-        p.base_sha = p.base_sha or version.base_commit_sha
-        p.start_sha = p.start_sha or version.start_commit_sha
-        p.head_sha = p.head_sha or version.head_commit_sha
+      local p, perr = common.complete_position(args, args.position)
+      if not p then
+        return nil, perr
       end
-      p.position_type = p.position_type or "text"
-      p.old_path = p.old_path or p.new_path
       body.position = p
     end
     local res, rerr = rest.request(args.host, "POST", noteable_path(args, "/discussions"), { body = body }):await()

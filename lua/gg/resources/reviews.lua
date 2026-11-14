@@ -95,7 +95,7 @@ end
 ---@field project string|integer
 ---@field iid integer
 ---@field note string
----@field position? table a diff position (as for gg.notes.add, with all SHAs)
+---@field position? gg.NewPosition a diff position; missing SHAs come from the latest diff version
 ---@field in_reply_to_discussion_id? string
 ---@field resolve_discussion? boolean
 ---@field commit_id? string
@@ -105,11 +105,23 @@ end
 ---@return gg.Task resolves with gg.DraftNote
 function M.create_draft(args)
   local s = spec({ note = "string", position = "table?", in_reply_to_discussion_id = "string?", resolve_discussion = "boolean?", commit_id = "string?" })
-  return common.run(args, s, function()
+  local cerr = common.check(args, s) or (type(args.position) == "table" and common.check_position(args.position)) or nil
+  if cerr then
+    return task.failed(cerr)
+  end
+  return task.run(function()
+    local position
+    if args.position then
+      local perr
+      position, perr = common.complete_position(args, args.position)
+      if not position then
+        return nil, perr
+      end
+    end
     local res, err = rest.request(args.host, "POST", mr_path(args, "/draft_notes"), {
       body = {
         note = args.note,
-        position = args.position,
+        position = position,
         in_reply_to_discussion_id = args.in_reply_to_discussion_id,
         resolve_discussion = args.resolve_discussion,
         commit_id = args.commit_id,
@@ -123,11 +135,11 @@ function M.create_draft(args)
 end
 
 --- Edit a draft note.
----@param args { host: string, project: string|integer, iid: integer, draft_id: integer, note?: string, position?: table }
+---@param args { host: string, project: string|integer, iid: integer, draft_id: integer, note?: string, position?: gg.NewPosition }
 ---@return gg.Task resolves with gg.DraftNote
 function M.edit_draft(args)
   local s = spec({ draft_id = "id", note = "string?", position = "table?" })
-  local err = common.check(args, s)
+  local err = common.check(args, s) or (type(args.position) == "table" and common.check_position(args.position)) or nil
   if err then
     return task.failed(err)
   end
@@ -135,8 +147,16 @@ function M.edit_draft(args)
     return task.failed(common.invalid("note", "(or args.position) is required: nothing to update"))
   end
   return task.run(function()
+    local position
+    if args.position then
+      local perr
+      position, perr = common.complete_position(args, args.position)
+      if not position then
+        return nil, perr
+      end
+    end
     local path = mr_path(args, ("/draft_notes/%d"):format(common.int(args.draft_id)))
-    local res, rerr = rest.request(args.host, "PUT", path, { body = { note = args.note, position = args.position } }):await()
+    local res, rerr = rest.request(args.host, "PUT", path, { body = { note = args.note, position = position } }):await()
     if rerr then
       return nil, rerr
     end

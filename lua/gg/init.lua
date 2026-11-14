@@ -26,6 +26,16 @@ M.errors = require("gg.core.errors")
 --- Remote URLs, web URLs and short references: `parse`, `parse_web_url`, `parse_ref`.
 M.context = require("gg.context")
 
+--- Diff text and comment positions (pure): `parse` a file's unified diff into
+--- hunks; `line_position`, `range_position` and `file_position` build the
+--- `position` of a diff comment.
+M.diff = {
+  parse = require("gg.models.diff").parse,
+  line_position = require("gg.models.position").line,
+  range_position = require("gg.models.position").range,
+  file_position = require("gg.models.position").file,
+}
+
 --- Test support for consumers: a backend that replays fixtures.
 M.testing = {
   fake_backend = require("gg.transport.backends.fake"),
@@ -34,6 +44,7 @@ M.testing = {
 -- resources
 M.artifacts = require("gg.resources.artifacts")
 M.branches = require("gg.resources.branches")
+M.files = require("gg.resources.files")
 M.issues = require("gg.resources.issues")
 M.jobs = require("gg.resources.jobs")
 M.labels = require("gg.resources.labels")

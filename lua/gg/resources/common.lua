@@ -7,6 +7,7 @@ local config = require("gg.config")
 local errors = require("gg.core.errors")
 local http = require("gg.transport.http")
 local pagination = require("gg.transport.pagination")
+local position_model = require("gg.models.position")
 local rest = require("gg.rest.client")
 local task = require("gg.core.task")
 
@@ -297,6 +298,42 @@ function M.run(args, spec, fn)
     return task.failed(err)
   end
   return task.run(fn)
+end
+
+--- Validate the diff position of a new comment.
+---@param p any
+---@return gg.Error|nil
+function M.check_position(p)
+  local key, message = position_model.check(p)
+  if key then
+    return M.invalid(key, message)
+  end
+  return nil
+end
+
+--- Complete a diff position for sending: missing SHAs come from the merge
+--- request's latest diff version, the type defaults to "text" and the old
+--- path to the new one. Awaits; call it inside a task.
+---@param args { host: string, project: string|integer, iid: integer }
+---@param position gg.NewPosition
+---@return table|nil position
+---@return gg.Error|nil
+function M.complete_position(args, position)
+  local p = vim.deepcopy(position)
+  if not (p.base_sha and p.start_sha and p.head_sha) then
+    -- required here: mr_changes itself builds on this module
+    local mr_changes = require("gg.resources.mr_changes")
+    local version, err = mr_changes.latest_version({ host = args.host, project = args.project, iid = args.iid }):await()
+    if not version then
+      return nil, err
+    end
+    p.base_sha = p.base_sha or version.base_commit_sha
+    p.start_sha = p.start_sha or version.start_commit_sha
+    p.head_sha = p.head_sha or version.head_commit_sha
+  end
+  p.position_type = p.position_type or "text"
+  p.old_path = p.old_path or p.new_path
+  return p, nil
 end
 
 return M

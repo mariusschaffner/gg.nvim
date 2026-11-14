@@ -4,7 +4,6 @@
 --- keys: `i` comment (the box at the end), `gc` reply, `gE` edit and `gD`
 --- delete your own comment, `gX` resolve / unresolve the thread.
 local avatar = require("gg.ui.lib.avatar")
-local composer = require("gg.ui.components.composer")
 local confirm = require("gg.ui.components.confirm")
 local date = require("gg.ui.lib.date")
 local edit = require("gg.ui.detail.edit")
@@ -161,49 +160,28 @@ end
 -- to follow afterwards
 ---@private
 function Tab:_compose(o)
-  local h = self.host
-  if h.editing then
-    return edit.refuse("Finish the current edit first")
-  end
-  if not self:_open() then
+  if not self.host.editing and not self:_open() then
     return edit.refuse("Commenting is closed")
   end
-  h:begin_edit({ kind = "composer" })
-  return composer.open({
-    win = h.content_float.win,
-    place = o.place,
-    col = o.col,
-    width = o.width or h:content_width(),
-    text = o.text,
+  return editing.compose(self.host, {
+    what = o.what,
+    busy = o.busy,
+    success = o.success,
     title = o.title,
     placeholder = o.placeholder,
-    keys = h.keys,
+    text = o.text,
+    place = o.place,
+    col = o.col,
+    width = o.width,
     resolve = o.resolve,
     mentions = function()
       return self:_mentions()
     end,
-    group = h.group,
-    on_submit = function(text, resolve, done)
-      edit.run({
-        what = o.what,
-        busy = o.busy,
-        success = o.success,
-        task = function()
-          return o.post(text, resolve)
-        end,
-        alive = function()
-          return not h.closed
-        end,
-        apply = function(res)
-          self:_done(o.follow and o.follow(res) or nil)
-        end,
-        done = function(_, err)
-          done(err == nil)
-        end,
-      })
+    post = o.post,
+    apply = function(res)
+      self:_done(o.follow and o.follow(res) or nil)
     end,
-    on_close = function()
-      h:end_edit()
+    render = function()
       self:render()
     end,
   })

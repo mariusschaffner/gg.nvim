@@ -73,8 +73,9 @@ end
 
 --- Rects for a detail view: the header across the top, the content below
 --- it (`DETAIL_GAP` rows apart) and, when `sidebar` is set and the editor is
---- wide enough, a sidebar to the right of the content. Pure given `area`.
----@param opts { header_h: integer, sidebar?: boolean, area?: { columns: integer, lines: integer } }
+--- wide enough, a sidebar to the right of the content (to its left with
+--- `left`). Pure given `area`.
+---@param opts { header_h: integer, sidebar?: boolean, left?: boolean, area?: { columns: integer, lines: integer } }
 ---@return { header: gg.ui.Rect, content: gg.ui.Rect, sidebar?: gg.ui.Rect }
 function M.detail(opts)
   local area = opts.area or M.editor()
@@ -86,7 +87,11 @@ function M.detail(opts)
   local out = {
     header = { row = 0, col = 0, width = full, height = header_h },
   }
-  if opts.sidebar and M.has_sidebar(area) then
+  if opts.sidebar and opts.left and M.has_sidebar(area) then
+    local content_col = M.SIDEBAR_WIDTH + M.SIDEBAR_GAP
+    out.sidebar = { row = below, col = 0, width = M.SIDEBAR_WIDTH - border, height = content_h }
+    out.content = { row = below, col = content_col, width = math.max(1, area.columns - content_col - border), height = content_h }
+  elseif opts.sidebar and M.has_sidebar(area) then
     local side_col = area.columns - M.SIDEBAR_WIDTH
     out.content = { row = below, col = 0, width = math.max(1, side_col - M.SIDEBAR_GAP - border), height = content_h }
     out.sidebar = { row = below, col = side_col, width = M.SIDEBAR_WIDTH - border, height = content_h }

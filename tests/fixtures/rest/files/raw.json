@@ -1,0 +1,12 @@
+[
+  {
+    "meta": { "source": "docs.gitlab.com (api/repository_files: Retrieve a raw file from a repository), sanitized" },
+    "request": { "method": "GET", "path": "/api/v4/projects/my-group%2Fmy-project/repository/files/app%2Fmodels%2Fkey.rb/raw", "query": { "ref": "33e2ee8579fda5bc36accc9c6fbd0b4fefda9e30" } },
+    "response": { "status": 200, "headers": { "Content-Type": "text/plain" }, "body": "class Key\n  def name\n  end\nend\n" }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com (api/repository_files): a file that does not exist at the ref" },
+    "request": { "method": "GET", "path": "/api/v4/projects/my-group%2Fmy-project/repository/files/missing.rb/raw", "query": { "ref": "main" } },
+    "response": { "status": 404, "body": { "message": "404 File Not Found" } }
+  }
+]

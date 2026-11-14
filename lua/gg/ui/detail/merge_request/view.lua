@@ -140,8 +140,15 @@ function M.open(ctx, item)
   self.sources = fields.sources(ctx.host, self.project)
   -- after open_item: in the description `i` edits, `<CR>` opens a card
   self:_edit_keys()
-  -- a file's diff comes with the review view; until then the key says so
-  self.file_hint = self.h:map_later("changes", "open_item", "File", "opening a file")
+  -- the review: `gd` anywhere, `<CR>` on a file of the Changes tab
+  self.h:map_all(k.review, function()
+    self:review()
+  end, "Review")
+  self.h:map("changes", k.open_item, function()
+    local info = self.h:current()
+    self:review(info and info.kind == "file" and info.path or nil)
+  end, "Open the file")
+  self.file_hint = { key = picker.first_key(k.open_item), desc = "File" }
   self:load()
   return self
 end
@@ -762,7 +769,7 @@ function View:render()
   local k = h.keys
   local ek = picker.first_key(h.keys.edit)
   h:set_hints("description", self:_open() and ek and { { key = ek, desc = "Edit" } } or {})
-  h:set_hints("changes", { self.file_hint })
+  h:set_hints("changes", { self.file_hint, { key = picker.first_key(k.review), desc = "Review" } })
   h:set_hints("commits", {})
   self:_tabs()
   if self.activity.status ~= "idle" then
@@ -781,6 +788,12 @@ function View:open_card()
     local project = r.project or self.mr.project or self.project
     require("gg.ui.detail").issue(vim.tbl_extend("force", {}, self.ctx, { project = project }), info.issue or { iid = r.iid, project = project })
   end
+end
+
+--- `gd`: open the review (the diff with its threads), on file `path`.
+---@param path? string
+function View:review(path)
+  require("gg.ui.detail").review(self:_ctx(), self.mr, { path = path })
 end
 
 --- `gp`: open the newest pipeline of this merge request.

@@ -134,6 +134,9 @@ Detail views open over the picker and over each other; `q` goes back, `Q` closes
   progress by workflow label (`WF:Doing` / `WF:Done`).
 - **Merge request**: a readiness strip (pipeline, conflicts, review, threads, draft), description with cards for the
   issues it closes, activity, changes, commits and its pipelines (live). `gp` opens the newest pipeline.
+- **Review** (`gd` in a merge request): the diff one file at a time with its threads under their lines. `i` comments
+  on a line, a visual selection or (in the files pane) the whole file; comments are pending until `gs` submits the
+  review (comment, approve or request changes). `za` / `zA` expand unchanged lines, `x` marks a file viewed.
 - **Pipeline**: the stage/job graph and the selected job's log, tailed live while it runs (`F` follows).
 
 They also edit what they show (`:help gg-ui-edit`): `i` edits a description in place, `gt` / `ga` / `gr` / `gl` /
@@ -175,6 +178,7 @@ gg.labels.list_all(args, { limit = 500, on_page = function(items) end })
 | `gg.todos` | `list`, `list_all`, `mark_done` |
 | `gg.pipelines` | `list`, `list_all`, `get`, `graph`, `retry`, `cancel`, `create`, `config_variables` |
 | `gg.jobs` | `list`, `list_all`, `get`, `trace` (streamed), `retry`, `cancel`, `play` |
+| `gg.files` | `raw` (a file at a ref, streamed) |
 | `gg.artifacts` | `download`, `download_file`, `download_ref`, `download_ref_file` (all streamed) |
 | `gg.registry` | `repositories[_all]`, `tags[_all]`, `tag` |
 

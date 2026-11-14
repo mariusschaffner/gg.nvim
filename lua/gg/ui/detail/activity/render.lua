@@ -160,8 +160,13 @@ local function comment_block(ctx, note)
     { avatar.initials(name), hl },
     { " ", nil },
     { name, hl },
-    { "  " .. date.hhmm(note.created_at, input.utc_offset), "GitlabTimelineTime" },
   }
+  if note.pending then
+    -- a draft of a review: not sent yet
+    vim.list_extend(head, { { "  ", nil }, { "◷ pending", "GitlabBadgePending" } })
+  else
+    table.insert(head, { "  " .. date.hhmm(note.created_at, input.utc_offset), "GitlabTimelineTime" })
+  end
   if input.me and author.username == input.me then
     vim.list_extend(head, { { "  ", nil }, { "you", "GitlabBadgeYou" } })
   end
@@ -169,6 +174,9 @@ local function comment_block(ctx, note)
     local t = ctx.thread
     if t.context then
       vim.list_extend(head, { { "  ", nil }, { "⎇ " .. t.context, "GitlabBadgeContext" } })
+    end
+    if t.outdated then
+      vim.list_extend(head, { { "  ", nil }, { "outdated", "GitlabBadgeOutdated" } })
     end
     if t.resolvable then
       if t.resolved then
@@ -256,6 +264,16 @@ local function thread_rows(d, thread, input)
     end
   end
   d:blank({ kind = "gap", thread = thread.id })
+end
+
+--- Append one thread (a root comment, its replies, an empty line) to `d`,
+--- for views that show threads elsewhere (the review). A note with
+--- `pending` is a draft; a thread with `outdated` says so.
+---@param d gg.ui.Doc
+---@param thread gg.ui.ActivityThread
+---@param input gg.ui.ActivityRenderInput
+function M.thread(d, thread, input)
+  thread_rows(d, thread, input)
 end
 
 --- Render the timeline.

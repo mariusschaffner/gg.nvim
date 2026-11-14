@@ -369,6 +369,21 @@ gg.mr_changes.latest_version({args})           *gg.mr_changes.latest_version()*
     Diff versions, newest first. Each has `diff_refs`, which you need to
     position diff comments.
 
+gg.diff.parse({diff})                                         *gg.diff.parse()*
+    Parses the unified diff text of one `gg.DiffFile` into hunks
+    `{ old_start, old_count, new_start, new_count, section, header, lines }`.
+    Each line is `{ kind, old_line, new_line, text }` with `kind` "context",
+    "add" or "delete". Pure; no request.
+
+gg.diff.line_position({paths}, {line})                *gg.diff.line_position()*
+gg.diff.range_position({paths}, {first}, {last})     *gg.diff.range_position()*
+gg.diff.file_position({paths})                        *gg.diff.file_position()*
+    Build the `position` of a diff comment for |gg.notes.add()| and
+    |gg.reviews.create_draft()|. `paths` is `{ new_path, old_path? }`; a line
+    is `{ old_line?, new_line? }` as in a parsed hunk (added lines have only
+    `new_line`, removed lines only `old_line`). A range is anchored on its
+    last line and carries GitLab's `line_range` with line codes.
+
 ------------------------------------------------------------------------------
 MERGE CHECKS                                                    *gg-mr_checks*
 
@@ -429,7 +444,8 @@ gg.reviews.edit_draft({args})                         *gg.reviews.edit_draft()*
 gg.reviews.delete_draft({args})                     *gg.reviews.delete_draft()*
     Pending review comments (draft notes). `create_draft` takes `note`, and
     optionally `position`, `in_reply_to_discussion_id`, `resolve_discussion`
-    and `commit_id`.
+    and `commit_id`. A `position` is the same as for |gg.notes.add()|: it is
+    checked, and missing SHAs come from the latest diff version.
 
 gg.reviews.discard_drafts({args}, {opts})         *gg.reviews.discard_drafts()*
     Deletes up to `opts.limit` drafts, one at a time. It stops at the first
@@ -602,6 +618,10 @@ gg.artifacts.download_ref_file({args})       *gg.artifacts.download_ref_file()*
     `{ host, project, ref, job, ... }`: from the latest successful pipeline
     on `ref`.
 
+gg.files.raw({args})                                           *gg.files.raw()*
+    `{ host, project, path, ref, output | on_chunk, lfs? }`: the raw content
+    of a repository file at a branch, tag or commit SHA.
+
 gg.registry.repositories({args}, {opts})           *gg.registry.repositories()*
 gg.registry.repositories_all({args}, {opts})   *gg.registry.repositories_all()*
     `{ host, project, name? }`: container repositories.
@@ -720,6 +740,12 @@ gg.ui.setup({opts})                                             *gg.ui.setup()*
         create_start_date = "gs", create_due_date = "gd",
         next_placeholder = "<C-n>", prev_placeholder = "<C-p>",
         add_variable = "a", toggle_variable_type = "t",
+        -- the merge request review (|gg-ui-review|)
+        review = "gd", next_file = "]f", prev_file = "[f",
+        next_hunk = "]h", prev_hunk = "[h",
+        next_thread = "]c", prev_thread = "[c",
+        review_focus = "<Tab>", pick_file = "f", toggle_viewed = "x",
+        submit_review = "gs", post_now = "<C-p>",
       },
       order = {},            -- { top?, milestones?, issues? } comparators
       pipeline_refresh_ms = 10000,    -- live refresh of active pipelines in
@@ -892,6 +918,40 @@ Detail views                                                  *gg-ui-detail*
     `P` loads more). In the Description `<CR>` opens a card. Sidebar:
     branches, assignee, reviewers with their review state, labels,
     milestone, and what happens on merge. `gp` opens the newest pipeline.
+    `gd` opens the review (|gg-ui-review|); `<CR>` on a file of the Changes
+    tab opens it on that file.
+
+    Review                                                      *gg-ui-review*
+    The diff of a merge request, one file at a time: the changed files on
+    the left (hidden below 100 columns; `f` lists them), the diff of the
+    selected file on the right. Every line of the diff is a line of the
+    buffer with its old and new line number, removed lines included.
+    Unchanged lines are collapsed into `⋯ N unchanged lines` rows: `za` (or
+    `<CR>`) expands one, `zA` the whole file; the file's content is fetched
+    once (|gg.files.raw()|) and cached under `stdpath("cache")`. A diff
+    GitLab did not send (too large, collapsed) is loaded with `za` and
+    computed from both sides. Code is coloured with treesitter when a
+    parser for the file type is installed.
+    Threads sit under the line they are on, drawn as on the Activity tab;
+    comments on the file sit above the diff, and a thread whose line is not
+    shown says which line it means. Outdated threads are marked.
+    Moving: `]f` / `[f` files, `]h` / `[h` hunks, `]c` / `[c` threads,
+    `<Tab>` into the files pane and back (`<CR>` there opens a file).
+    `x` marks a file viewed and goes to the next one that is not; the marks
+    are kept per merge request and head commit under `stdpath("state")`.
+    Comments: `i` on a line, or on the lines of a visual selection; `i` in
+    the files pane comments on the whole file. The composer adds the
+    comment to your pending review (`[<C-s>] Add to review`) or posts it at
+    once (`[<C-p>] Post now`). `gc` replies to a thread the same way
+    (`<C-r>` adds the reply and resolves the thread when the review is
+    sent), `gE` / `gD` edit / delete your comment, pending or published,
+    `gX` resolves or reopens a thread at once. Pending comments show
+    `◷ pending`; their number is in the borders and next to each file.
+    `gs` submits the review: choose Comment, Approve or Request changes,
+    write an optional summary, `<C-s>`. It is refused when the merge
+    request got new commits since the diff was loaded (`R` reloads). The
+    same list shows the pending comments (pick one to go to it) and can
+    discard them.
 
     Pipeline                                           *gg-ui-detail-pipeline*
     The header holds the stage / job graph; the content the log of the
@@ -1029,6 +1089,10 @@ Highlights                                                  *gg-ui-highlights*
     `GitlabPipelinePending` `GitlabPipelineManual` `GitlabPipelineCanceled`
     `GitlabPipelineSkipped` `GitlabDiffAdd` (links `GitlabPipelineSuccess`)
     `GitlabDiffDelete` (links `GitlabPipelineFailed`).
+    Review: `GitlabDiffAddLine` (DiffAdd) `GitlabDiffDeleteLine`
+    (DiffDelete) `GitlabDiffLineNr` (LineNr) `GitlabDiffHunk`
+    `GitlabDiffGap` `GitlabDiffViewed` `GitlabDiffCurrent`
+    `GitlabBadgePending` `GitlabBadgeOutdated`.
     Pipelines: `GitlabRefDefault` (Special) `GitlabRefTag` (Constant)
     `GitlabSha` (DiagnosticWarn) `GitlabPipelineSource` (Comment)
     `GitlabPipelineSourceSchedule` (DiagnosticWarn).

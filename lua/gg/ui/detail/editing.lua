@@ -4,6 +4,7 @@
 --- from loaded once per view, and cursor hints. Every
 --- change goes through `gg.ui.detail.edit.run`.
 local chooser = require("gg.ui.components.select")
+local composer = require("gg.ui.components.composer")
 local edit = require("gg.ui.detail.edit")
 local field_edit = require("gg.ui.components.field_edit")
 local text_edit = require("gg.ui.components.text_edit")
@@ -266,6 +267,76 @@ function M.source(load)
     end)
   end
   return src
+end
+
+---@class gg.ui.Composing
+---@field what string "comment", "reply"
+---@field busy? string
+---@field success? string|false
+---@field title string
+---@field placeholder? string
+---@field text? string seed
+---@field place? { bottom: true }|{ bufpos: integer }
+---@field col? integer
+---@field width? integer
+---@field resolve? boolean offer "post & resolve"
+---@field labels? { submit?: string, resolve?: string }
+---@field alt? { key: gg.ui.Keymap, desc: string, busy?: string, success?: string }
+---@field allow_empty? boolean
+---@field mentions? fun(): gg.ui.Candidate[]
+---@field post fun(text: string, resolve: boolean, alt: boolean): gg.Task
+---@field apply fun(result: any, alt: boolean)
+---@field render fun()
+
+--- Write a comment in a composer laid over the host's content window; the
+--- request runs through `edit.run`.
+---@param h gg.ui.DetailHost
+---@param o gg.ui.Composing
+---@return gg.ui.Composer|nil
+function M.compose(h, o)
+  if h.editing then
+    return edit.refuse("Finish the current edit first")
+  end
+  h:begin_edit({ kind = "composer" })
+  return composer.open({
+    win = h.content_float.win,
+    place = o.place,
+    col = o.col,
+    width = o.width or h:content_width(),
+    text = o.text,
+    title = o.title,
+    placeholder = o.placeholder,
+    keys = h.keys,
+    resolve = o.resolve,
+    labels = o.labels,
+    alt = o.alt,
+    allow_empty = o.allow_empty,
+    mentions = o.mentions,
+    group = h.group,
+    on_submit = function(text, resolve, done, alt)
+      edit.run({
+        what = o.what,
+        busy = alt and o.alt and o.alt.busy or o.busy,
+        success = alt and o.alt and o.alt.success or o.success,
+        task = function()
+          return o.post(text, resolve, alt)
+        end,
+        alive = function()
+          return not h.closed
+        end,
+        apply = function(res)
+          o.apply(res, alt)
+        end,
+        done = function(_, err)
+          done(err == nil)
+        end,
+      })
+    end,
+    on_close = function()
+      h:end_edit()
+      o.render()
+    end,
+  })
 end
 
 --- Show `text(info)` right-aligned on the cursor line of tab `tab` (e.g.

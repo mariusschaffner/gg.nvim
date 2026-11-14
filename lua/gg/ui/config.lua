@@ -81,6 +81,18 @@ local M = {}
 ---@field prev_placeholder gg.ui.Keymap Creation popup: jump to the previous `‹placeholder›` (default "<C-p>")
 ---@field add_variable gg.ui.Keymap Run pipeline: add a variable below the cursor (default "a")
 ---@field toggle_variable_type gg.ui.Keymap Run pipeline: variable ⇄ file for the line under the cursor (default "t")
+---@field review gg.ui.Keymap Merge request detail: open the review (the diff) (default "gd")
+---@field next_file gg.ui.Keymap Review: next file (default "]f")
+---@field prev_file gg.ui.Keymap Review: previous file (default "[f")
+---@field next_hunk gg.ui.Keymap Review: next hunk (default "]h")
+---@field prev_hunk gg.ui.Keymap Review: previous hunk (default "[h")
+---@field next_thread gg.ui.Keymap Review: next thread or pending comment (default "]c")
+---@field prev_thread gg.ui.Keymap Review: previous thread or pending comment (default "[c")
+---@field review_focus gg.ui.Keymap Review: switch between the files and the diff (default "<Tab>")
+---@field pick_file gg.ui.Keymap Review: pick a file from a list (default "f")
+---@field toggle_viewed gg.ui.Keymap Review: mark the file viewed / not viewed (default "x")
+---@field submit_review gg.ui.Keymap Review: submit the pending comments (default "gs")
+---@field post_now gg.ui.Keymap Review composer: post the comment at once instead of adding it to the review (default "<C-p>")
 
 ---@class gg.ui.Order
 ---@field top? fun(a: gg.Issue, b: gg.Issue): boolean issues without a milestone
@@ -178,6 +190,18 @@ local function defaults()
       prev_placeholder = "<C-p>",
       add_variable = "a",
       toggle_variable_type = "t",
+      review = "gd",
+      next_file = "]f",
+      prev_file = "[f",
+      next_hunk = "]h",
+      prev_hunk = "[h",
+      next_thread = "]c",
+      prev_thread = "[c",
+      review_focus = "<Tab>",
+      pick_file = "f",
+      toggle_viewed = "x",
+      submit_review = "gs",
+      post_now = "<C-p>",
     },
     order = {},
     pipeline_refresh_ms = 10000,

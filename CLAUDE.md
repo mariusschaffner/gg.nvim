@@ -49,7 +49,9 @@ lua/gg/
                       refs, variables_view; pure: layout, model, placeholders,
                       variables, mr
     detail/           detail views: host (windows), header/sidebar (pure), activity/,
-                      issue/, milestone/, merge_request/, pipeline/ (pure parts + view);
+                      issue/, milestone/, merge_request/, pipeline/ (pure parts + view),
+                      review/ (the merge request diff: model, threads, position,
+                      render, files, submit pure; viewed = stored marks; view);
                       editing: edit.lua (runner), editing.lua + fields.lua (glue),
                       edits.lua (pure payloads); components text_edit, field_edit,
                       composer, confirm
@@ -100,6 +102,11 @@ gg.ui.* -> gg (the facade) only        nothing outside gg.ui requires gg.ui
 - A float border can carry a left and a right label (`title_right`,
   `footer_right` in `ui/components/float.lua`); `float_group` rebuilds them
   on resize and focus changes.
+- The review (`gg.ui.detail.review`, `gd` in the merge request view) shows
+  one file's diff at a time. The diff text and line numbers always come from
+  GitLab (`gg.mr_changes.diffs_all` + `gg.diff.parse`), so comment positions
+  match; unchanged lines come from `gg.files.raw` at the head SHA. Comments
+  are draft notes (`gg.reviews.*`) until the review is submitted.
 - Screens stack: the picker is the bottom of a `ui/components/stack`; detail
   views are pushed on it (`gg.ui.detail.*`) and reach other screens only
   through it (`q` back, `Q` close all). A covered screen is hidden and its

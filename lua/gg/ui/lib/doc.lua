@@ -13,6 +13,8 @@ local M = {}
 ---@field end_col integer exclusive byte column
 ---@field hl string
 ---@field priority? integer
+---@field end_row? integer 0-based row the mark ends on (default: its own row)
+---@field hl_eol? boolean the highlight runs on to the window's edge
 
 ---@class gg.ui.Region where an editable value is drawn
 ---@field row integer 0-based first row
@@ -93,6 +95,16 @@ function Doc:line_hl(lnum, hl)
   table.insert(self.line_hls, { row = lnum - 1, hl = hl })
 end
 
+--- Tint line `lnum` (1-based) from edge to edge, below the highlights of
+--- its text: unlike `line_hl` the tint never hides a colour or background
+--- of the text itself (syntax colours, marked characters).
+---@param lnum integer
+---@param hl string
+---@param priority? integer default 10
+function Doc:line_tint(lnum, hl, priority)
+  table.insert(self.marks, { row = lnum - 1, col = 0, end_row = lnum, end_col = 0, hl = hl, priority = priority or 10, hl_eol = true })
+end
+
 --- Append every line of `other` (marks, backgrounds and metadata follow).
 ---@param other gg.ui.Doc
 function Doc:append(other)
@@ -101,7 +113,15 @@ function Doc:append(other)
     self.lines[off + i] = s
   end
   for _, m in ipairs(other.marks) do
-    table.insert(self.marks, { row = m.row + off, col = m.col, end_col = m.end_col, hl = m.hl, priority = m.priority })
+    table.insert(self.marks, {
+      row = m.row + off,
+      col = m.col,
+      end_col = m.end_col,
+      hl = m.hl,
+      priority = m.priority,
+      end_row = m.end_row and (m.end_row + off) or nil,
+      hl_eol = m.hl_eol,
+    })
   end
   for _, h in ipairs(other.line_hls) do
     table.insert(self.line_hls, { row = h.row + off, hl = h.hl })

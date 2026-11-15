@@ -2,7 +2,10 @@
 --- one-line prompt and the matches below it. Typing asks for the matches
 --- again (debounced); `<C-n>` / `<C-p>` or the arrows move, `<CR>` picks,
 --- `<Esc>` or leaving the prompt cancels. With `multi`, `<Tab>` ticks the
---- item under the cursor and `<CR>` takes everything ticked.
+--- item under the cursor and `<CR>` takes everything ticked; after typing a
+--- filter `<CR>` ticks the item under the cursor too (unless `<Tab>` was
+--- pressed since), so "type, `<CR>`" is enough to add one. `<CR>` before the
+--- debounced filter has run waits for its matches.
 ---
 --- When the floats cannot be opened (an editor too small for them), a single
 --- choice goes through `vim.ui.select`; a `multi` one is refused.
@@ -178,6 +181,8 @@ function M.open(opts)
     placeholder = opts.placeholder or "filter",
     debounce_ms = opts.debounce_ms or 120,
     on_change = function(q)
+      -- a new filter: `<CR>` takes what it finds until something is ticked
+      self.typed = vim.trim(q) ~= ""
       self:_load(q)
     end,
   })
@@ -269,6 +274,7 @@ end
 
 ---@private
 function Picker:_load(query)
+  self.query = query
   self.seq = self.seq + 1
   local seq = self.seq
   self.loading = true
@@ -291,6 +297,11 @@ function Picker:_load(query)
     end
     self.started = true
     self:_render()
+    -- `<CR>` came before these matches
+    if self.pick_waiting then
+      self.pick_waiting = false
+      self:pick()
+    end
   end)
 end
 
@@ -368,21 +379,37 @@ function Picker:toggle()
     return
   end
   self:_tick(item, self.ticked[self:_key(item)] == nil)
+  self.typed = false
   if self.index < #self.items then
     self.index = self.index + 1
   end
   self:_render()
 end
 
---- Take the item under the cursor; with `multi`, everything ticked.
+--- Take the item under the cursor; with `multi`, everything ticked (and
+--- the item under the cursor after typing a filter, see the top).
 function Picker:pick()
   if self.closed then
     return
   end
+  -- the filter typed last has not been asked for yet (debounce) or its
+  -- matches are not back: pick once they are
+  local text = self.prompt and self.prompt:text() or ""
+  if text ~= (self.query or "") then
+    self.pick_waiting = true
+    self.typed = vim.trim(text) ~= ""
+    self:_load(text)
+    return
+  end
+  if self.loading then
+    self.pick_waiting = true
+    return
+  end
   local picked
   if self.opts.multi then
-    if self.loading and not self.started then
-      return
+    local item = self.items[self.index]
+    if self.typed and item and not self.ticked[self:_key(item)] then
+      self:_tick(item, true)
     end
     picked = self:selection()
   else

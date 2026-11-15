@@ -187,16 +187,22 @@ T["render: gutter, tints, gaps, threads under their line"] = function()
   eq(d.lines[3], "   3   3   a")
   eq(d.lines[4], "   4     - b")
   eq(d.lines[5], "       4 + B")
-  eq(d.lines[6]:find("▎ BO Bea Other  10:00  ◷ unresolved thread", 1, true) ~= nil, true)
-  eq(d.lines[7]:find("▎ on B", 1, true) ~= nil, true)
+  eq(d.lines[6]:find("╭ BO Bea Other  ◷ unresolved thread ─", 1, true) ~= nil, true)
+  eq(vim.endswith(d.lines[6], "─ 10:00 ─╮"), true)
+  eq(d.lines[7]:find("│ on B", 1, true) ~= nil, true)
+  eq(d.lines[8]:find("╰─", 1, true) ~= nil, true)
   eq(d.rows[5], { kind = "line", type = "add", new_line = 4, index = 5, col = 11 })
   eq(d.lines[5]:sub(d.rows[5].col + 1), "B")
   eq({ d.rows[6].kind, d.rows[6].thread, d.rows[6].note }, { "comment", "d1", 1 })
   eq(d.rows[1], { kind = "fold", gap = 1, index = 1 })
   local tints = {}
-  for _, h in ipairs(d.line_hls) do
-    tints[h.row + 1] = h.hl
+  for _, m in ipairs(d.marks) do
+    if m.hl_eol then
+      eq({ m.col, m.end_row, m.end_col, m.priority }, { 0, m.row + 1, 0, 10 })
+      tints[m.row + 1] = m.hl
+    end
   end
+  eq(d.line_hls, {})
   eq({ tints[3], tints[4], tints[5] }, { nil, "GitlabDiffDeleteLine", "GitlabDiffAddLine" })
   local last
   for i, l in ipairs(d.lines) do
@@ -204,7 +210,7 @@ T["render: gutter, tints, gaps, threads under their line"] = function()
       last = i
     end
   end
-  eq(d.lines[last]:find("AE Ann Example  ◷ pending", 1, true) ~= nil, true)
+  eq(d.lines[last]:find("AE Ann Example  you ─", 1, true) ~= nil, true)
   eq(d.lines[last - 1], "      22 + Y")
   eq(d.lines[#d.lines], "         ⋯ unchanged lines below · [za] expand")
   -- states
@@ -509,6 +515,18 @@ T["view: files on the left, the diff with its thread, border labels"] = function
   eq(vim.startswith(head, " merge requests › !88 › review "), true)
   eq(head:find("0/2 viewed · 1 thread ", 1, true) ~= nil, true)
   eq(vim.startswith(lines(g.members.header.buf)[2], "  ● Open  Rotate Terraform state backend credentials !88"), true)
+  -- the tint of a changed line lies below the text's own highlights: an
+  -- edge-to-edge mark of low priority, not a line highlight group (which
+  -- would paint over the syntax colours and the marked characters)
+  local tint, line_groups = nil, 0
+  for _, m in ipairs(vim.api.nvim_buf_get_extmarks(g.members.content.buf, vim.api.nvim_create_namespace("gg.ui.detail"), { 3, 0 }, { 3, -1 }, { details = true })) do
+    if m[4].line_hl_group then
+      line_groups = line_groups + 1
+    elseif m[4].hl_eol then
+      tint = { m[4].hl_group, m[4].priority, m[4].end_row }
+    end
+  end
+  eq({ tint, line_groups }, { { "GitlabDiffDeleteLine", 10, 4 }, 0 })
   -- the cursor starts on the first change
   eq(vim.api.nvim_win_get_cursor(win)[1], 4)
   eq(vim.api.nvim_get_current_win(), win)
@@ -662,7 +680,8 @@ T["view: i adds a pending comment on a line, on a range, on the file"] = functio
   eq(post.json.position, { old_path = "src/a.lua", new_path = "src/a.lua", position_type = "text", old_line = 4, base_sha = "1ab692e5cfc809947e1852c77e0692e09b2eacde", start_sha = "1ab692e5cfc809947e1852c77e0692e09b2eacde", head_sha = HEAD })
   local c = lines(g.members.content.buf)
   eq(c[4], "   4     - b")
-  eq(c[5]:find("Ann Example  ◷ pending", 1, true) ~= nil, true)
+  eq(c[5]:find("╭ AE Ann Example  you ─", 1, true) ~= nil, true)
+  eq(vim.endswith(c[5], "─ ◷ pending ─╮"), true)
   eq(vim.api.nvim_win_get_cursor(win)[1], 5) -- on the new comment
   eq(vim.endswith(chunks_text(vim.api.nvim_win_get_config(win).footer), " 1 pending ─"), true)
   eq(vim.endswith(lines(g.members.sidebar.buf)[3], "◷1 💬1 +3 −2"), true)
@@ -705,7 +724,8 @@ T["view: gc replies into the review; <C-p> posts at once; gE and gD on a pending
     return row_of(win, "@user-2 Because") ~= nil
   end)
   eq(request(fake, "POST", BASE .. "/draft_notes").json, { note = "@user-2 Because", in_reply_to_discussion_id = "d1", resolve_discussion = true })
-  eq(lines(g.members.content.buf)[row_of(win, "@user-2 Because") - 1]:find("└─ ▎ AE Ann Example  ◷ pending", 1, true) ~= nil, true)
+  eq(lines(g.members.content.buf)[row_of(win, "@user-2 Because") - 1]:find("└─ ╭ AE Ann Example  you ─", 1, true) ~= nil, true)
+  eq(vim.endswith(lines(g.members.content.buf)[row_of(win, "@user-2 Because") - 1], "─ ◷ pending ─╮"), true)
   -- edit the pending reply
   vim.api.nvim_win_set_cursor(win, { row_of(win, "@user-2 Because"), 0 })
   keys("gE")

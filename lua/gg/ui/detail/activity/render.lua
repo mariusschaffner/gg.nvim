@@ -3,15 +3,19 @@
 ---  TODAY · 10.11.2026 ─────────────────────────────────────────
 ---     ◈  Marius Schaffner added WF:Doing label            09:12
 ---     ⋯  5 more changes · [<CR>] expand
----   ▎ (MS) Marius Schaffner  14:02  you  ◷ unresolved thread
----   ▎ The comment body, wrapped to the block width
----   ▎ 👍 2
----     └─ ▎ (AB) Anna Berg  14:30
----        ▎ A reply
+---   ╭ MS Marius Schaffner  you  ◷ unresolved thread ───── 14:02 ─╮
+---   │ The comment body, wrapped to the box width                  │
+---   │ 👍 2                                                         │
+---   ╰─ [gc] reply · [gE] edit ─────────────────────────────────────╯
+---         └─ ╭ AB Anna Berg ──────────────────────────────── 14:30 ─╮
+---            │ A reply                                              │
+---            ╰──────────────────────────────────────────────────────╯
 ---
---- Comment blocks have a tinted background (`GitlabCommentBg`, replies
---- `GitlabCommentReplyBg`) up to 90% of the width. Every line carries
---- metadata in `rows` for the view's keys (`<CR>`, `za`).
+--- Each comment is a box up to 90% of the width; its border and author take
+--- the author's colour (`GitlabCommentBorderN` and `GitlabUserN`, see
+--- `gg.ui.lib.user_hl`). The bottom border is plain: the view lays the key
+--- hints of the comment under the cursor over it (`foot_hint`). Every line
+--- carries metadata in `rows` for the view's keys (`<CR>`, `za`).
 local avatar = require("gg.ui.lib.avatar")
 local date = require("gg.ui.lib.date")
 local doc = require("gg.ui.lib.doc")
@@ -22,8 +26,9 @@ local user_hl = require("gg.ui.lib.user_hl")
 
 local M = {}
 
-M.BAR = "▎"
 M.RULE = "─"
+M.TL, M.TR, M.BL, M.BR, M.V = "╭", "╮", "╰", "╯", "│"
+M.TAIL = 1 -- rule cells between the time and the corner
 M.BLOCK_SHARE = 0.9
 M.REPLY_INDENT = 4
 
@@ -121,52 +126,77 @@ local function more_row(d, item, keys)
   d:line(l, { kind = "more", run = item.run })
 end
 
--- one comment (root or reply): header, body, reactions
----@param ctx table { d, input, indent, width, bg, thread, guide_first, guide_rest, root }
+-- a border row: `left`, rule, `right` and `TAIL` rule cells between the
+-- corners `a` and `b`, `mid` cells in all. When both labels do not fit the
+-- right one goes, then the left one is cut.
+local function border_row(l, a, b, left, right, mid, hl)
+  l:add(a, hl)
+  local lw, rw = 0, 0
+  for _, sg in ipairs(left) do
+    lw = lw + text.width(sg[1])
+  end
+  for _, sg in ipairs(right) do
+    rw = rw + text.width(sg[1])
+  end
+  if rw > 0 and lw + 1 + rw + M.TAIL > mid then
+    right, rw = {}, 0
+  end
+  local tail = rw > 0 and M.TAIL or 0
+  local used = 0
+  for _, sg in ipairs(fit(left, mid - rw - tail)) do
+    l:add(sg[1], sg[2] or hl)
+    used = used + text.width(sg[1])
+  end
+  l:add(text.rep(M.RULE, mid - used - rw - tail), hl)
+  for _, sg in ipairs(right) do
+    l:add(sg[1], sg[2] or hl)
+  end
+  l:add(text.rep(M.RULE, tail), hl)
+  l:add(b, hl)
+end
+
+-- one comment (root or reply) as a box: author and badges in the top
+-- border, the time on its right, body and reactions inside
+---@param ctx table { d, input, indent, width, thread, guide_first, guide_rest, root }
 local function comment_block(ctx, note)
   local d, input = ctx.d, ctx.input
   local state = input.state or {}
-  local block_w = ctx.width
-  local inner = math.max(10, block_w - ctx.indent - 2) -- after the bar and a space
-  local bg = ctx.bg
-  local info = { kind = "comment", thread = ctx.thread.id, note = note.id }
+  local box_w = math.max(14, ctx.width - ctx.indent)
+  local inner = box_w - 4 -- between "│ " and " │"
+  local author = note.author or {}
+  local border = author.username and user_hl.border(author.username, input.user_colors) or "GitlabCommentBorder"
+  -- one table on every line of the box: `foot_hint` finds the bottom
+  -- border by it (line numbers move when the doc is appended elsewhere)
+  local box = { width = box_w }
+  local info = { kind = "comment", thread = ctx.thread.id, note = note.id, box = box }
   local first_row = true
-  local function emit(segs, row_info)
+  local function open_row()
     local guide = first_row and ctx.guide_first or ctx.guide_rest
     first_row = false
     local l = line.new():add(string.rep(" ", ctx.indent - text.width(guide)))
     if guide ~= "" then
       l:add(guide, "GitlabTimelineGuide")
     end
-    local start = l.bytes
-    l:add(M.BAR, "GitlabCommentBar"):add(" ")
+    return l
+  end
+  local function emit(segs, row_info)
+    local l = open_row():add(M.V, border):add(" ")
     for _, sg in ipairs(fit(segs, inner)) do
       l:add(sg[1], sg[2])
     end
-    -- highlighted padding survives the trailing-space trim of `result`
-    if block_w > l.cells then
-      l:add(string.rep(" ", block_w - l.cells), bg)
-    end
-    local lnum = d:line(l, row_info or info)
-    -- the tint runs from the bar to the end of the block, below other marks
-    table.insert(d.marks, { row = lnum - 1, col = start, end_col = l.bytes, hl = bg, priority = 50 })
+    l:pad_to(ctx.indent + box_w - 1):add(M.V, border)
+    d:line(l, row_info or info)
   end
 
-  -- header
-  local author = note.author or {}
+  -- top border: author and badges left, the time right
   local name = model.display_name(note.author)
   local hl = author.username and user_hl.group(author.username, input.user_colors) or "GitlabTimelineActor"
   local head = {
+    { " ", nil },
     { avatar.initials(name), hl },
     { " ", nil },
     { name, hl },
   }
-  if note.pending then
-    -- a draft of a review: not sent yet
-    vim.list_extend(head, { { "  ", nil }, { "◷ pending", "GitlabBadgePending" } })
-  else
-    table.insert(head, { "  " .. date.hhmm(note.created_at, input.utc_offset), "GitlabTimelineTime" })
-  end
   if input.me and author.username == input.me then
     vim.list_extend(head, { { "  ", nil }, { "you", "GitlabBadgeYou" } })
   end
@@ -186,7 +216,17 @@ local function comment_block(ctx, note)
       end
     end
   end
-  emit(head)
+  table.insert(head, { " ", nil })
+  local right
+  if note.pending then
+    -- a draft of a review: not sent yet
+    right = { { " ", nil }, { "◷ pending", "GitlabBadgePending" }, { " ", nil } }
+  else
+    right = { { " ", nil }, { date.hhmm(note.created_at, input.utc_offset), "GitlabTimelineTime" }, { " ", nil } }
+  end
+  local top = open_row()
+  border_row(top, M.TL, M.TR, head, right, box_w - 2, border)
+  d:line(top, info)
 
   -- body
   local wrapped = {}
@@ -226,6 +266,37 @@ local function comment_block(ctx, note)
     end
     emit(segs)
   end
+
+  -- bottom border: plain until the cursor is on the box
+  local bottom = open_row()
+  box.col = bottom.bytes
+  bottom:add(M.BL, border):add(text.rep(M.RULE, box_w - 2), border):add(M.BR, border)
+  d:line(bottom, info)
+end
+
+--- The key hints of the comment box on line `lnum` of `rows`, laid over
+--- its bottom border ("╰─ [gc] reply · [gE] edit ───╯"): the chunks and
+--- where they go (1-based line, byte column). Nil when `lnum` is not on a
+--- box.
+---@param rows table<integer, table> `gg.ui.Doc.rows` of the buffer
+---@param lnum integer
+---@param chunks gg.ui.Chunk[]
+---@return gg.ui.Chunk[]|nil chunks
+---@return { lnum: integer, col: integer }|nil at
+function M.foot_hint(rows, lnum, chunks)
+  local box = rows[lnum] and rows[lnum].box
+  if not box then
+    return nil
+  end
+  local foot = lnum
+  while rows[foot + 1] and rows[foot + 1].box == box do
+    foot = foot + 1
+  end
+  local segs = { { " ", nil } }
+  vim.list_extend(segs, chunks)
+  table.insert(segs, { " ", nil })
+  -- a corner and one rule cell on each side stay visible
+  return fit(segs, math.max(0, box.width - 4)), { lnum = foot, col = box.col + #M.BL + #M.RULE }
 end
 
 local function thread_rows(d, thread, input)
@@ -235,7 +306,6 @@ local function thread_rows(d, thread, input)
     input = input,
     indent = 2,
     width = block_w,
-    bg = "GitlabCommentBg",
     thread = thread,
     guide_first = "",
     guide_rest = "",
@@ -255,7 +325,6 @@ local function thread_rows(d, thread, input)
         input = input,
         indent = 2 + M.REPLY_INDENT + 3,
         width = block_w,
-        bg = "GitlabCommentReplyBg",
         thread = thread,
         guide_first = last and "└─ " or "├─ ",
         guide_rest = last and "   " or "│  ",

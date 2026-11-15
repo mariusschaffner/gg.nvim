@@ -500,8 +500,10 @@ function Host:write(buf, d)
   end
   for _, m in ipairs(d.marks) do
     pcall(vim.api.nvim_buf_set_extmark, buf, self.ns, m.row, m.col, {
+      end_row = m.end_row,
       end_col = m.end_col,
       hl_group = m.hl,
+      hl_eol = m.hl_eol,
       priority = m.priority or 100,
       strict = false,
     })

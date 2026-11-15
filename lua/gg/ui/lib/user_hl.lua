@@ -29,6 +29,20 @@ function M.group(username, overrides)
   return "GitlabUser" .. (M.hash(username) % M.COUNT + 1)
 end
 
+--- The border group of `username` (a comment box): `GitlabCommentBorderN`
+--- with the same N as its `group`, so border and name match but can be
+--- coloured apart; a user pinned in `overrides` takes the pinned group.
+---@param username string
+---@param overrides? table<string, string>
+---@return string
+function M.border(username, overrides)
+  local pinned = overrides and overrides[username]
+  if pinned then
+    return pinned
+  end
+  return "GitlabCommentBorder" .. (M.hash(username) % M.COUNT + 1)
+end
+
 --- A `[text, hl, extra_hl]` item for "@username": the user's colour, and
 --- `GitlabCurrentUser` (bold) layered on when it is `me`.
 ---@param username string

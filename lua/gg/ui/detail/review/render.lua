@@ -5,15 +5,16 @@
 ---    40  40    local args = build(opts)
 ---    41      - local res = run(args)
 ---        41  + local res, err = retry(run, args)
----    ▎ (MS) Marius  ◷ pending
----    ▎ should this back off on 429 only?
+---    ╭ MS Marius ─────────────────────── ◷ pending ─╮
+---    │ should this back off on 429 only?             │
+---    ╰───────────────────────────────────────────────╯
 ---    42  43    return res
 ---
 --- Every line of the diff is a buffer line (removed ones too), so each can
 --- take a comment. Added and removed lines have a whole-line tint; where a
 --- removed line was replaced by an added one, the characters that differ
 --- are marked on both. Threads
---- are drawn with the Activity tab's comment block under the line they are on.
+--- are drawn with the Activity tab's comment boxes under the line they are on.
 local activity = require("gg.ui.detail.activity.render")
 local doc = require("gg.ui.lib.doc")
 local intraline = require("gg.ui.detail.review.intraline")
@@ -144,7 +145,9 @@ function M.render(input)
       l:add((r.text:gsub("\r", "")))
       local lnum = d:line(l, { kind = "line", type = r.type, old_line = r.old_line, new_line = r.new_line, index = i, col = col, gap = r.gap })
       if LINE_HL[r.type] then
-        d:line_hl(lnum, LINE_HL[r.type])
+        -- below the code's colours and the marked characters (a whole-line
+        -- highlight group would paint over both)
+        d:line_tint(lnum, LINE_HL[r.type])
       end
       for _, range in ipairs(changed[i] or {}) do
         table.insert(d.marks, { row = lnum - 1, col = col + range[1], end_col = col + range[2], hl = TEXT_HL[r.type], priority = 110 })

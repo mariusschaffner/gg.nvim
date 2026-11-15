@@ -142,26 +142,59 @@ T["render: comment blocks, badges, replies, truncation, folds"] = function()
       note(3, "second reply", "2026-11-10T10:06:00Z", ann),
     }, { resolvable = true, resolved = true }),
   }, { me = "ann" })
-  eq(vim.startswith(d.lines[2], "  ▎ AE Ann Example  10:00  you  ✓ resolved thread "), true)
-  eq(text.width(d.lines[2]), 72) -- padded to the block width (90%)
-  eq(vim.startswith(d.lines[3], "  ▎ line 1"), true)
+  -- a box: author and badges in the top border, the time on its right
+  eq(d.lines[2], "  ╭ AE Ann Example  you  ✓ resolved thread " .. ("─"):rep(20) .. " 10:00 ─╮")
+  eq(text.width(d.lines[2]), 72) -- the box is 90% of the width
+  eq(d.lines[3], "  │ line 1" .. (" "):rep(61) .. "│")
   -- 8 body lines, then the cut marker
-  eq(vim.startswith(d.lines[11], "  ▎ … [za] expand"), true)
+  eq(vim.startswith(d.lines[11], "  │ … [za] expand"), true)
   eq(d.rows[11].long, true)
-  eq(vim.startswith(d.lines[12], "  ▎ 👍 1"), true)
-  eq(vim.startswith(d.lines[13], "      ├─ ▎ BS Bob Sample  10:05"), true)
-  eq(vim.startswith(d.lines[14], "      │  ▎ first reply"), true)
-  eq(vim.startswith(d.lines[15], "      └─ ▎ AE Ann Example  10:06  you"), true)
-  eq(vim.startswith(d.lines[16], "         ▎ second reply"), true)
-  eq(d.rows[14], { kind = "comment", thread = "t1", note = 2, long = false })
-  -- the block tint stops at 90% of the width
-  local tint
-  for _, m in ipairs(d.marks) do
-    if m.row == 1 and m.hl == "GitlabCommentBg" then
-      tint = m
+  eq(vim.startswith(d.lines[12], "  │ 👍 1"), true)
+  eq(text.width(d.lines[12]), 72)
+  eq(d.lines[13], "  ╰" .. ("─"):rep(68) .. "╯")
+  eq(vim.startswith(d.lines[14], "      ├─ ╭ BS Bob Sample ─"), true)
+  eq(vim.endswith(d.lines[14], "─ 10:05 ─╮"), true)
+  eq(vim.startswith(d.lines[15], "      │  │ first reply"), true)
+  eq(vim.startswith(d.lines[16], "      │  ╰──"), true)
+  eq(vim.startswith(d.lines[17], "      └─ ╭ AE Ann Example  you ─"), true)
+  eq(vim.startswith(d.lines[18], "         │ second reply"), true)
+  eq(vim.startswith(d.lines[19], "         ╰──"), true)
+  eq(text.width(d.lines[19]), 72)
+  local box = { col = 6 + #"│  ", width = 63 }
+  eq(d.rows[15], { kind = "comment", thread = "t1", note = 2, long = false, box = box })
+  eq(d.rows[14].box, box)
+  eq(d.rows[16].box, box)
+  -- border and name in the author's colour, each user their own
+  local function hl_at(row, s)
+    local col = d.lines[row]:find(s, 1, true) - 1
+    for _, m in ipairs(d.marks) do
+      if m.row == row - 1 and m.col == col then
+        return m.hl
+      end
     end
   end
-  eq(text.width(d.lines[2]:sub(1, tint.end_col)), 72)
+  local user_hl = require("gg.ui.lib.user_hl")
+  local n = user_hl.hash("ann") % user_hl.COUNT + 1
+  eq(hl_at(2, "╭"), "GitlabCommentBorder" .. n)
+  eq(hl_at(3, "│"), "GitlabCommentBorder" .. n)
+  eq(hl_at(13, "╰"), "GitlabCommentBorder" .. n)
+  eq(hl_at(2, "Ann Example"), "GitlabUser" .. n)
+  eq(hl_at(14, "╭"), user_hl.border("bob"))
+  eq(hl_at(14, "Bob Sample"), user_hl.group("bob"))
+  eq(user_hl.border("bob") ~= hl_at(2, "╭"), true)
+  -- the key hints go into the bottom border, after "╰─"
+  local chunks, at = render.foot_hint(d.rows, 14, { { "[gc]", "GitlabHintKey" }, { " reply", "GitlabHintText" } })
+  eq(at, { lnum = 16, col = box.col + #"╰─" })
+  eq(chunks, { { " " }, { "[gc]", "GitlabHintKey" }, { " reply", "GitlabHintText" }, { " " } })
+  eq(d.lines[16]:sub(at.col - #"╰─" + 1, at.col), "╰─")
+  eq(select(2, render.foot_hint(d.rows, 16, {})), at) -- from any line of the box
+  eq(render.foot_hint(d.rows, 1, {}), nil) -- not a box
+  -- cut to the box
+  local narrow = { col = 0, width = 10 }
+  chunks = render.foot_hint({ { box = narrow } }, 1, { { "[gc] reply · [gE] edit", "X" } })
+  eq(text.width(table.concat(vim.tbl_map(function(c)
+    return c[1]
+  end, chunks))), 6)
   -- expanded and folded
   d = rendered({
     thread(1, {
@@ -169,8 +202,15 @@ T["render: comment blocks, badges, replies, truncation, folds"] = function()
       note(2, "first reply", "2026-11-10T10:05:00Z", bob),
     }),
   }, { state = { expanded_notes = { [1] = true }, folded = { t1 = true } } })
-  eq(d.lines[15], "     ▸ 1 reply · [za] expand")
-  eq(d.rows[15], { kind = "replies", thread = "t1" })
+  eq(d.lines[16], "     ▸ 1 reply · [za] expand")
+  eq(d.rows[16], { kind = "replies", thread = "t1" })
+  -- a long header drops the time first, then is cut
+  d = rendered({
+    thread(1, { note(1, "x", "2026-11-10T10:00:00Z", { username = "ann", name = ("N"):rep(80) }) }),
+  })
+  eq(text.width(d.lines[2]), 72)
+  eq(d.lines[2]:find("10:00", 1, true), nil)
+  eq(vim.endswith(d.lines[2], "…╮"), true)
 end
 
 T["render: loading, error, empty"] = function()

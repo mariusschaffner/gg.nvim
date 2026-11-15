@@ -338,4 +338,65 @@ T["select: static filter, ticking several, the cursor on the current one"] = fun
   eq({ note, closed }, { "gg.ui: No room to choose: Words", false })
 end
 
+T["select: <CR> after typing takes the match under the cursor (multi)"] = function()
+  local chooser = require("gg.ui.components.select")
+  local words = { "alpha", "beta", "alphabet", "gamma" }
+  local function id(w)
+    return w
+  end
+  local picked
+  local function open(debounce)
+    picked = nil
+    return chooser.open({
+      title = "Words",
+      row = 1,
+      col = 2,
+      width = 40,
+      multi = true,
+      debounce_ms = debounce,
+      selected = { "gamma" },
+      load = chooser.static(words, id),
+      line = function(w)
+        return " " .. w
+      end,
+      key = id,
+      on_pick = function(items)
+        picked = items
+      end,
+    })
+  end
+  local function type_in(pk, s, fire)
+    vim.api.nvim_buf_set_lines(pk.prompt_float.buf, 0, -1, false, { s })
+    if fire then
+      vim.api.nvim_exec_autocmds("TextChangedI", { buffer = pk.prompt_float.buf })
+    end
+  end
+  -- typed, no <Tab>: the match under the cursor joins what is ticked
+  local pk = open(0)
+  type_in(pk, "bet", true)
+  pk:pick()
+  eq(picked, { "gamma", "beta" })
+  -- a <Tab> after typing: only what is ticked
+  pk = open(0)
+  type_in(pk, "bet", true)
+  pk:toggle() -- beta, the cursor moves on to alphabet
+  pk:pick()
+  eq(picked, { "gamma", "beta" })
+  -- an item that is ticked already stays ticked
+  pk = open(0)
+  type_in(pk, "gam", true)
+  pk:pick()
+  eq(picked, { "gamma" })
+  -- no filter: just what is ticked
+  pk = open(0)
+  pk:pick()
+  eq(picked, { "gamma" })
+  -- <CR> before the debounced filter ran: it waits for the matches
+  pk = open(10000)
+  type_in(pk, "alphab", false)
+  pk:pick()
+  eq(picked, { "gamma", "alphabet" })
+  eq(pk.closed, true)
+end
+
 return T

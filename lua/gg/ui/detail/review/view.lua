@@ -8,6 +8,7 @@
 --- the review. Comments are added to the pending review (draft notes);
 --- `post_now` in the composer posts one at once. In the files pane `<CR>`
 --- opens a file and `i` comments on the whole file.
+local activity_render = require("gg.ui.detail.activity.render")
 local confirm = require("gg.ui.components.confirm")
 local date = require("gg.ui.lib.date")
 local doc = require("gg.ui.lib.doc")
@@ -215,8 +216,8 @@ function View:_maps()
       self:comment(math.min(a, b), math.max(a, b))
     end, { buffer = buf, nowait = true, silent = true, desc = "Comment on the lines" })
   end
-  self._cursor_hint = editing.cursor_hint(h, M.TAB, function(info)
-    return self:_hint(info)
+  self._cursor_hint = editing.cursor_hint(h, M.TAB, function(info, lnum, rows)
+    return self:_hint(info, lnum, rows)
   end)
 end
 
@@ -1053,9 +1054,13 @@ function View:_mine(note)
   return note.pending or (self.me and note.author and note.author.username == self.me.username)
 end
 
--- "[gc] reply · [gE] edit · [gD] delete · [gX] resolve" on comment rows
+-- "[gc] reply · [gE] edit · [gD] delete · [gX] resolve" in the bottom
+-- border of the comment under the cursor
 ---@private
-function View:_hint(info)
+---@param info table
+---@param lnum integer
+---@param rows table<integer, table>
+function View:_hint(info, lnum, rows)
   if info.kind ~= "comment" then
     return nil
   end
@@ -1085,7 +1090,13 @@ function View:_hint(info)
       table.insert(chunks, { " " .. p[2], "GitlabHintText" })
     end
   end
-  return #chunks > 0 and chunks or nil
+  if #chunks == 0 then
+    return nil
+  end
+  if info.box and rows then
+    return activity_render.foot_hint(rows, lnum, chunks)
+  end
+  return chunks
 end
 
 -- a position with the diff refs the diff was loaded with

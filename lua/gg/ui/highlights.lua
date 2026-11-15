@@ -104,9 +104,8 @@ M.LINKS = {
   { "GitlabTimelineRef", "Special" },
   { "GitlabTimelineGuide", "NonText" },
   { "GitlabTimelineMore", "GitlabDetailDim" },
-  { "GitlabCommentBg", "CursorLine" },
-  { "GitlabCommentReplyBg", "CursorLine" },
-  { "GitlabCommentBar", "Function" },
+  -- comment boxes: an author's border takes the author's colour
+  { "GitlabCommentBorder", "GitlabDetailBorder" },
   { "GitlabBadgeYou", "DiagnosticInfo" },
   { "GitlabBadgeResolved", "DiagnosticOk" },
   { "GitlabBadgeUnresolved", "DiagnosticWarn" },
@@ -173,6 +172,14 @@ M.LINKS = {
   { "GitlabUser6", "Type" },
   { "GitlabUser7", "Identifier" },
   { "GitlabUser8", "PreProc" },
+  { "GitlabCommentBorder1", "GitlabUser1" },
+  { "GitlabCommentBorder2", "GitlabUser2" },
+  { "GitlabCommentBorder3", "GitlabUser3" },
+  { "GitlabCommentBorder4", "GitlabUser4" },
+  { "GitlabCommentBorder5", "GitlabUser5" },
+  { "GitlabCommentBorder6", "GitlabUser6" },
+  { "GitlabCommentBorder7", "GitlabUser7" },
+  { "GitlabCommentBorder8", "GitlabUser8" },
 }
 --- Pills: { name, group whose text colour becomes the background }.
 M.PILLS = {

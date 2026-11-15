@@ -248,7 +248,7 @@ T["view: Changes, Commits, Activity tabs"] = function()
     return (lines(vim.api.nvim_win_get_buf(win))[2] or ""):find("04.03.2018", 1, true) ~= nil
   end)
   local a = lines(vim.api.nvim_win_get_buf(win))
-  eq(a[6]:find("⎇ package.json:27  ✓ resolved thread", 1, true) ~= nil, true)
+  eq(a[7]:find("⎇ package.json:27  ✓ resolved thread", 1, true) ~= nil, true)
   -- no key hints under the activity, and no footer breaking the border
   eq(vim.api.nvim_win_get_config(win).footer, nil)
   keys("<Tab>")

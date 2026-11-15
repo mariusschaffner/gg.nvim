@@ -245,7 +245,24 @@ T["ga, gl, gM: chosen from a list over the field; payloads"] = function()
   eq(vim.api.nvim_win_is_valid(prompt_win), false)
   eq(vim.api.nvim_win_is_valid(list_win), false)
   eq(vim.api.nvim_get_current_win(), g.members.content.win)
+  -- typing a name and <CR>: added without ticking it first
+  H.wait_for(function()
+    return vim.api.nvim_get_current_win() == g.members.content.win
+  end)
+  fake:add({ X.issue_put({ assignee_ids = { 3, 1 } }, { assignees = { X.rest_user(3, "Cid Third"), X.rest_user(1, "Ann Example") } }) })
+  keys("ga")
+  prompt_win = sel.wait()
+  vim.cmd("stopinsert")
+  vim.api.nvim_buf_set_lines(vim.api.nvim_win_get_buf(prompt_win), 0, -1, false, { "user-1" })
+  keys("<CR>")
+  H.wait_for(function()
+    return table.concat(lines(g.members.sidebar.buf), "\n"):find("Ann Example", 1, true) ~= nil
+  end)
+  eq(fake:last().json.assignee_ids, { 3, 1 })
   -- nothing changed: nothing is sent
+  H.wait_for(function()
+    return vim.api.nvim_get_current_win() == g.members.content.win
+  end)
   local sent = #fake:requests()
   keys("ga")
   sel.wait()

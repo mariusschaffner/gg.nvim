@@ -340,10 +340,12 @@ function M.compose(h, o)
 end
 
 --- Show `text(info)` right-aligned on the cursor line of tab `tab` (e.g.
---- "[x] toggle" on a task), redrawn as the cursor moves.
+--- "[x] toggle" on a task), redrawn as the cursor moves. When `text` also
+--- returns a place (`{ lnum, col }`, e.g. a comment's bottom border) the
+--- chunks are laid over the text there instead.
 ---@param h gg.ui.DetailHost
 ---@param tab string
----@param text fun(info: table|nil): gg.ui.Chunk[]|nil
+---@param text fun(info: table, lnum: integer, rows: table<integer, table>): gg.ui.Chunk[]|nil, { lnum: integer, col: integer }|nil
 function M.cursor_hint(h, tab, text)
   local buf = h:buf(tab)
   local ns = vim.api.nvim_create_namespace("gg.ui.detail.cursor_hint")
@@ -356,8 +358,14 @@ function M.cursor_hint(h, tab, text)
       return
     end
     local info, lnum = h:current()
-    local chunks = info and text(info)
-    if chunks and lnum then
+    if not (info and lnum) then
+      return
+    end
+    local d = h.docs[buf]
+    local chunks, at = text(info, lnum, d and d.rows or {})
+    if chunks and at then
+      pcall(vim.api.nvim_buf_set_extmark, buf, ns, at.lnum - 1, at.col, { virt_text = chunks, virt_text_pos = "overlay" })
+    elseif chunks then
       pcall(vim.api.nvim_buf_set_extmark, buf, ns, lnum - 1, 0, { virt_text = chunks, virt_text_pos = "right_align" })
     end
   end

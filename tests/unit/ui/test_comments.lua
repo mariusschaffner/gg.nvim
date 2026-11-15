@@ -180,15 +180,27 @@ T["gc replies under the thread (author seeded); <C-r> posts and resolves"] = fun
   vim.api.nvim_win_set_cursor(win, { r, 0 })
   -- the cursor hint
   vim.api.nvim_exec_autocmds("CursorMoved", { buffer = vim.api.nvim_win_get_buf(win) })
-  local hint
-  for _, m in ipairs(vim.api.nvim_buf_get_extmarks(vim.api.nvim_win_get_buf(win), -1, { r - 1, 0 }, { r - 1, -1 }, { details = true })) do
-    if m[4].virt_text then
-      hint = table.concat(vim.tbl_map(function(c)
-        return c[1]
-      end, m[4].virt_text))
-    end
-  end
-  eq(hint, "[gc] reply · [gX] resolve")
+  -- the cursor hint: laid over the bottom border of Bob's box
+  local buf = vim.api.nvim_win_get_buf(win)
+  local ns = vim.api.nvim_create_namespace("gg.ui.detail.cursor_hint")
+  local marks = vim.api.nvim_buf_get_extmarks(buf, ns, 0, -1, { details = true })
+  eq(#marks, 1)
+  local m = marks[1]
+  local foot = lines(buf)[m[2] + 1]
+  eq(m[2] > r - 1, true)
+  eq(foot:sub(m[3] - #"╰─" + 1, m[3]), "╰─")
+  eq(vim.endswith(foot, "─╯"), true)
+  eq(m[4].virt_text_pos, "overlay")
+  local hint = table.concat(vim.tbl_map(function(c)
+    return c[1]
+  end, m[4].virt_text))
+  eq(hint, " [gc] reply · [gX] resolve ")
+  -- on the body too, the same place
+  vim.api.nvim_win_set_cursor(win, { r + 1, 0 })
+  vim.api.nvim_exec_autocmds("CursorMoved", { buffer = buf })
+  marks = vim.api.nvim_buf_get_extmarks(buf, ns, 0, -1, {})
+  eq({ #marks, marks[1][2], marks[1][3] }, { 1, m[2], m[3] })
+  vim.api.nvim_win_set_cursor(win, { r, 0 })
   keys("gc")
   local cw = composer_set("@user-2 thanks")
   eq(lines(vim.api.nvim_win_get_buf(cw)), { "@user-2 thanks" })

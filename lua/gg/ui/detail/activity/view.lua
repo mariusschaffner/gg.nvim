@@ -75,8 +75,8 @@ function M.new(host, opts)
     self:toggle_resolved()
   end, "Resolve / unresolve")
   host:set_hints(opts.tab, {}) -- the timeline shows its own key hints
-  editing.cursor_hint(host, opts.tab, function(info)
-    return self:_hint(info)
+  editing.cursor_hint(host, opts.tab, function(info, lnum, rows)
+    return self:_hint(info, lnum, rows)
   end)
   return self
 end
@@ -101,9 +101,13 @@ function Tab:_find(info)
   end
 end
 
--- "[gc] reply · [gE] edit · [gD] delete · [gX] resolve" on comment rows
+-- "[gc] reply · [gE] edit · [gD] delete · [gX] resolve" in the bottom
+-- border of the comment under the cursor
 ---@private
-function Tab:_hint(info)
+---@param info table
+---@param lnum integer
+---@param rows table<integer, table>
+function Tab:_hint(info, lnum, rows)
   if info.kind ~= "comment" or not self:_open() then
     return nil
   end
@@ -131,7 +135,13 @@ function Tab:_hint(info)
       table.insert(chunks, { " " .. p[2], "GitlabHintText" })
     end
   end
-  return #chunks > 0 and chunks or nil
+  if #chunks == 0 then
+    return nil
+  end
+  if info.box and rows then
+    return render.foot_hint(rows, lnum, chunks)
+  end
+  return chunks
 end
 
 ---@private

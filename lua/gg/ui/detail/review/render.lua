@@ -10,10 +10,13 @@
 ---    42  43    return res
 ---
 --- Every line of the diff is a buffer line (removed ones too), so each can
---- take a comment. Added and removed lines have a whole-line tint. Threads
+--- take a comment. Added and removed lines have a whole-line tint; where a
+--- removed line was replaced by an added one, the characters that differ
+--- are marked on both. Threads
 --- are drawn with the Activity tab's comment block under the line they are on.
 local activity = require("gg.ui.detail.activity.render")
 local doc = require("gg.ui.lib.doc")
+local intraline = require("gg.ui.detail.review.intraline")
 local line = require("gg.ui.lib.line")
 local model = require("gg.ui.detail.review.model")
 
@@ -25,6 +28,7 @@ M.MIN_DIGITS = 3
 local SIGN = { add = "+", delete = "-", context = " " }
 local SIGN_HL = { add = "GitlabDiffAdd", delete = "GitlabDiffDelete" }
 local LINE_HL = { add = "GitlabDiffAddLine", delete = "GitlabDiffDeleteLine" }
+local TEXT_HL = { add = "GitlabDiffAddText", delete = "GitlabDiffDeleteText" }
 
 ---@class gg.ui.ReviewRenderInput
 ---@field width integer
@@ -110,6 +114,8 @@ function M.render(input)
   end
   local rows = input.rows or {}
   local w = math.max(M.MIN_DIGITS, #tostring(model.max_line(rows)))
+  -- the characters that changed inside a replaced line
+  local changed = intraline.rows(rows)
   for i, r in ipairs(rows) do
     if r.kind == "gap" then
       local l = line.new():add(" " .. string.rep(" ", 2 * w + 1) .. " "):add(M.GAP .. " ", "GitlabDiffGap")
@@ -139,6 +145,9 @@ function M.render(input)
       local lnum = d:line(l, { kind = "line", type = r.type, old_line = r.old_line, new_line = r.new_line, index = i, col = col, gap = r.gap })
       if LINE_HL[r.type] then
         d:line_hl(lnum, LINE_HL[r.type])
+      end
+      for _, range in ipairs(changed[i] or {}) do
+        table.insert(d.marks, { row = lnum - 1, col = col + range[1], end_col = col + range[2], hl = TEXT_HL[r.type], priority = 110 })
       end
     end
     threads(placed.at[i])

@@ -922,10 +922,15 @@ Detail views                                                  *gg-ui-detail*
     tab opens it on that file.
 
     Review                                                      *gg-ui-review*
-    The diff of a merge request, one file at a time: the changed files on
-    the left (hidden below 100 columns; `f` lists them), the diff of the
-    selected file on the right. Every line of the diff is a line of the
+    The diff of a merge request, one file at a time. On the left (hidden
+    below 100 columns; `f` lists the files) two boxes: the changed files as
+    a tree (directories first, `<CR>` or `za` closes and opens one) and,
+    below it, the threads: every thread and pending comment by file and
+    line (`●` unresolved, `✓` resolved, `◷` pending), `<CR>` goes to it.
+    On the right the diff of the selected file. Every line of the diff is a line of the
     buffer with its old and new line number, removed lines included.
+    Where a removed line was replaced by an added one, the characters that
+    differ are marked on both lines.
     Unchanged lines are collapsed into `⋯ N unchanged lines` rows: `za` (or
     `<CR>`) expands one, `zA` the whole file; the file's content is fetched
     once (|gg.files.raw()|) and cached under `stdpath("cache")`. A diff
@@ -936,7 +941,8 @@ Detail views                                                  *gg-ui-detail*
     comments on the file sit above the diff, and a thread whose line is not
     shown says which line it means. Outdated threads are marked.
     Moving: `]f` / `[f` files, `]h` / `[h` hunks, `]c` / `[c` threads,
-    `<Tab>` into the files pane and back (`<CR>` there opens a file).
+    `<Tab>` from the diff to the files, to the threads and back (`<CR>` on
+    a file opens it).
     `x` marks a file viewed and goes to the next one that is not; the marks
     are kept per merge request and head commit under `stdpath("state")`.
     Comments: `i` on a line, or on the lines of a visual selection; `i` in
@@ -1090,7 +1096,8 @@ Highlights                                                  *gg-ui-highlights*
     `GitlabPipelineSkipped` `GitlabDiffAdd` (links `GitlabPipelineSuccess`)
     `GitlabDiffDelete` (links `GitlabPipelineFailed`).
     Review: `GitlabDiffAddLine` (DiffAdd) `GitlabDiffDeleteLine`
-    (DiffDelete) `GitlabDiffLineNr` (LineNr) `GitlabDiffHunk`
+    (DiffDelete) `GitlabDiffAddText` `GitlabDiffDeleteText` (DiffText: the
+    characters that changed inside a line) `GitlabDiffLineNr` (LineNr) `GitlabDiffHunk`
     `GitlabDiffGap` `GitlabDiffViewed` `GitlabDiffCurrent`
     `GitlabBadgePending` `GitlabBadgeOutdated`.
     Pipelines: `GitlabRefDefault` (Special) `GitlabRefTag` (Constant)

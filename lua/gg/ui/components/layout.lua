@@ -74,15 +74,15 @@ end
 --- Rects for a detail view: the header across the top, the content below
 --- it (`DETAIL_GAP` rows apart) and, when `sidebar` is set and the editor is
 --- wide enough, a sidebar to the right of the content (to its left with
---- `left`). Pure given `area`.
----@param opts { header_h: integer, sidebar?: boolean, left?: boolean, area?: { columns: integer, lines: integer } }
+--- `left`). `gap` replaces `DETAIL_GAP`. Pure given `area`.
+---@param opts { header_h: integer, sidebar?: boolean, left?: boolean, gap?: integer, area?: { columns: integer, lines: integer } }
 ---@return { header: gg.ui.Rect, content: gg.ui.Rect, sidebar?: gg.ui.Rect }
 function M.detail(opts)
   local area = opts.area or M.editor()
   local border = 2
   local header_h = math.max(1, math.min(opts.header_h, M.header_max(area)))
   local full = math.max(1, area.columns - border)
-  local below = header_h + border + M.DETAIL_GAP
+  local below = header_h + border + (opts.gap or M.DETAIL_GAP)
   local content_h = math.max(1, area.lines - below - border)
   local out = {
     header = { row = 0, col = 0, width = full, height = header_h },
@@ -99,6 +99,27 @@ function M.detail(opts)
     out.content = { row = below, col = 0, width = full, height = content_h }
   end
   return out
+end
+
+M.SPLIT_SHARE = 0.35 -- of a split side pane, for its lower box
+M.SPLIT_MIN = 3
+
+--- Split a side pane's rect into two boxes, one above the other: the lower
+--- one takes `SPLIT_SHARE` of the height (at least `SPLIT_MIN` rows). Nil
+--- for the lower box when there is no room for both.
+---@param rect gg.ui.Rect
+---@return gg.ui.Rect upper
+---@return gg.ui.Rect|nil lower
+function M.split(rect)
+  local border = 2
+  local room = rect.height - border -- the second box's border comes out of the height
+  local lower_h = math.max(M.SPLIT_MIN, math.floor(room * M.SPLIT_SHARE))
+  local upper_h = room - lower_h
+  if upper_h < M.SPLIT_MIN then
+    return rect, nil
+  end
+  return { row = rect.row, col = rect.col, width = rect.width, height = upper_h },
+    { row = rect.row + upper_h + border, col = rect.col, width = rect.width, height = lower_h }
 end
 
 return M

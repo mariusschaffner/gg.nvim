@@ -53,6 +53,8 @@ local SIDE_WIN_OPTS = {
 ---@field sidebar_left? boolean the sidebar sits left of the content
 ---@field sidebar_focus? boolean the sidebar takes the focus and has a cursor line
 ---@field on_sidebar? fun(float: gg.ui.Float) the sidebar was (re)created: map its keys
+---@field gap? integer empty rows between the header and the boxes below it (default `layout.DETAIL_GAP`)
+---@field rects? fun(rects: table<string, gg.ui.Rect>): table<string, gg.ui.Rect> adjust the layout (e.g. add a pane of the view's own)
 ---@field on_render? fun() redraw everything (resize, colourscheme, sidebar change)
 ---@field on_refresh? fun() `R`
 ---@field on_tab? fun(key: string) a tab became active
@@ -93,6 +95,8 @@ function M.new(opts)
     sidebar_left = opts.sidebar_left == true,
     sidebar_focus = opts.sidebar_focus == true,
     _on_sidebar = opts.on_sidebar,
+    gap = opts.gap,
+    _adjust = opts.rects,
     bufs = {},
     docs = {},
     docks = {}, -- tab key -> the box pinned to its bottom (false: none)
@@ -163,10 +167,13 @@ end
 
 ---@private
 function Host:_rects()
-  local r = layout.detail({ header_h = self.header_h, sidebar = self.want_sidebar, left = self.sidebar_left })
+  local r = layout.detail({ header_h = self.header_h, sidebar = self.want_sidebar, left = self.sidebar_left, gap = self.gap })
   -- the dock: a one-line box over the last rows inside the content box
   local c = r.content
   r.dock = { row = c.row + c.height - M.DOCK_ROWS + 1, col = c.col + 1, width = math.max(1, c.width - 2), height = 1 }
+  if self._adjust then
+    r = self._adjust(r)
+  end
   return r
 end
 

@@ -20,6 +20,7 @@ local gg = require("gg")
 local header = require("gg.ui.detail.header")
 local highlights = require("gg.ui.highlights")
 local hint = require("gg.ui.lib.hint")
+local layout = require("gg.ui.components.layout")
 local host = require("gg.ui.detail.host")
 local model = require("gg.ui.detail.review.model")
 local mr_render = require("gg.ui.detail.merge_request.render")
@@ -27,6 +28,7 @@ local picker = require("gg.ui.components.picker")
 local position = require("gg.ui.detail.review.position")
 local render = require("gg.ui.detail.review.render")
 local submit = require("gg.ui.detail.review.submit")
+local thread_list = require("gg.ui.detail.review.thread_list")
 local threads = require("gg.ui.detail.review.threads")
 local viewed = require("gg.ui.detail.review.viewed")
 
@@ -35,6 +37,17 @@ local M = {}
 M.TAB = "main"
 M.SYNTAX_MAX_LINES = 5000
 M.CONTEXT_LINES = 3
+
+local PANE_WIN_OPTS = {
+  wrap = false,
+  number = false,
+  relativenumber = false,
+  signcolumn = "no",
+  foldcolumn = "0",
+  spell = false,
+  list = false,
+  cursorline = true,
+}
 
 ---@class gg.ui.ReviewItem
 ---@field mr gg.MergeRequest|{ iid: integer, project?: string }
@@ -73,6 +86,7 @@ function M.open(ctx, item)
     idx = 1,
     tasks = {},
     viewed = {},
+    collapsed = {}, -- directory path -> closed in the files pane
     expanded = {}, -- path -> gap index -> true
     content = {}, -- path -> { status, lines }
     tstate = { folded = {}, expanded_notes = {} },
@@ -85,6 +99,14 @@ function M.open(ctx, item)
     sidebar = true,
     sidebar_left = true,
     sidebar_focus = true,
+    gap = 0,
+    -- the side pane is two boxes: the files, and the threads below them
+    rects = function(r)
+      if r.sidebar then
+        r.sidebar, r.threads = layout.split(r.sidebar)
+      end
+      return r
+    end,
     on_sidebar = function(f)
       self:_side_maps(f.buf)
     end,
@@ -220,8 +242,11 @@ function View:_side_maps(buf)
     self:_side_open(true)
   end, "Open the file")
   m(k.review_focus, function()
-    self.h.group:focus("content")
-  end, "Diff")
+    self.h.group:focus(self.h.group.members.threads and "threads" or "content")
+  end, "Threads")
+  m(k.toggle_fold, function()
+    self:_side_open(false)
+  end, "Open / close the directory")
   -- after open_item: `i` comments on the file, `<CR>` opens it
   m(k.comment, function()
     if self:_side_open(false) then
@@ -271,6 +296,11 @@ end
 ---@private
 function View:_side_open(focus)
   local info = self:_side_info()
+  if info and info.kind == "dir" then
+    self.collapsed[info.path] = not self.collapsed[info.path] or nil
+    self:_side()
+    return false
+  end
   if not (info and info.kind == "file") then
     return false
   end
@@ -326,7 +356,7 @@ function View:load()
       return self:render()
     end
     self.status, self.err = "ready", nil
-    self.list = model.files(res.items or {})
+    self.list = files_pane.sorted(model.files(res.items or {}))
     self.truncated = res.truncated == true
     self.content, self.expanded = {}, {}
     self.idx = 1
@@ -547,6 +577,7 @@ function View:_side()
     current = self.idx,
     viewed = self.viewed,
     counts = self.counts.files,
+    collapsed = self.collapsed,
   }))
   local k = h.keys
   local open = picker.lhs_list(k.open_item)
@@ -556,6 +587,100 @@ function View:_side()
   float.set_text(f.win, {
     title = { { (" Files %s "):format(self.status == "ready" and #self.list or ""), "GitlabDetailTabActive" } },
     footer = #hints > 0 and hint.chunks(hints) or "",
+  })
+end
+
+-- the threads pane exists while the files pane does
+---@private
+function View:_sync_threads_pane()
+  local h = self.h
+  local g = h.group
+  local want = h:has_sidebar() and g._layout().threads ~= nil
+  if want and not g.members.threads then
+    local f = g:add({
+      name = "threads",
+      focusable = true,
+      filetype = "gg_ui_detail_sidebar",
+      win_opts = PANE_WIN_OPTS,
+      winhighlight = "CursorLine:GitlabCursorLine",
+    })
+    self:_threads_maps(f.buf)
+    g:relayout()
+  elseif not want and g.members.threads then
+    g:remove("threads")
+    g:relayout()
+  end
+end
+
+---@private
+function View:_threads_maps(buf)
+  local k = self.ctx.cfg.keymaps
+  local function m(key, fn, desc)
+    for _, lhs in ipairs(picker.lhs_list(key)) do
+      vim.keymap.set("n", lhs, fn, { buffer = buf, nowait = true, silent = true, desc = desc })
+    end
+  end
+  m(k.close, function()
+    self.ctx.stack:pop()
+  end, "Back")
+  m(k.close_all, function()
+    self.ctx.stack:close()
+  end, "Close")
+  m(k.refresh, function()
+    self:load()
+  end, "Reload")
+  m(k.review_focus, function()
+    self.h.group:focus("content")
+  end, "Diff")
+  m(k.submit_review, function()
+    self:submit()
+  end, "Submit the review")
+  m(k.open_item, function()
+    self:_threads_open()
+  end, "Go to the thread")
+end
+
+-- `<CR>` in the threads pane: show the file, the cursor on the thread
+---@private
+function View:_threads_open()
+  local f = self.h.group.members.threads
+  if not (f and vim.api.nvim_win_is_valid(f.win)) then
+    return
+  end
+  local d = self.h.docs[f.buf]
+  local info = d and d.rows[vim.api.nvim_win_get_cursor(f.win)[1]]
+  if not info then
+    return
+  end
+  self:show(info.index)
+  self.h.group:focus("content")
+  if info.kind == "thread" then
+    self:_goto(function(i)
+      return i.kind == "comment" and i.thread == info.thread
+    end)
+  end
+end
+
+---@private
+function View:_threads_pane()
+  self:_sync_threads_pane()
+  local f = self.h.group.members.threads
+  if not f then
+    return
+  end
+  local groups, count = {}, 0
+  if self.status == "ready" then
+    groups, count = thread_list.groups(self.list, self.discussions, self.drafts, { me = self.me })
+  end
+  local d = thread_list.render({ width = vim.api.nvim_win_get_width(f.win), status = self.status, groups = groups })
+  local padded = doc.new()
+  padded:blank()
+  padded:append(d)
+  self.h:write(f.buf, padded)
+  local open = picker.lhs_list(self.h.keys.open_item)
+  float.set_text(f.win, {
+    title = { { (" Threads %s "):format(self.status == "ready" and count or ""), "GitlabDetailTabActive" } },
+    footer = open[#open] and hint.chunks({ { key = open[#open], desc = "Go to" } }) or "",
   })
 end
 
@@ -611,6 +736,7 @@ function View:render()
   self.counts = threads.counts(self.list, self.discussions, self.drafts)
   self:_header()
   self:_side()
+  self:_threads_pane()
   local file = self.status == "ready" and self:_file() or nil
   local d
   if file then

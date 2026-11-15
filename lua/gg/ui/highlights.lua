@@ -53,6 +53,9 @@ M.LINKS = {
   -- the review: whole-line tints of added and removed lines, the line numbers
   { "GitlabDiffAddLine", "DiffAdd" },
   { "GitlabDiffDeleteLine", "DiffDelete" },
+  -- the characters that differ inside a replaced line
+  { "GitlabDiffAddText", "DiffText" },
+  { "GitlabDiffDeleteText", "DiffText" },
   { "GitlabDiffLineNr", "LineNr" },
   { "GitlabDiffHunk", "GitlabDetailDim" },
   { "GitlabDiffGap", "GitlabDetailDim" },

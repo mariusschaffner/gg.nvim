@@ -51,7 +51,8 @@ lua/gg/
     detail/           detail views: host (windows), header/sidebar (pure), activity/,
                       issue/, milestone/, merge_request/, pipeline/ (pure parts + view),
                       review/ (the merge request diff: model, threads, position,
-                      render, files, submit pure; viewed = stored marks; view);
+                      render, intraline, files (tree), thread_list, submit pure; viewed =
+                      stored marks; view);
                       editing: edit.lua (runner), editing.lua + fields.lua (glue),
                       edits.lua (pure payloads); components text_edit, field_edit,
                       composer, confirm

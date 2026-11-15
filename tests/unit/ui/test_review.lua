@@ -14,6 +14,7 @@ local position = require("gg.ui.detail.review.position")
 local render = require("gg.ui.detail.review.render")
 local stack = require("gg.ui.components.stack")
 local submit = require("gg.ui.detail.review.submit")
+local thread_list = require("gg.ui.detail.review.thread_list")
 local threads = require("gg.ui.detail.review.threads")
 local viewed = require("gg.ui.detail.review.viewed")
 local eq = MiniTest.expect.equality
@@ -216,26 +217,101 @@ T["render: gutter, tints, gaps, threads under their line"] = function()
   eq(bd.rows[1], { kind = "unavailable", loadable = true })
 end
 
-T["files pane: directories, marks, counts"] = function()
-  local list = model.files({
-    raw_file("lua/a.lua", DIFF),
-    raw_file("lua/b.lua", "@@ -0,0 +1 @@\n+x\n", { new_file = true }),
-    raw_file("README.md", "@@ -1 +0,0 @@\n-x\n", { deleted_file = true }),
+T["intraline: the characters that differ between a removed and an added line"] = function()
+  local intraline = require("gg.ui.detail.review.intraline")
+  eq({ intraline.ranges("foo(a)", "foo(a, b)") }, { {}, { { 5, 8 } } })
+  eq({ intraline.ranges("timeout = 10", "timeout = 30") }, { { { 10, 11 } }, { { 10, 11 } } })
+  -- multi-byte characters: byte ranges
+  eq({ intraline.ranges("naïve é", "naïve ü") }, { { { 7, 9 } }, { { 7, 9 } } })
+  -- equal, empty or nothing in common: no marks
+  eq({ intraline.ranges("same", "same") }, {})
+  eq({ intraline.ranges("", "x") }, {})
+  eq({ intraline.ranges("abcdef", "uvwxyz") }, {})
+  -- pairs: the n-th removed line with the n-th added line of a run
+  local rows = {
+    { kind = "line", type = "context", text = "a" },
+    { kind = "line", type = "delete", text = "x = 1" },
+    { kind = "line", type = "delete", text = "gone" },
+    { kind = "line", type = "add", text = "x = 2" },
+    { kind = "line", type = "context", text = "b" },
+    { kind = "line", type = "add", text = "new" },
+  }
+  eq(intraline.rows(rows), { [2] = { { 4, 5 } }, [4] = { { 4, 5 } } })
+  -- drawn over the code, after the gutter
+  local f = model.file(raw_file("a.lua", "@@ -1 +1 @@\n-x = 1\n+x = 2\n"), 1)
+  local d = render.render({ width = 80, status = "ready", file = f, rows = model.rows(f) })
+  local marks = vim.tbl_filter(function(m)
+    return m.hl == "GitlabDiffDeleteText" or m.hl == "GitlabDiffAddText"
+  end, d.marks)
+  eq(marks, {
+    { row = 1, col = 15, end_col = 16, hl = "GitlabDiffDeleteText", priority = 110 },
+    { row = 2, col = 15, end_col = 16, hl = "GitlabDiffAddText", priority = 110 },
   })
-  local d = files_pane.render({ width = 32, status = "ready", files = list, current = 1, viewed = { ["lua/b.lua"] = true }, counts = { ["lua/a.lua"] = { threads = 1, pending = 2 } } })
-  eq(d.lines[1], " lua/")
-  eq(vim.startswith(d.lines[2], " ▸ a.lua"), true)
-  eq(vim.endswith(d.lines[2], "◷2 💬1 +3 −2"), true)
-  eq(vim.startswith(d.lines[3], " ✓ b.lua"), true)
-  eq(vim.endswith(d.lines[3], "+1 A"), true)
-  eq(vim.startswith(d.lines[4], "   README.md"), true)
-  eq(vim.endswith(d.lines[4], "−1 D"), true)
-  eq(d.rows[2], { kind = "file", index = 1, path = "lua/a.lua" })
-  eq({ files_pane.lnum_of(d, 3), files_pane.lnum_of(d, 9) }, { 4, nil })
+  eq(d.lines[2]:sub(16, 16), "1")
+end
+
+T["files pane: a tree with marks and counts; directories close"] = function()
+  local list = files_pane.sorted(model.files({
+    raw_file("README.md", "@@ -1 +0,0 @@\n-x\n", { deleted_file = true }),
+    raw_file("lua/gg/ui/b.lua", "@@ -0,0 +1 @@\n+x\n", { new_file = true }),
+    raw_file("lua/gg/ui/a.lua", DIFF),
+    raw_file("lua/gg/core/task.lua", DIFF),
+    raw_file("tests/t.lua", DIFF),
+  }))
+  -- directories first, by name; the files are renumbered in that order
+  eq(vim.tbl_map(function(f)
+    return f.index .. ":" .. f.path
+  end, list), { "1:lua/gg/core/task.lua", "2:lua/gg/ui/a.lua", "3:lua/gg/ui/b.lua", "4:tests/t.lua", "5:README.md" })
+  local input = { width = 32, status = "ready", files = list, current = 2, viewed = { ["lua/gg/ui/b.lua"] = true }, counts = { ["lua/gg/ui/a.lua"] = { threads = 1, pending = 2 } } }
+  local d = files_pane.render(input)
+  eq(d.lines[1], " ▾ lua/gg/") -- a directory holding one directory is joined with it
+  eq(d.lines[2], "   ▾ core/")
+  eq(vim.startswith(d.lines[3], "       task.lua"), true)
+  eq(d.lines[4], "   ▾ ui/")
+  eq(vim.startswith(d.lines[5], "     ▸ a.lua"), true)
+  eq(vim.endswith(d.lines[5], "◷2 💬1 +3 −2"), true)
+  eq(vim.startswith(d.lines[6], "     ✓ b.lua"), true)
+  eq(vim.endswith(d.lines[6], "+1 A"), true)
+  eq(d.lines[7], " ▾ tests/")
+  eq(vim.startswith(d.lines[9], "   README.md"), true)
+  eq(vim.endswith(d.lines[9], "−1 D"), true)
+  eq(d.rows[5], { kind = "file", index = 2, path = "lua/gg/ui/a.lua" })
+  eq(d.rows[4], { kind = "dir", path = "lua/gg/ui/" })
+  eq({ files_pane.lnum_of(d, 5), files_pane.lnum_of(d, 9) }, { 9, nil })
   for _, l in ipairs(d.lines) do
     eq(vim.fn.strdisplaywidth(l) <= 32, true)
   end
+  input.collapsed = { ["lua/gg/"] = true }
+  local c = files_pane.render(input)
+  eq({ c.lines[1], c.lines[2], #c.lines }, { " ▸ lua/gg/", " ▾ tests/", 4 })
   eq(files_pane.render({ width = 32, status = "loading" }).lines, { " Loading…" })
+end
+
+T["threads pane: every thread by file, in line order"] = function()
+  local fa = model.file(raw_file("src/a.lua", DIFF), 1)
+  local fb = model.file(raw_file("src/b.lua", DIFF), 2)
+  local on_b = { old_path = "src/b.lua", new_path = "src/b.lua", position_type = "text", new_line = 4 }
+  local groups, count = thread_list.groups({ fa, fb }, {
+    { id = "d1", resolvable = true, resolved = false, notes = { note(1, "later line", pos({ new_line = 22 })) } },
+    { id = "d2", resolvable = true, resolved = true, notes = { note(2, "done\nmore", pos({ old_line = 4 })) } },
+    { id = "d3", notes = { note(3, "the file", pos({ position_type = "file" })) } },
+    { id = "d4", resolvable = true, resolved = false, notes = { note(4, "on b", on_b) } },
+  }, { { id = 9, note = "mine", position = pos({ new_line = 5 }) }, { id = 10, note = "re", discussion_id = "d4" } }, { me = { username = "user-1" } })
+  eq(count, 5)
+  local d = thread_list.render({ width = 32, status = "ready", groups = groups })
+  eq(d.lines, {
+    " a.lua",
+    " file • the file",
+    "    4 ✓ done",
+    "    5 ◷ mine",
+    "   22 ● later line",
+    " b.lua",
+    "    4 ◷ on b",
+  })
+  eq(d.rows[1], { kind = "file", index = 1 })
+  eq(d.rows[5], { kind = "thread", index = 1, thread = "d1" })
+  eq(d.rows[7], { kind = "thread", index = 2, thread = "d4" })
+  eq(thread_list.render({ width = 32, status = "ready", groups = {} }).lines, { " No threads." })
 end
 
 T["submit: actions and the pending list"] = function()
@@ -274,6 +350,13 @@ T["layout: the sidebar on the left"] = function()
   eq(r.sidebar, { row = 6, col = 0, width = 32, height = 32 })
   eq(r.content, { row = 6, col = 35, width = 83, height = 32 })
   eq(layout.detail({ header_h = 3, sidebar = true, left = true, area = { columns = 90, lines = 40 } }).sidebar, nil)
+  -- no gap under the header; the side pane split in two boxes
+  local tight = layout.detail({ header_h = 3, sidebar = true, left = true, gap = 0, area = { columns = 120, lines = 40 } })
+  eq({ tight.content.row, tight.content.height }, { 5, 33 })
+  local upper, lower = layout.split(tight.sidebar)
+  eq(upper, { row = 5, col = 0, width = 32, height = 21 })
+  eq(lower, { row = 28, col = 0, width = 32, height = 10 })
+  eq({ layout.split({ row = 0, col = 0, width = 32, height = 6 }) }, { { row = 0, col = 0, width = 32, height = 6 } })
 end
 
 -- ------------------------------------------------------------------ view
@@ -399,10 +482,20 @@ T["view: files on the left, the diff with its thread, border labels"] = function
   eq(c[6]:find("Bea Other", 1, true) ~= nil, true)
   local side = lines(g.members.sidebar.buf)
   eq(side[1], "")
-  eq(side[2], " src/")
-  eq(vim.startswith(side[3], " ▸ a.lua"), true)
+  eq(side[2], " ▾ src/")
+  eq(vim.startswith(side[3], "   ▸ a.lua"), true)
   eq(vim.endswith(side[3], "💬1 +3 −2"), true)
   eq(vim.endswith(side[4], "+1 A"), true)
+  -- the threads pane below the files
+  local tp = g.members.threads
+  eq(lines(tp.buf), { "", " a.lua", "    4 ● Why B?" })
+  eq(chunks_text(vim.api.nvim_win_get_config(tp.win).title), " Threads 1 ")
+  eq(chunks_text(vim.api.nvim_win_get_config(tp.win).footer), " [<CR>] Go to ")
+  local sp, tpos = vim.api.nvim_win_get_position(g.members.sidebar.win), vim.api.nvim_win_get_position(tp.win)
+  eq(tpos[1], sp[1] + vim.api.nvim_win_get_height(g.members.sidebar.win) + 2)
+  eq(tpos[1] + vim.api.nvim_win_get_height(tp.win), vim.api.nvim_win_get_position(win)[1] + vim.api.nvim_win_get_height(win))
+  -- no empty row between the header and the boxes below it
+  eq(vim.api.nvim_win_get_position(win)[1], vim.api.nvim_win_get_height(g.members.header.win) + 2)
   -- the sidebar sits left of the content
   eq(vim.api.nvim_win_get_position(g.members.sidebar.win)[2] < vim.api.nvim_win_get_position(win)[2], true)
   local cfg = vim.api.nvim_win_get_config(win)
@@ -438,7 +531,7 @@ T["view: files, hunks and threads are stepped through; x marks viewed"] = functi
   -- viewed: marked, stored, on to the next file not viewed
   keys("x")
   eq(lines(g.members.content.buf)[2], "       1 + w")
-  eq(vim.startswith(lines(g.members.sidebar.buf)[3], " ✓ a.lua"), true)
+  eq(vim.startswith(lines(g.members.sidebar.buf)[3], "   ✓ a.lua"), true)
   eq(viewed.load(viewed.key(X.HOST, X.PROJECT, X.MR_IID, HEAD)), { ["src/a.lua"] = true })
   eq(chunks_text(vim.api.nvim_win_get_config(g.members.header.win).title):find("1/2 viewed", 1, true) ~= nil, true)
   -- the files pane: <Tab> focuses it, moving shows the file, <CR> goes back
@@ -448,6 +541,24 @@ T["view: files, hunks and threads are stepped through; x marks viewed"] = functi
   vim.api.nvim_exec_autocmds("CursorMoved", { buffer = g.members.sidebar.buf })
   eq(lines(g.members.content.buf)[3], "   3   3   a")
   keys("<CR>")
+  eq(vim.api.nvim_get_current_win(), win)
+  -- a directory closes and opens
+  keys("<Tab>")
+  vim.api.nvim_win_set_cursor(g.members.sidebar.win, { 2, 0 })
+  keys("<CR>")
+  eq(lines(g.members.sidebar.buf), { "", " ▸ src/" })
+  keys("za")
+  eq(#lines(g.members.sidebar.buf), 4)
+  -- <Tab> again: the threads pane; <CR> on a thread jumps to it
+  keys("]f")
+  eq(lines(g.members.content.buf)[2], "       1 + w")
+  keys("<Tab>")
+  eq(vim.api.nvim_get_current_win(), g.members.threads.win)
+  vim.api.nvim_win_set_cursor(g.members.threads.win, { 3, 0 })
+  keys("<CR>")
+  eq(vim.api.nvim_get_current_win(), win)
+  eq(lines(g.members.content.buf)[vim.api.nvim_win_get_cursor(win)[1]]:find("Bea Other", 1, true) ~= nil, true)
+  keys("<Tab><Tab><Tab>")
   eq(vim.api.nvim_get_current_win(), win)
   -- q goes back
   keys("q")

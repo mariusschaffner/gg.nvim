@@ -108,7 +108,7 @@ end
 ---@param lnum integer
 ---@param rows table<integer, table>
 function Tab:_hint(info, lnum, rows)
-  if info.kind ~= "comment" or not self:_open() then
+  if info.kind ~= "comment" then
     return nil
   end
   local note, d = self:_find(info)
@@ -117,31 +117,18 @@ function Tab:_hint(info, lnum, rows)
   end
   local k = self.host.keys
   local fk = require("gg.ui.components.picker").first_key
-  local parts = { { fk(k.reply), "reply" } }
-  if note and self.me and note.author and note.author.username == self.me then
-    table.insert(parts, { fk(k.edit_comment), "edit" })
-    table.insert(parts, { fk(k.delete_comment), "delete" })
-  end
-  if d.resolvable then
-    table.insert(parts, { fk(k.toggle_resolved), d.resolved and "unresolve" or "resolve" })
-  end
-  local chunks = {}
-  for _, p in ipairs(parts) do
-    if p[1] then
-      if #chunks > 0 then
-        table.insert(chunks, { " · ", "GitlabHintText" })
-      end
-      table.insert(chunks, { "[" .. p[1] .. "]", "GitlabHintKey" })
-      table.insert(chunks, { " " .. p[2], "GitlabHintText" })
+  local parts = {}
+  if self:_open() then
+    table.insert(parts, { fk(k.reply), "reply" })
+    if note and self.me and note.author and note.author.username == self.me then
+      table.insert(parts, { fk(k.edit_comment), "edit" })
+      table.insert(parts, { fk(k.delete_comment), "delete" })
+    end
+    if d.resolvable then
+      table.insert(parts, { fk(k.toggle_resolved), d.resolved and "unresolve" or "resolve" })
     end
   end
-  if #chunks == 0 then
-    return nil
-  end
-  if info.box and rows then
-    return render.foot_hint(rows, lnum, chunks)
-  end
-  return chunks
+  return render.comment_hint(info, lnum, rows, parts, fk(k.toggle_fold))
 end
 
 ---@private

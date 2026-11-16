@@ -1,11 +1,11 @@
 --- The review of a merge request: its changed files on the left, the diff
 --- of one file on the right, with the threads under the lines they are on.
 ---
---- Keys in the diff: `]f` / `[f` files, `]h` / `[h` hunks, `]c` / `[c`
+--- Keys in the diff: `gf` / `[f` files, `]h` / `[h` hunks, `]c` / `[c`
 --- threads, `za` / `zA` expand unchanged lines (the file's content is
 --- fetched once), `i` comment on the line (or the visual selection), `gc`
---- reply, `gE` / `gD` edit / delete, `gX` resolve, `x` viewed, `gs` submit
---- the review. Comments are added to the pending review (draft notes);
+--- reply, `gE` / `gD` edit / delete, `gX` resolve, `gx` viewed, `gV` side
+--- by side (the files and threads panes hidden), `gs` submit the review. Comments are added to the pending review (draft notes);
 --- `post_now` in the composer posts one at once. In the files pane `<CR>`
 --- opens a file and `i` comments on the whole file.
 local activity_render = require("gg.ui.detail.activity.render")
@@ -208,6 +208,9 @@ function View:_maps()
   m(k.submit_review, function()
     self:submit()
   end, "Submit the review")
+  m(k.toggle_split, function()
+    self:toggle_split()
+  end, "Side by side / unified")
   local buf = h:buf(M.TAB)
   for _, lhs in ipairs(picker.lhs_list(k.comment)) do
     vim.keymap.set("x", lhs, function()
@@ -271,6 +274,9 @@ function View:_side_maps(buf)
   m(k.prev_file, function()
     self:step_file(-1)
   end, "Previous file")
+  m(k.toggle_split, function()
+    self:toggle_split()
+  end, "Side by side")
   vim.api.nvim_create_autocmd("CursorMoved", {
     buffer = buf,
     callback = function()
@@ -681,7 +687,7 @@ function View:_threads_pane()
   local open = picker.lhs_list(self.h.keys.open_item)
   float.set_text(f.win, {
     title = { { (" Threads %s "):format(self.status == "ready" and count or ""), "GitlabDetailTabActive" } },
-    footer = open[#open] and hint.chunks({ { key = open[#open], desc = "Go to" } }) or "",
+    footer = open[#open] and hint.chunks({ { key = open[#open], desc = "Open" } }) or "",
   })
 end
 
@@ -725,6 +731,7 @@ function View:_chrome(file)
     { key = fk(k.toggle_viewed), desc = self.viewed[file.path] and "Not viewed" or "Viewed" },
     { key = fk(k.next_file), desc = "Next file" },
     { key = fk(k.submit_review), desc = "Submit" },
+    { key = fk(k.toggle_split), desc = self.split and "Unified" or "Side by side" },
   })
 end
 
@@ -757,6 +764,7 @@ function View:render()
       keys = { fold = fk(h.keys.toggle_fold) },
       fetching = c ~= nil and c.status == "loading",
       truncated = self.truncated,
+      split = self.split,
     })
   else
     self.file_threads = {}
@@ -777,8 +785,9 @@ function View:render()
   end
 end
 
--- treesitter colours for the code: the new side and the removed lines are
--- parsed as two texts, their captures laid over the buffer lines
+-- treesitter colours for the code: the new side and the removed lines (side
+-- by side: the two sides) are parsed as two texts, their captures laid over
+-- the buffer lines
 ---@private
 function View:_syntax(buf, d, file)
   vim.api.nvim_buf_clear_namespace(buf, self.syn_ns, 0, -1)
@@ -799,7 +808,14 @@ function View:_syntax(buf, d, file)
       local text, map = {}, {}
       for lnum = 1, #d.lines do
         local info = d.rows[lnum]
-        if info and info.kind == "line" and (info.type == "delete") == old_side then
+        if info and info.kind == "line" and info.split then
+          -- side by side: the left side is the old file, the right the new
+          local side = old_side and info.left or info.right
+          if side then
+            table.insert(text, d.lines[lnum]:sub(side.col + 1, side.col + side.len))
+            table.insert(map, { lnum - 1, side.col })
+          end
+        elseif info and info.kind == "line" and (info.type == "delete") == old_side then
           table.insert(text, d.lines[lnum]:sub(info.col + 1))
           table.insert(map, { lnum - 1, info.col })
         end
@@ -832,6 +848,86 @@ function View:_syntax(buf, d, file)
 end
 
 -- ---------------------------------------------------------------- moving
+
+--- A row of the diff as one line: side by side, the side at byte column
+--- `col` (the other one where that side is empty). Other rows as they are.
+---@param info table|nil
+---@param col integer
+---@return table|nil
+function M.side(info, col)
+  if not (info and info.split) then
+    return info
+  end
+  local s
+  if col >= info.sep then
+    s = info.right or info.left
+  else
+    s = info.left or info.right
+  end
+  return vim.tbl_extend("force", { kind = "line" }, s)
+end
+
+-- the row under the cursor (`M.side`) and its line number
+---@private
+function View:_current()
+  local info, lnum = self.h:current()
+  if info and info.split then
+    local win = self.h.content_float.win
+    info = M.side(info, vim.api.nvim_win_is_valid(win) and vim.api.nvim_win_get_cursor(win)[2] or 0)
+  end
+  return info, lnum
+end
+
+-- a predicate for the row of the same diff line as `info` (a line row as
+-- `_current` gives it), on either side of a side-by-side row
+local function same_line(info)
+  local function eq(r)
+    return r ~= nil and r.type == info.type and r.old_line == info.old_line and r.new_line == info.new_line
+  end
+  return function(i)
+    return i.kind == "line" and (eq(i) or eq(i.left) or eq(i.right))
+  end
+end
+
+-- the cursor on the side of row `info` that holds `line` (side by side)
+---@private
+function View:_to_side(lnum, line)
+  local d = self.h.docs[self.h:buf(M.TAB)]
+  local info = d and d.rows[lnum]
+  local win = self.h.content_float.win
+  if not (info and info.split and vim.api.nvim_win_is_valid(win)) then
+    return
+  end
+  local function eq(r)
+    return r ~= nil and r.type == line.type and r.old_line == line.old_line and r.new_line == line.new_line
+  end
+  local s = (eq(info.left) and info.left) or (eq(info.right) and info.right) or info.left or info.right
+  if s then
+    pcall(vim.api.nvim_win_set_cursor, win, { lnum, s.col })
+  end
+end
+
+--- `gV`: side by side (the files and threads panes hidden for the room) or
+--- unified again; the cursor stays on its line of the diff.
+function View:toggle_split()
+  local h = self.h
+  local info = self:_current()
+  self.split = not self.split
+  h:want_sidebar_shown(not self.split)
+  h.group:focus("content")
+  self:render()
+  if info and info.kind == "line" then
+    self:_goto(same_line(info))
+    self:_to_side(select(2, self.h:current()), info)
+  elseif info and (info.note or info.index) then
+    self:_goto(function(i)
+      if info.note then
+        return i.note == info.note
+      end
+      return i.kind == info.kind and i.index == info.index
+    end)
+  end
+end
 
 -- the cursor to the first row `pred(info)` accepts
 ---@private
@@ -904,7 +1000,7 @@ end
 function View:jump(what, dir)
   local h = self.h
   local d = h.docs[h:buf(M.TAB)]
-  local _, cur = h:current()
+  local _, cur = self:_current()
   if not (d and cur) then
     return
   end
@@ -937,7 +1033,7 @@ end
 --- one of its lines), load a diff that was not sent; on a thread, fold its
 --- replies or show a long comment in full.
 function View:toggle_fold()
-  local info = self.h:current()
+  local info = self:_current()
   local file = self:_file()
   if not (info and file) then
     return
@@ -991,7 +1087,7 @@ function View:toggle_all()
   if not file or file.unavailable then
     return
   end
-  local info = self.h:current()
+  local info = self:_current()
   if next(self.expanded[file.path] or {}) then
     self.expanded[file.path] = nil
   else
@@ -1000,9 +1096,8 @@ function View:toggle_all()
   end
   self:render()
   if info and info.kind == "line" then
-    self:_goto(function(i)
-      return i.kind == "line" and i.type == info.type and i.old_line == info.old_line and i.new_line == info.new_line
-    end)
+    self:_goto(same_line(info))
+    self:_to_side(select(2, self.h:current()), info)
   end
 end
 
@@ -1054,8 +1149,8 @@ function View:_mine(note)
   return note.pending or (self.me and note.author and note.author.username == self.me.username)
 end
 
--- "[gc] reply · [gE] edit · [gD] delete · [gX] resolve" in the bottom
--- border of the comment under the cursor
+-- "[gc] reply · [gE] edit · [gD] delete · [gX] resolve · [za] expand" in
+-- the bottom border of the comment under the cursor
 ---@private
 ---@param info table
 ---@param lnum integer
@@ -1080,23 +1175,7 @@ function View:_hint(info, lnum, rows)
   if t.resolvable then
     table.insert(parts, { fk(k.toggle_resolved), t.resolved and "unresolve" or "resolve" })
   end
-  local chunks = {}
-  for _, p in ipairs(parts) do
-    if p[1] then
-      if #chunks > 0 then
-        table.insert(chunks, { " · ", "GitlabHintText" })
-      end
-      table.insert(chunks, { "[" .. p[1] .. "]", "GitlabHintKey" })
-      table.insert(chunks, { " " .. p[2], "GitlabHintText" })
-    end
-  end
-  if #chunks == 0 then
-    return nil
-  end
-  if info.box and rows then
-    return activity_render.foot_hint(rows, lnum, chunks)
-  end
-  return chunks
+  return activity_render.comment_hint(info, lnum, rows, parts, fk(k.toggle_fold))
 end
 
 -- a position with the diff refs the diff was loaded with
@@ -1170,14 +1249,16 @@ function View:comment(first, last)
     return
   end
   local d = h.docs[h:buf(M.TAB)]
-  local info, lnum = h:current()
+  local info, lnum = self:_current()
   if not first then
     if info and info.thread then
       return self:reply()
     end
     first, last = lnum, lnum
   end
-  local a, b = d and d.rows[first], d and d.rows[last]
+  -- side by side: the lines on the side the cursor is on
+  local col = vim.api.nvim_win_is_valid(h.content_float.win) and vim.api.nvim_win_get_cursor(h.content_float.win)[2] or 0
+  local a, b = M.side(d and d.rows[first], col), M.side(d and d.rows[last], col)
   local pos, why = position.lines(file, a, b)
   if not pos then
     local key = fk(h.keys.comment)
@@ -1213,7 +1294,7 @@ end
 --- `gc`: reply to the thread under the cursor; the reply joins the review,
 --- `post_now` sends it at once.
 function View:reply()
-  local info = self.h:current()
+  local info = self:_current()
   if not (info and info.thread) then
     return
   end
@@ -1261,7 +1342,7 @@ end
 -- the comment under the cursor when it is yours
 ---@private
 function View:_own()
-  local info = self.h:current()
+  local info = self:_current()
   if not (info and info.kind == "comment") then
     return nil
   end
@@ -1341,7 +1422,7 @@ end
 
 --- `gX`: resolve or unresolve the thread under the cursor (at once).
 function View:toggle_resolved()
-  local info = self.h:current()
+  local info = self:_current()
   if not (info and info.thread) then
     return
   end

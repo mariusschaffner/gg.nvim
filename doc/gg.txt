@@ -741,10 +741,10 @@ gg.ui.setup({opts})                                             *gg.ui.setup()*
         next_placeholder = "<C-n>", prev_placeholder = "<C-p>",
         add_variable = "a", toggle_variable_type = "t",
         -- the merge request review (|gg-ui-review|)
-        review = "gd", next_file = "]f", prev_file = "[f",
+        review = "gd", next_file = "gf", prev_file = "[f",
         next_hunk = "]h", prev_hunk = "[h",
         next_thread = "]c", prev_thread = "[c",
-        review_focus = "<Tab>", pick_file = "f", toggle_viewed = "x",
+        review_focus = "<Tab>", pick_file = "f", toggle_viewed = "gx", toggle_split = "gV",
         submit_review = "gs", post_now = "<C-p>",
       },
       order = {},            -- { top?, milestones?, issues? } comparators
@@ -940,11 +940,16 @@ Detail views                                                  *gg-ui-detail*
     Threads sit under the line they are on, drawn as on the Activity tab;
     comments on the file sit above the diff, and a thread whose line is not
     shown says which line it means. Outdated threads are marked.
-    Moving: `]f` / `[f` files, `]h` / `[h` hunks, `]c` / `[c` threads,
+    Moving: `gf` / `[f` files, `]h` / `[h` hunks, `]c` / `[c` threads,
     `<Tab>` from the diff to the files, to the threads and back (`<CR>` on
     a file opens it).
-    `x` marks a file viewed and goes to the next one that is not; the marks
+    `gx` marks a file viewed and goes to the next one that is not; the marks
     are kept per merge request and head commit under `stdpath("state")`.
+    `gV` shows the diff side by side, the old file on the left and the new
+    one on the right, and hides the files and threads panes for the room
+    (`gV` again brings them back). Lines too long for their side end in
+    `…`; tabs are shown as spaces. Comments and the other keys work on the
+    side the cursor is on; threads sit under their line across both sides.
     Comments: `i` on a line, or on the lines of a visual selection; `i` in
     the files pane comments on the whole file. The composer adds the
     comment to your pending review (`[<C-s>] Add to review`) or posts it at

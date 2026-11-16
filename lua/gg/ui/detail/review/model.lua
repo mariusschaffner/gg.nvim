@@ -156,6 +156,51 @@ function M.rows(file, opts)
   return rows
 end
 
+---@class gg.ui.ReviewPair
+---@field kind "pair"|"gap"|"hunk"
+---@field index? integer the row of a gap or hunk
+---@field left? integer the row on the old side (nil: nothing there)
+---@field right? integer the row on the new side
+
+--- The rows of a diff side by side: an unchanged line on both sides, in a
+--- run of removed lines followed by added ones the first removed line
+--- beside the first added one and so on, the rest beside nothing. Gaps and
+--- hunk headers stay across both sides.
+---@param rows gg.ui.ReviewRow[]
+---@return gg.ui.ReviewPair[]
+function M.pairs(rows)
+  local out = {}
+  local i, n = 1, #rows
+  local function is(r, kind)
+    return r ~= nil and r.kind == "line" and r.type == kind
+  end
+  while i <= n do
+    local r = rows[i]
+    if r.kind ~= "line" then
+      table.insert(out, { kind = r.kind, index = i })
+      i = i + 1
+    elseif r.type == "context" then
+      table.insert(out, { kind = "pair", left = i, right = i })
+      i = i + 1
+    else
+      local dels = {}
+      while is(rows[i], "delete") do
+        table.insert(dels, i)
+        i = i + 1
+      end
+      local adds = {}
+      while is(rows[i], "add") do
+        table.insert(adds, i)
+        i = i + 1
+      end
+      for k = 1, math.max(#dels, #adds) do
+        table.insert(out, { kind = "pair", left = dels[k], right = adds[k] })
+      end
+    end
+  end
+  return out
+end
+
 --- The gap index of every gap of a file (to expand them all).
 ---@param file gg.ui.ReviewFile
 ---@return table<integer, boolean>

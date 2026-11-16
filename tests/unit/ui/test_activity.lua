@@ -146,9 +146,10 @@ T["render: comment blocks, badges, replies, truncation, folds"] = function()
   eq(d.lines[2], "  ╭ AE Ann Example  you  ✓ resolved thread " .. ("─"):rep(20) .. " 10:00 ─╮")
   eq(text.width(d.lines[2]), 72) -- the box is 90% of the width
   eq(d.lines[3], "  │ line 1" .. (" "):rep(61) .. "│")
-  -- 8 body lines, then the cut marker
-  eq(vim.startswith(d.lines[11], "  │ … [za] expand"), true)
-  eq(d.rows[11].long, true)
+  -- 8 body lines, then the cut marker; `za` works on every line of a long
+  -- comment and its hint goes in the border
+  eq(d.lines[11], "  │ …" .. (" "):rep(66) .. "│")
+  eq({ d.rows[2].long, d.rows[11].long, d.rows[13].long, d.rows[2].expanded }, { true, true, true, nil })
   eq(vim.startswith(d.lines[12], "  │ 👍 1"), true)
   eq(text.width(d.lines[12]), 72)
   eq(d.lines[13], "  ╰" .. ("─"):rep(68) .. "╯")
@@ -161,7 +162,7 @@ T["render: comment blocks, badges, replies, truncation, folds"] = function()
   eq(vim.startswith(d.lines[19], "         ╰──"), true)
   eq(text.width(d.lines[19]), 72)
   local box = { col = 6 + #"│  ", width = 63 }
-  eq(d.rows[15], { kind = "comment", thread = "t1", note = 2, long = false, box = box })
+  eq(d.rows[15], { kind = "comment", thread = "t1", note = 2, box = box })
   eq(d.rows[14].box, box)
   eq(d.rows[16].box, box)
   -- border and name in the author's colour, each user their own
@@ -195,6 +196,18 @@ T["render: comment blocks, badges, replies, truncation, folds"] = function()
   eq(text.width(table.concat(vim.tbl_map(function(c)
     return c[1]
   end, chunks))), 6)
+  -- the comment's hints: its keys, then expand / collapse on a long one
+  local function hint_text(c)
+    return table.concat(vim.tbl_map(function(x)
+      return x[1]
+    end, c or {}))
+  end
+  local parts = { { "gc", "reply" }, { nil, "edit" } }
+  eq(hint_text((render.comment_hint(d.rows[3], 3, d.rows, parts, "za"))), " [gc] reply · [za] expand ")
+  eq(select(2, render.comment_hint(d.rows[3], 3, d.rows, parts, "za")), { lnum = 13, col = 2 + #"╰─" })
+  eq(hint_text((render.comment_hint(d.rows[15], 15, d.rows, parts, "za"))), " [gc] reply ")
+  eq(render.comment_hint(d.rows[15], 15, d.rows, {}, "za"), nil)
+  eq(hint_text((render.comment_hint({ long = true }, 1, nil, {}, "za"))), "[za] expand") -- no box: as is
   -- expanded and folded
   d = rendered({
     thread(1, {
@@ -202,6 +215,8 @@ T["render: comment blocks, badges, replies, truncation, folds"] = function()
       note(2, "first reply", "2026-11-10T10:05:00Z", bob),
     }),
   }, { state = { expanded_notes = { [1] = true }, folded = { t1 = true } } })
+  eq(d.rows[2].expanded, true)
+  eq(hint_text((render.comment_hint(d.rows[2], 2, d.rows, {}, "za"))), " [za] collapse ")
   eq(d.lines[16], "     ▸ 1 reply · [za] expand")
   eq(d.rows[16], { kind = "replies", thread = "t1" })
   -- a long header drops the time first, then is cut

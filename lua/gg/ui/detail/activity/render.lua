@@ -179,13 +179,13 @@ local function comment_block(ctx, note)
     end
     return l
   end
-  local function emit(segs, row_info)
+  local function emit(segs)
     local l = open_row():add(M.V, border):add(" ")
     for _, sg in ipairs(fit(segs, inner)) do
       l:add(sg[1], sg[2])
     end
     l:pad_to(ctx.indent + box_w - 1):add(M.V, border)
-    d:line(l, row_info or info)
+    d:line(l, info)
   end
 
   -- top border: author and badges left, the time right
@@ -236,22 +236,20 @@ local function comment_block(ctx, note)
   if #wrapped == 0 then
     wrapped = { "(empty comment)" }
   end
+  -- on every line of the box (the table is shared): `za` there shows a
+  -- long comment in full or cuts it again, and its hint says which
   local long = #wrapped > model.COMMENT_LINES
+  local expanded = long and (state.expanded_notes or {})[note.id] == true
+  info.long, info.expanded = long or nil, expanded or nil
   local shown = wrapped
-  if long and not (state.expanded_notes or {})[note.id] then
+  if long and not expanded then
     shown = vim.list_slice(wrapped, 1, model.COMMENT_LINES)
   end
-  local truncated = #shown < #wrapped
-  local body_info = vim.tbl_extend("force", info, { long = long })
   for _, s in ipairs(shown) do
-    emit({ { s, "GitlabDetailValue" } }, body_info)
+    emit({ { s, "GitlabDetailValue" } })
   end
-  if truncated then
-    local segs = { { "… ", "GitlabTimelineMore" } }
-    if input.keys.fold then
-      vim.list_extend(segs, { { "[" .. input.keys.fold .. "]", "GitlabHintKey" }, { " expand", "GitlabTimelineMore" } })
-    end
-    emit(segs, body_info)
+  if #shown < #wrapped then
+    emit({ { "…", "GitlabTimelineMore" } })
   end
   -- reactions
   local reactions = model.reactions(note.reactions)
@@ -297,6 +295,40 @@ function M.foot_hint(rows, lnum, chunks)
   table.insert(segs, { " ", nil })
   -- a corner and one rule cell on each side stay visible
   return fit(segs, math.max(0, box.width - 4)), { lnum = foot, col = box.col + #M.BL + #M.RULE }
+end
+
+--- The hints of the comment box under the cursor (`foot_hint`): `parts`
+--- (`{ key, description }`, a nil key is left out), then `fold` to show a
+--- long comment in full or cut it again. Nil when there is nothing to show.
+---@param info table the row under the cursor
+---@param lnum integer
+---@param rows table<integer, table>|nil
+---@param parts { [1]: string|nil, [2]: string }[]
+---@param fold string|nil first key of `toggle_fold`
+---@return gg.ui.Chunk[]|nil chunks
+---@return { lnum: integer, col: integer }|nil at
+function M.comment_hint(info, lnum, rows, parts, fold)
+  parts = vim.list_extend({}, parts)
+  if info.long then
+    table.insert(parts, { fold, info.expanded and "collapse" or "expand" })
+  end
+  local chunks = {}
+  for _, p in ipairs(parts) do
+    if p[1] then
+      if #chunks > 0 then
+        table.insert(chunks, { " · ", "GitlabHintText" })
+      end
+      table.insert(chunks, { "[" .. p[1] .. "]", "GitlabHintKey" })
+      table.insert(chunks, { " " .. p[2], "GitlabHintText" })
+    end
+  end
+  if #chunks == 0 then
+    return nil
+  end
+  if info.box and rows then
+    return M.foot_hint(rows, lnum, chunks)
+  end
+  return chunks
 end
 
 local function thread_rows(d, thread, input)

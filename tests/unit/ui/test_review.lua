@@ -223,6 +223,94 @@ T["render: gutter, tints, gaps, threads under their line"] = function()
   eq(bd.rows[1], { kind = "unavailable", loadable = true })
 end
 
+T["model: pairs put removed and added lines side by side"] = function()
+  local rows = model.rows(model.file(raw_file("src/a.lua", DIFF), 1))
+  eq(model.pairs(rows), {
+    { kind = "gap", index = 1 },
+    { kind = "hunk", index = 2 },
+    { kind = "pair", left = 3, right = 3 },
+    { kind = "pair", left = 4, right = 5 },
+    { kind = "pair", right = 6 },
+    { kind = "pair", left = 7, right = 7 },
+    { kind = "pair", left = 8, right = 8 },
+    { kind = "gap", index = 9 },
+    { kind = "hunk", index = 10 },
+    { kind = "pair", left = 11, right = 11 },
+    { kind = "pair", left = 12, right = 13 },
+    { kind = "gap", index = 14 },
+  })
+  -- more removed than added lines: the rest beside nothing
+  local r = model.rows(model.file(raw_file("x", "@@ -1,3 +1,1 @@\n-a\n-b\n+A\n c\n"), 1))
+  eq(vim.list_slice(model.pairs(r), 2, 4), {
+    { kind = "pair", left = 2, right = 4 },
+    { kind = "pair", left = 3 },
+    { kind = "pair", left = 5, right = 5 },
+  })
+end
+
+T["render: side by side, the old file left and the new one right"] = function()
+  local f = model.file(raw_file("src/a.lua", DIFF), 1)
+  local rows = model.rows(f)
+  local list = threads.for_file(f, { { id = "d1", resolvable = true, resolved = false, notes = { note(1, "on B", pos({ new_line = 4 })) } } }, {}, {})
+  local d = render.render({ width = 41, status = "ready", file = f, rows = rows, placed = threads.place(rows, list), utc_offset = 0, keys = { fold = "za" }, split = true })
+  -- 41 cells: 20 a side and the separator; gaps and headers where the old text starts
+  eq(d.lines[1], "       ⋯ 2 unchanged lines · [za] expand")
+  eq(d.lines[2], "       @@ -3,4 +3,5 @@ local function f()")
+  eq(d.lines[3], "   3   a" .. (" "):rep(12) .. "│   3   a")
+  eq(d.lines[4], "   4 - b" .. (" "):rep(12) .. "│   4 + B")
+  -- the thread on B under its line, across both sides
+  eq(d.lines[5]:find("╭ BO Bea Other", 1, true) ~= nil, true)
+  eq(d.lines[6]:find("│ on B", 1, true) ~= nil, true)
+  eq(d.lines[9], (" "):rep(20) .. "│   5 + C")
+  eq(d.lines[10], "   5   d" .. (" "):rep(12) .. "│   6   d")
+  eq(d.lines[12], "       ⋯ 13 unchanged lines · [za] expand")
+  local sep = 20
+  local right = sep + #"│" + 7
+  eq(d.rows[3], {
+    kind = "line",
+    split = true,
+    type = "context",
+    sep = sep,
+    left = { type = "context", old_line = 3, new_line = 3, index = 3, col = 7, len = 1 },
+    right = { type = "context", old_line = 3, new_line = 3, index = 3, col = right, len = 1 },
+  })
+  eq(d.rows[4].type, "change")
+  eq(d.rows[4].left, { type = "delete", old_line = 4, index = 4, col = 7, len = 1 })
+  eq(d.rows[4].right, { type = "add", new_line = 4, index = 5, col = right, len = 1 })
+  eq({ d.rows[9].left, d.rows[9].right.new_line }, { nil, 5 })
+  eq(d.lines[4]:sub(d.rows[4].right.col + 1), "B")
+  -- each side tinted on its own: the left up to the separator, the right to the edge
+  local tints = {}
+  for _, m in ipairs(d.marks) do
+    if m.row == 3 and m.priority == 10 then
+      table.insert(tints, { m.hl, m.col, m.end_col, m.hl_eol })
+    end
+  end
+  eq(tints, { { "GitlabDiffDeleteLine", 0, sep }, { "GitlabDiffAddLine", sep + #"│", 0, true } })
+  -- the characters that differ, on both sides
+  local function text_marks(row)
+    local out = {}
+    for _, m in ipairs(d.marks) do
+      if m.row == row and m.priority == 110 then
+        table.insert(out, { m.col, m.end_col, m.hl })
+      end
+    end
+    return out
+  end
+  eq(text_marks(3), {}) -- "b" and "B" have nothing in common
+  -- tabs become spaces, a long line is cut to its side
+  local g = model.file(raw_file("x", "@@ -1 +1 @@\n-\tx\n+abcdefghijklmnopqrstuvwxyz\n"), 1)
+  d = render.render({ width = 41, status = "ready", file = g, rows = model.rows(g), split = true })
+  eq(d.lines[2], "   1 -     x" .. (" "):rep(8) .. "│   1 + abcdefghijkl…")
+  eq(d.rows[2].right.len, 12)
+  -- the characters that differ, on both sides, past the tab
+  local t = model.file(raw_file("x", "@@ -1 +1 @@\n-\tlocal n = 1\n+\tlocal n = 2\n"), 1)
+  d = render.render({ width = 61, status = "ready", file = t, rows = model.rows(t), split = true })
+  eq(d.lines[2], "   1 -     local n = 1" .. (" "):rep(8) .. "│   1 +     local n = 2")
+  local r2 = d.rows[2]
+  eq(text_marks(1), { { r2.left.col + 14, r2.left.col + 15, "GitlabDiffDeleteText" }, { r2.right.col + 14, r2.right.col + 15, "GitlabDiffAddText" } })
+end
+
 T["intraline: the characters that differ between a removed and an added line"] = function()
   local intraline = require("gg.ui.detail.review.intraline")
   eq({ intraline.ranges("foo(a)", "foo(a, b)") }, { {}, { { 5, 8 } } })
@@ -496,7 +584,7 @@ T["view: files on the left, the diff with its thread, border labels"] = function
   local tp = g.members.threads
   eq(lines(tp.buf), { "", " a.lua", "    4 ● Why B?" })
   eq(chunks_text(vim.api.nvim_win_get_config(tp.win).title), " Threads 1 ")
-  eq(chunks_text(vim.api.nvim_win_get_config(tp.win).footer), " [<CR>] Go to ")
+  eq(chunks_text(vim.api.nvim_win_get_config(tp.win).footer), " [<CR>] Open ")
   local sp, tpos = vim.api.nvim_win_get_position(g.members.sidebar.win), vim.api.nvim_win_get_position(tp.win)
   eq(tpos[1], sp[1] + vim.api.nvim_win_get_height(g.members.sidebar.win) + 2)
   eq(tpos[1] + vim.api.nvim_win_get_height(tp.win), vim.api.nvim_win_get_position(win)[1] + vim.api.nvim_win_get_height(win))
@@ -508,7 +596,7 @@ T["view: files on the left, the diff with its thread, border labels"] = function
   local title, footer = chunks_text(cfg.title), chunks_text(cfg.footer)
   eq(vim.startswith(title, " src/a.lua ─"), true)
   eq(title:find("+3 −2 · M · 1/2 ", 1, true) ~= nil, true)
-  eq(vim.startswith(footer, " [i] Comment • [x] Viewed • []f] Next file • [gs] Submit "), true)
+  eq(vim.startswith(footer, " [i] Comment • [gx] Viewed • [gf] Next file • [gs] Submit "), true)
   eq(chunks_text(vim.api.nvim_win_get_config(g.members.sidebar.win).title), " Files 2 ")
   eq(chunks_text(vim.api.nvim_win_get_config(g.members.sidebar.win).footer), " [<CR>] Open • [i] Comment ")
   local head = chunks_text(vim.api.nvim_win_get_config(g.members.header.win).title)
@@ -532,7 +620,7 @@ T["view: files on the left, the diff with its thread, border labels"] = function
   eq(vim.api.nvim_get_current_win(), win)
 end
 
-T["view: files, hunks and threads are stepped through; x marks viewed"] = function()
+T["view: files, hunks and threads are stepped through; gx marks viewed"] = function()
   local g, _, win = open()
   keys("]h")
   eq(lines(g.members.content.buf)[vim.api.nvim_win_get_cursor(win)[1]], "  21     - y")
@@ -540,14 +628,14 @@ T["view: files, hunks and threads are stepped through; x marks viewed"] = functi
   eq(vim.api.nvim_win_get_cursor(win)[1], 4) -- wraps
   keys("]c")
   eq(vim.api.nvim_win_get_cursor(win)[1], 6)
-  keys("]f")
+  keys("gf")
   eq(lines(g.members.content.buf), { "         @@ -0,0 +1 @@", "       1 + w" })
   eq(vim.startswith(chunks_text(vim.api.nvim_win_get_config(win).title), " src/b.lua ─"), true)
   eq(vim.api.nvim_win_get_cursor(g.members.sidebar.win)[1], 4)
-  keys("]f")
+  keys("gf")
   eq(lines(g.members.content.buf)[3], "   3   3   a")
   -- viewed: marked, stored, on to the next file not viewed
-  keys("x")
+  keys("gx")
   eq(lines(g.members.content.buf)[2], "       1 + w")
   eq(vim.startswith(lines(g.members.sidebar.buf)[3], "   ✓ a.lua"), true)
   eq(viewed.load(viewed.key(X.HOST, X.PROJECT, X.MR_IID, HEAD)), { ["src/a.lua"] = true })
@@ -568,7 +656,7 @@ T["view: files, hunks and threads are stepped through; x marks viewed"] = functi
   keys("za")
   eq(#lines(g.members.sidebar.buf), 4)
   -- <Tab> again: the threads pane; <CR> on a thread jumps to it
-  keys("]f")
+  keys("gf")
   eq(lines(g.members.content.buf)[2], "       1 + w")
   keys("<Tab>")
   eq(vim.api.nvim_get_current_win(), g.members.threads.win)
@@ -581,6 +669,60 @@ T["view: files, hunks and threads are stepped through; x marks viewed"] = functi
   -- q goes back
   keys("q")
   eq(s:is_closed(), true)
+end
+
+T["view: gV shows the diff side by side without the side panes"] = function()
+  local g, fake, win = open({
+    {
+      ["repeat"] = true,
+      request = { method = "POST", path = BASE .. "/draft_notes" },
+      response = { status = 201, body = { id = 31, note = "x" } },
+    },
+  })
+  local narrow = vim.api.nvim_win_get_width(win)
+  vim.api.nvim_win_set_cursor(win, { 5, 0 }) -- "       4 + B"
+  keys("gV")
+  eq({ g.members.sidebar, g.members.threads }, { nil, nil })
+  eq(vim.api.nvim_win_get_width(win) > narrow, true)
+  eq(vim.api.nvim_get_current_win(), win)
+  local c = lines(g.members.content.buf)
+  local at = vim.api.nvim_win_get_cursor(win)
+  eq(c[at[1]]:find("4 - b", 1, true) ~= nil and c[at[1]]:find("4 + B", 1, true) ~= nil, true)
+  -- the cursor went to the side of the line it was on
+  eq(c[at[1]]:sub(at[2] + 1), "B")
+  eq(chunks_text(vim.api.nvim_win_get_config(win).footer):find("[gV] Unified", 1, true) ~= nil, true)
+  -- a comment on the side the cursor is on
+  keys("i")
+  local cw = composer_set("Why B?")
+  eq(vim.api.nvim_win_get_config(cw).title[1][1], " Comment · a.lua:4 ")
+  keys("<C-s>")
+  H.wait_for(function()
+    return last_note() == "gg.ui: Comment added to the review"
+  end)
+  eq(request(fake, "POST", BASE .. "/draft_notes").json.position.new_line, 4)
+  eq(request(fake, "POST", BASE .. "/draft_notes").json.position.old_line, nil)
+  -- the old side: the removed line
+  local row = row_of(win, "4 - b")
+  vim.api.nvim_win_set_cursor(win, { row, 0 })
+  keys("i")
+  cw = composer_set("And b?")
+  eq(vim.api.nvim_win_get_config(cw).title[1][1], " Comment · a.lua:4 ")
+  keys("<C-s>")
+  H.wait_for(function()
+    return request(fake, "POST", BASE .. "/draft_notes").json.note == "And b?"
+  end)
+  eq(request(fake, "POST", BASE .. "/draft_notes").json.position.old_line, 4)
+  eq(request(fake, "POST", BASE .. "/draft_notes").json.position.new_line, nil)
+  H.wait_for(function()
+    return vim.api.nvim_get_current_win() == win
+  end)
+  -- moving to the next file keeps it side by side; gV again brings the panes back
+  keys("gf")
+  eq(lines(g.members.content.buf)[2]:find("│   1 + w", 1, true) ~= nil, true)
+  keys("gV")
+  eq(g.members.sidebar ~= nil and g.members.threads ~= nil, true)
+  eq(vim.api.nvim_win_get_width(win), narrow)
+  eq(lines(g.members.content.buf)[2], "       1 + w")
 end
 
 T["view: za expands a gap from the file's content"] = function()

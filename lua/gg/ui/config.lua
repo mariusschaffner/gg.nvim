@@ -82,7 +82,7 @@ local M = {}
 ---@field add_variable gg.ui.Keymap Run pipeline: add a variable below the cursor (default "a")
 ---@field toggle_variable_type gg.ui.Keymap Run pipeline: variable ⇄ file for the line under the cursor (default "t")
 ---@field review gg.ui.Keymap Merge request detail: open the review (the diff) (default "gd")
----@field next_file gg.ui.Keymap Review: next file (default "]f")
+---@field next_file gg.ui.Keymap Review: next file (default "gf")
 ---@field prev_file gg.ui.Keymap Review: previous file (default "[f")
 ---@field next_hunk gg.ui.Keymap Review: next hunk (default "]h")
 ---@field prev_hunk gg.ui.Keymap Review: previous hunk (default "[h")
@@ -90,7 +90,8 @@ local M = {}
 ---@field prev_thread gg.ui.Keymap Review: previous thread or pending comment (default "[c")
 ---@field review_focus gg.ui.Keymap Review: switch between the files and the diff (default "<Tab>")
 ---@field pick_file gg.ui.Keymap Review: pick a file from a list (default "f")
----@field toggle_viewed gg.ui.Keymap Review: mark the file viewed / not viewed (default "x")
+---@field toggle_viewed gg.ui.Keymap Review: mark the file viewed / not viewed (default "gx")
+---@field toggle_split gg.ui.Keymap Review: side by side ⇄ unified; side by side hides the files and threads panes (default "gV")
 ---@field submit_review gg.ui.Keymap Review: submit the pending comments (default "gs")
 ---@field post_now gg.ui.Keymap Review composer: post the comment at once instead of adding it to the review (default "<C-p>")
 
@@ -191,7 +192,7 @@ local function defaults()
       add_variable = "a",
       toggle_variable_type = "t",
       review = "gd",
-      next_file = "]f",
+      next_file = "gf",
       prev_file = "[f",
       next_hunk = "]h",
       prev_hunk = "[h",
@@ -199,7 +200,8 @@ local function defaults()
       prev_thread = "[c",
       review_focus = "<Tab>",
       pick_file = "f",
-      toggle_viewed = "x",
+      toggle_viewed = "gx",
+      toggle_split = "gV",
       submit_review = "gs",
       post_now = "<C-p>",
     },

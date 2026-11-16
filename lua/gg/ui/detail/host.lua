@@ -183,6 +183,20 @@ function Host:has_sidebar()
   return self.group.members.sidebar ~= nil
 end
 
+--- Show or hide the sidebar (it still needs a wide enough editor); the
+--- content takes the room. Focus moves to the content when the sidebar had it.
+---@param want boolean
+function Host:want_sidebar_shown(want)
+  if self.want_sidebar == want then
+    return
+  end
+  self.want_sidebar = want
+  if not want and self.group.members.sidebar and vim.api.nvim_get_current_win() ~= self.content_float.win then
+    self.group:focus("content")
+  end
+  self:_sync_sidebar()
+end
+
 -- add or remove the sidebar after a resize
 ---@private
 function Host:_sync_sidebar()

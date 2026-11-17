@@ -88,7 +88,7 @@ local M = {}
 ---@field prev_hunk gg.ui.Keymap Review: previous hunk (default "[h")
 ---@field next_thread gg.ui.Keymap Review: next thread or pending comment (default "]c")
 ---@field prev_thread gg.ui.Keymap Review: previous thread or pending comment (default "[c")
----@field review_focus gg.ui.Keymap Review: switch between the files and the diff (default "<Tab>")
+---@field review_focus gg.ui.Keymap Review: switch between the files and the diff; side by side, between the two boxes (default "<Tab>")
 ---@field pick_file gg.ui.Keymap Review: pick a file from a list (default "f")
 ---@field toggle_viewed gg.ui.Keymap Review: mark the file viewed / not viewed (default "gx")
 ---@field toggle_split gg.ui.Keymap Review: side by side ⇄ unified; side by side hides the files and threads panes (default "gV")

@@ -5,7 +5,8 @@
 --- threads, `za` / `zA` expand unchanged lines (the file's content is
 --- fetched once), `i` comment on the line (or the visual selection), `gc`
 --- reply, `gE` / `gD` edit / delete, `gX` resolve, `gx` viewed, `gV` side
---- by side (the files and threads panes hidden), `gs` submit the review. Comments are added to the pending review (draft notes);
+--- by side (the files and threads panes hidden; `<Tab>` switches between
+--- the two boxes), `gs` submit the review. Comments are added to the pending review (draft notes);
 --- `post_now` in the composer posts one at once. In the files pane `<CR>`
 --- opens a file and `i` comments on the whole file.
 local activity_render = require("gg.ui.detail.activity.render")
@@ -106,6 +107,10 @@ function M.open(ctx, item)
       if r.sidebar then
         r.sidebar, r.threads = layout.split(r.sidebar)
       end
+      -- side by side: the old file in the content box, the new one beside it
+      if self.split and r.content then
+        r.content, r.right = M.halves(r.content)
+      end
       return r
     end,
     on_sidebar = function(f)
@@ -125,6 +130,17 @@ function M.open(ctx, item)
   self:_maps()
   self:load()
   return self
+end
+
+--- A box's rect split into two boxes side by side (borders included).
+---@param rect gg.ui.Rect
+---@return gg.ui.Rect left
+---@return gg.ui.Rect right
+function M.halves(rect)
+  local border = 2
+  local lw = math.max(1, math.floor((rect.width - border) / 2))
+  return { row = rect.row, col = rect.col, width = lw, height = rect.height },
+    { row = rect.row, col = rect.col + lw + border, width = math.max(1, rect.width - lw - border), height = rect.height }
 end
 
 ---@private
@@ -170,10 +186,13 @@ function View:_maps()
     self:jump("thread", -1)
   end, "Previous thread")
   m(k.review_focus, function()
-    if h:has_sidebar() then
+    if self.split then
+      -- side by side: the other box, on the same line
+      self:switch_side()
+    elseif h:has_sidebar() then
       h.group:focus("sidebar")
     end
-  end, "Files")
+  end, "Files / other side")
   m(k.pick_file, function()
     self:pick_file()
   end, "Pick a file")
@@ -211,17 +230,38 @@ function View:_maps()
   m(k.toggle_split, function()
     self:toggle_split()
   end, "Side by side / unified")
-  local buf = h:buf(M.TAB)
-  for _, lhs in ipairs(picker.lhs_list(k.comment)) do
-    vim.keymap.set("x", lhs, function()
-      local a, b = vim.fn.line("v"), vim.fn.line(".")
-      vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Esc>", true, false, true), "nx", false)
-      self:comment(math.min(a, b), math.max(a, b))
-    end, { buffer = buf, nowait = true, silent = true, desc = "Comment on the lines" })
-  end
-  self._cursor_hint = editing.cursor_hint(h, M.TAB, function(info, lnum, rows)
-    return self:_hint(info, lnum, rows)
-  end)
+  self._hints = {}
+  self:_box_setup(M.TAB, function()
+    return h.content_float.win
+  end, "content")
+  -- side by side: the boxes scroll together; the focused one has the hints
+  vim.api.nvim_create_autocmd("WinScrolled", {
+    group = h.augroup,
+    callback = function(ev)
+      local win = tonumber(ev.match)
+      for _, p in ipairs(self:_panes()) do
+        if p.win == win then
+          self:_follow(p)
+        end
+      end
+    end,
+  })
+  vim.api.nvim_create_autocmd("WinEnter", {
+    group = h.augroup,
+    callback = function()
+      if not self.split or h.closed then
+        return
+      end
+      local cur = vim.api.nvim_get_current_win()
+      for _, p in ipairs(self:_panes()) do
+        if p.win == cur then
+          self.last_pane = p.name
+          self:_chrome(self.status == "ready" and self:_file() or nil)
+          self:_draw_hints()
+        end
+      end
+    end,
+  })
 end
 
 -- the keys of the files pane (its buffer is new after every resize)
@@ -705,6 +745,79 @@ function View:_sync_side()
   end
 end
 
+-- the keys only a diff box has, its comment hint and its sync, once per
+-- buffer: `key` is the host's buffer key, `win()` the box's window
+---@private
+function View:_box_setup(key, win, name)
+  local h, k = self.h, self.h.keys
+  local buf = h:buf(key)
+  for _, lhs in ipairs(picker.lhs_list(k.comment)) do
+    vim.keymap.set("x", lhs, function()
+      local a, b = vim.fn.line("v"), vim.fn.line(".")
+      vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Esc>", true, false, true), "nx", false)
+      self:comment(math.min(a, b), math.max(a, b))
+    end, { buffer = buf, nowait = true, silent = true, desc = "Comment on the lines" })
+  end
+  table.insert(
+    self._hints,
+    editing.cursor_hint(h, key, function(info, lnum, rows)
+      return self:_hint(info, lnum, rows)
+    end, {
+      win = win,
+      -- side by side only the box with the focus
+      show = function(w)
+        return not self.split or vim.api.nvim_get_current_win() == w
+      end,
+    })
+  )
+  vim.api.nvim_create_autocmd("CursorMoved", {
+    group = h.augroup,
+    buffer = buf,
+    callback = function()
+      local w = win()
+      if w and vim.api.nvim_win_is_valid(w) then
+        self:_follow({ name = name, win = w, buf = buf })
+      end
+    end,
+  })
+end
+
+---@private
+function View:_draw_hints()
+  for _, draw in ipairs(self._hints or {}) do
+    draw()
+  end
+end
+
+-- the new side's box exists while side by side
+---@private
+function View:_sync_split_pane()
+  local h = self.h
+  local g = h.group
+  if self.split and not g.members.right then
+    local buf = h:buf("right")
+    g:add({
+      name = "right",
+      focusable = true,
+      buf = buf,
+      title = " ",
+      win_opts = PANE_WIN_OPTS,
+      winhighlight = "CursorLine:GitlabCursorLine",
+    })
+    if not self._right_ready then
+      self._right_ready = true
+      self:_box_setup("right", function()
+        local r = g.members.right
+        return r and r.win or nil
+      end, "right")
+    end
+    g:relayout()
+  elseif not self.split and g.members.right then
+    g:remove("right")
+    g:relayout()
+  end
+end
+
 ---@private
 function View:_chrome(file)
   local h, k = self.h, self.h.keys
@@ -712,6 +825,37 @@ function View:_chrome(file)
     h:set_title({ { " Changes ", "GitlabDetailTabActive" } })
     h:set_right(nil, nil)
     h:set_hints(M.TAB, {})
+    return
+  end
+  local pending = self.counts.pending
+  local pending_label = pending > 0 and { { (" %d pending "):format(pending), "GitlabBadgePending" } } or nil
+  local place = { " · %s · %d/%d ", file.status, file.index, #self.list }
+  local hints = {
+    { key = fk(k.comment), desc = "Comment" },
+    { key = fk(k.toggle_viewed), desc = self.viewed[file.path] and "Not viewed" or "Viewed" },
+    { key = fk(k.next_file), desc = "Next file" },
+    { key = fk(k.submit_review), desc = "Submit" },
+    { key = fk(k.toggle_split), desc = self.split and "Unified" or "Side by side" },
+  }
+  local box = self.split and h.group.members.right
+  if box then
+    -- the old file left, the new one right; the hints in the box in use
+    local on_right = self:_pane().name == "right"
+    h:set_title({ { " " .. file.old_path .. " ", "GitlabDetailTabActive" } })
+    h:set_right(file.deletions and { { " −" .. file.deletions .. " ", "GitlabDiffDelete" } } or nil, nil)
+    h:set_hints(M.TAB, on_right and {} or hints)
+    local right = { { " ", "GitlabDetailMuted" } }
+    table.insert(right, { file.additions and ("+" .. file.additions) or "±?", file.additions and "GitlabDiffAdd" or "GitlabDetailMuted" })
+    table.insert(right, { place[1]:format(place[2], place[3], place[4]), "GitlabDetailMuted" })
+    local shown = vim.tbl_filter(function(x)
+      return x.key ~= nil
+    end, hints)
+    h.group:set_labels("right", {
+      title = { { " " .. file.new_path .. " ", "GitlabDetailTabActive" } },
+      title_right = right,
+      footer = on_right and #shown > 0 and hint.chunks(shown) or "",
+      footer_right = pending_label or "",
+    })
     return
   end
   local name = file.status == "R" and file.old_path ~= file.new_path and (file.old_path .. " → " .. file.new_path) or file.path
@@ -723,16 +867,9 @@ function View:_chrome(file)
     table.insert(right, { "+" .. file.additions, "GitlabDiffAdd" })
     table.insert(right, { " −" .. file.deletions, "GitlabDiffDelete" })
   end
-  table.insert(right, { (" · %s · %d/%d "):format(file.status, file.index, #self.list), "GitlabDetailMuted" })
-  local pending = self.counts.pending
-  h:set_right(right, pending > 0 and { { (" %d pending "):format(pending), "GitlabBadgePending" } } or nil)
-  h:set_hints(M.TAB, {
-    { key = fk(k.comment), desc = "Comment" },
-    { key = fk(k.toggle_viewed), desc = self.viewed[file.path] and "Not viewed" or "Viewed" },
-    { key = fk(k.next_file), desc = "Next file" },
-    { key = fk(k.submit_review), desc = "Submit" },
-    { key = fk(k.toggle_split), desc = self.split and "Unified" or "Side by side" },
-  })
+  table.insert(right, { place[1]:format(place[2], place[3], place[4]), "GitlabDetailMuted" })
+  h:set_right(right, pending_label)
+  h:set_hints(M.TAB, hints)
 end
 
 --- Redraw everything.
@@ -742,17 +879,20 @@ function View:render()
     return
   end
   self.counts = threads.counts(self.list, self.discussions, self.drafts)
+  self:_sync_split_pane()
   self:_header()
   self:_side()
   self:_threads_pane()
   local file = self.status == "ready" and self:_file() or nil
-  local d
+  local box = self.split and h.group.members.right or nil
+  local d, right
   if file then
     local c = self.content[file.path]
     local rows = model.rows(file, { content = c and c.lines or nil, expanded = self.expanded[file.path] })
     self.file_threads = self:_threads()
-    d = render.render({
+    local input = {
       width = h:content_width(),
+      width_right = box and self:_width(box.win) or nil,
       status = "ready",
       file = file,
       rows = rows,
@@ -764,11 +904,16 @@ function View:render()
       keys = { fold = fk(h.keys.toggle_fold) },
       fetching = c ~= nil and c.status == "loading",
       truncated = self.truncated,
-      split = self.split,
-    })
+    }
+    if box then
+      d, right = render.render_split(input)
+    else
+      d = render.render(input)
+    end
   else
     self.file_threads = {}
     d = render.render({ width = h:content_width(), status = self.status, error = self.err })
+    right = box and doc.new() or nil
   end
   if self.status ~= "ready" then
     local padded = doc.new()
@@ -778,18 +923,22 @@ function View:render()
   end
   local buf = h:buf(M.TAB)
   h:write(buf, d)
-  self:_syntax(buf, d, file)
-  self:_chrome(file)
-  if self._cursor_hint then
-    self._cursor_hint()
+  -- side by side each box is one file: the old one, the new one
+  self:_syntax(buf, d, file, box ~= nil)
+  if box then
+    h:write(box.buf, right)
+    self:_syntax(box.buf, right, file, true)
+    self:_follow(self:_pane())
   end
+  self:_chrome(file)
+  self:_draw_hints()
 end
 
--- treesitter colours for the code: the new side and the removed lines (side
--- by side: the two sides) are parsed as two texts, their captures laid over
--- the buffer lines
+-- treesitter colours for the code: the new side and the removed lines are
+-- parsed as two texts (`whole`: every line as one, a side-by-side box),
+-- their captures laid over the buffer lines
 ---@private
-function View:_syntax(buf, d, file)
+function View:_syntax(buf, d, file, whole)
   vim.api.nvim_buf_clear_namespace(buf, self.syn_ns, 0, -1)
   if not file then
     return
@@ -804,18 +953,11 @@ function View:_syntax(buf, d, file)
     if not query then
       return
     end
-    for _, old_side in ipairs({ false, true }) do
+    for _, old_side in ipairs(whole and { "all" } or { false, true }) do
       local text, map = {}, {}
       for lnum = 1, #d.lines do
         local info = d.rows[lnum]
-        if info and info.kind == "line" and info.split then
-          -- side by side: the left side is the old file, the right the new
-          local side = old_side and info.left or info.right
-          if side then
-            table.insert(text, d.lines[lnum]:sub(side.col + 1, side.col + side.len))
-            table.insert(map, { lnum - 1, side.col })
-          end
-        elseif info and info.kind == "line" and (info.type == "delete") == old_side then
+        if info and info.kind == "line" and (old_side == "all" or (info.type == "delete") == old_side) then
           table.insert(text, d.lines[lnum]:sub(info.col + 1))
           table.insert(map, { lnum - 1, info.col })
         end
@@ -849,76 +991,137 @@ end
 
 -- ---------------------------------------------------------------- moving
 
---- A row of the diff as one line: side by side, the side at byte column
---- `col` (the other one where that side is empty). Other rows as they are.
----@param info table|nil
----@param col integer
----@return table|nil
-function M.side(info, col)
-  if not (info and info.split) then
-    return info
+---@class gg.ui.ReviewPane
+---@field name "content"|"right" the group member
+---@field win integer
+---@field buf integer
+
+-- the boxes of the diff: the content, and side by side the new side's box
+---@private
+---@return gg.ui.ReviewPane[]
+function View:_panes()
+  local h = self.h
+  local out = { { name = "content", win = h.content_float.win, buf = h:buf(M.TAB) } }
+  local r = self.split and h.group.members.right
+  if r and vim.api.nvim_win_is_valid(r.win) then
+    table.insert(out, { name = "right", win = r.win, buf = r.buf })
   end
-  local s
-  if col >= info.sep then
-    s = info.right or info.left
-  else
-    s = info.left or info.right
-  end
-  return vim.tbl_extend("force", { kind = "line" }, s)
+  return out
 end
 
--- the row under the cursor (`M.side`) and its line number
+-- the diff box with the focus, else the one that had it last
 ---@private
+---@return gg.ui.ReviewPane
+function View:_pane()
+  local panes = self:_panes()
+  local cur = vim.api.nvim_get_current_win()
+  for _, p in ipairs(panes) do
+    if p.win == cur then
+      return p
+    end
+  end
+  for _, p in ipairs(panes) do
+    if p.name == self.last_pane then
+      return p
+    end
+  end
+  return panes[1]
+end
+
+-- the row under the cursor of the diff box in use, its line number and box
+---@private
+---@return table|nil info
+---@return integer|nil lnum
+---@return gg.ui.ReviewPane pane
 function View:_current()
-  local info, lnum = self.h:current()
-  if info and info.split then
-    local win = self.h.content_float.win
-    info = M.side(info, vim.api.nvim_win_is_valid(win) and vim.api.nvim_win_get_cursor(win)[2] or 0)
+  local p = self:_pane()
+  if not vim.api.nvim_win_is_valid(p.win) then
+    return nil, nil, p
   end
-  return info, lnum
+  local lnum = vim.api.nvim_win_get_cursor(p.win)[1]
+  local d = self.h.docs[p.buf]
+  return d and d.rows[lnum] or nil, lnum, p
 end
 
--- a predicate for the row of the same diff line as `info` (a line row as
--- `_current` gives it), on either side of a side-by-side row
-local function same_line(info)
-  local function eq(r)
-    return r ~= nil and r.type == info.type and r.old_line == info.old_line and r.new_line == info.new_line
-  end
-  return function(i)
-    return i.kind == "line" and (eq(i) or eq(i.left) or eq(i.right))
-  end
-end
-
--- the cursor on the side of row `info` that holds `line` (side by side)
+-- the other box's cursor and view follow box `p` (side by side)
 ---@private
-function View:_to_side(lnum, line)
-  local d = self.h.docs[self.h:buf(M.TAB)]
-  local info = d and d.rows[lnum]
-  local win = self.h.content_float.win
-  if not (info and info.split and vim.api.nvim_win_is_valid(win)) then
+function View:_follow(p)
+  if self._following or not self.split then
     return
   end
-  local function eq(r)
-    return r ~= nil and r.type == line.type and r.old_line == line.old_line and r.new_line == line.new_line
-  end
-  local s = (eq(info.left) and info.left) or (eq(info.right) and info.right) or info.left or info.right
-  if s then
-    pcall(vim.api.nvim_win_set_cursor, win, { lnum, s.col })
+  for _, o in ipairs(self:_panes()) do
+    if o.win ~= p.win and vim.api.nvim_win_is_valid(p.win) then
+      self._following = true
+      local lnum = vim.api.nvim_win_get_cursor(p.win)[1]
+      local top = vim.fn.line("w0", p.win)
+      pcall(vim.api.nvim_win_call, o.win, function()
+        local v = vim.fn.winsaveview()
+        v.lnum, v.topline = lnum, top
+        vim.fn.winrestview(v)
+      end)
+      self._following = false
+    end
   end
 end
 
---- `gV`: side by side (the files and threads panes hidden for the room) or
---- unified again; the cursor stays on its line of the diff.
+-- the cursor on line `lnum` of box `p`; the focus goes there when the
+-- other box had it
+---@private
+function View:_put(p, lnum, col)
+  if not vim.api.nvim_win_is_valid(p.win) then
+    return
+  end
+  local count = vim.api.nvim_buf_line_count(p.buf)
+  pcall(vim.api.nvim_win_set_cursor, p.win, { math.max(1, math.min(count, lnum)), col or 0 })
+  local cur = vim.api.nvim_get_current_win()
+  if cur ~= p.win then
+    for _, o in ipairs(self:_panes()) do
+      if o.win == cur then
+        self.h.group:focus(p.name)
+        break
+      end
+    end
+  end
+  self.last_pane = p.name
+  self:_follow(p)
+end
+
+-- a predicate for the row of the same diff line as `info`
+local function same_line(info)
+  return function(i)
+    return i.kind == "line" and i.type == info.type and i.old_line == info.old_line and i.new_line == info.new_line
+  end
+end
+
+--- `<Tab>` side by side: the focus to the other box, the cursor on the same
+--- line (on the text when the line has some there).
+function View:switch_side()
+  local _, lnum, from = self:_current()
+  for _, p in ipairs(self:_panes()) do
+    if p.name ~= from.name then
+      local d = self.h.docs[p.buf]
+      local info = d and lnum and d.rows[lnum]
+      self.h.group:focus(p.name)
+      self:_put(p, lnum or 1, info and info.kind == "line" and info.col or 0)
+      return
+    end
+  end
+end
+
+--- `gV`: side by side, the old file and the new one in two boxes (the files
+--- and threads panes hidden for the room), or unified again; the cursor
+--- stays on its line of the diff.
 function View:toggle_split()
   local h = self.h
   local info = self:_current()
-  self.split = not self.split
-  h:want_sidebar_shown(not self.split)
+  -- the right box is about to close: the focus must not be in it
   h.group:focus("content")
+  self.split = not self.split
+  self.last_pane = nil
+  h:want_sidebar_shown(not self.split)
   self:render()
   if info and info.kind == "line" then
     self:_goto(same_line(info))
-    self:_to_side(select(2, self.h:current()), info)
   elseif info and (info.note or info.index) then
     self:_goto(function(i)
       if info.note then
@@ -929,15 +1132,30 @@ function View:toggle_split()
   end
 end
 
--- the cursor to the first row `pred(info)` accepts
+-- the cursor to the first row `pred(info)` accepts (side by side: in
+-- either box, the one in use first)
 ---@private
 function View:_goto(pred)
-  local d = self.h.docs[self.h:buf(M.TAB)]
-  for lnum = 1, d and #d.lines or 0 do
-    local info = d.rows[lnum]
-    if info and pred(info) then
-      self.h:set_cursor(lnum)
-      return true
+  local first = self:_pane()
+  local panes = { first }
+  for _, p in ipairs(self:_panes()) do
+    if p.name ~= first.name then
+      table.insert(panes, p)
+    end
+  end
+  local n = 0
+  for _, p in ipairs(panes) do
+    local d = self.h.docs[p.buf]
+    n = math.max(n, d and #d.lines or 0)
+  end
+  for lnum = 1, n do
+    for _, p in ipairs(panes) do
+      local d = self.h.docs[p.buf]
+      local info = d and d.rows[lnum]
+      if info and pred(info) then
+        self:_put(p, lnum)
+        return true
+      end
     end
   end
   return false
@@ -948,7 +1166,7 @@ function View:_first_change()
   if not self:_goto(function(info)
     return info.kind == "line" and info.type ~= "context"
   end) then
-    self.h:set_cursor(1)
+    self:_put(self:_pane(), 1)
   end
 end
 
@@ -999,20 +1217,27 @@ end
 ---@param dir integer 1 or -1
 function View:jump(what, dir)
   local h = self.h
-  local d = h.docs[h:buf(M.TAB)]
-  local _, cur = self:_current()
-  if not (d and cur) then
+  local _, cur, first = self:_current()
+  if not cur then
     return
   end
-  local function starts(lnum)
+  -- side by side the boxes are searched together, the one in use first
+  local panes = { first }
+  for _, p in ipairs(self:_panes()) do
+    if p.name ~= first.name then
+      table.insert(panes, p)
+    end
+  end
+  local function starts(d, lnum)
     local info, prev = d.rows[lnum], d.rows[lnum - 1]
     if not info then
       return false
     end
     if what == "hunk" then
-      -- threads between the lines of a change do not split it
+      -- threads (and the other side's filler) between the lines of a
+      -- change do not split it
       local at = lnum - 1
-      while prev and prev.thread do
+      while prev and (prev.thread or prev.kind == "filler") do
         at = at - 1
         prev = d.rows[at]
       end
@@ -1020,11 +1245,15 @@ function View:jump(what, dir)
     end
     return info.kind == "comment" and not (prev and prev.thread == info.thread)
   end
-  local n = #d.lines
+  local d0 = h.docs[first.buf]
+  local n = d0 and #d0.lines or 0
   for step = 1, n do
     local lnum = (cur - 1 + dir * step) % n + 1
-    if starts(lnum) then
-      return h:set_cursor(lnum)
+    for _, p in ipairs(panes) do
+      local d = h.docs[p.buf]
+      if d and starts(d, lnum) then
+        return self:_put(p, lnum)
+      end
     end
   end
 end
@@ -1097,7 +1326,6 @@ function View:toggle_all()
   self:render()
   if info and info.kind == "line" then
     self:_goto(same_line(info))
-    self:_to_side(select(2, self.h:current()), info)
   end
 end
 
@@ -1197,10 +1425,9 @@ end
 
 ---@private
 function View:_compose(o)
-  local width = math.floor(self.h:content_width() * 0.9) - 2
   return editing.compose(self.h, vim.tbl_extend("force", {
     col = 2,
-    width = width,
+    width = math.floor(self:_width(o.win) * 0.9) - 2,
     mentions = function()
       return edits.mentions(self.mr, self.discussions)
     end,
@@ -1210,11 +1437,22 @@ function View:_compose(o)
   }, o))
 end
 
--- a new comment at `pos`, added to the review or posted at once
+-- the inner width of diff box `win` (default: the content)
 ---@private
-function View:_new_comment(pos, label, place)
+function View:_width(win)
+  if win and vim.api.nvim_win_is_valid(win) then
+    return vim.api.nvim_win_get_width(win)
+  end
+  return self.h:content_width()
+end
+
+-- a new comment at `pos`, added to the review or posted at once; `place`
+-- is in box `win`
+---@private
+function View:_new_comment(pos, label, place, win)
   pos = self:_with_refs(pos)
   return self:_compose({
+    win = win,
     what = "comment",
     busy = "Adding the comment to the review…",
     success = "Comment added to the review",
@@ -1248,23 +1486,20 @@ function View:comment(first, last)
   if not file then
     return
   end
-  local d = h.docs[h:buf(M.TAB)]
-  local info, lnum = self:_current()
+  local info, lnum, pane = self:_current()
+  local d = h.docs[pane.buf]
   if not first then
     if info and info.thread then
       return self:reply()
     end
     first, last = lnum, lnum
   end
-  -- side by side: the lines on the side the cursor is on
-  local col = vim.api.nvim_win_is_valid(h.content_float.win) and vim.api.nvim_win_get_cursor(h.content_float.win)[2] or 0
-  local a, b = M.side(d and d.rows[first], col), M.side(d and d.rows[last], col)
-  local pos, why = position.lines(file, a, b)
+  local pos, why = position.lines(file, d and d.rows[first], d and d.rows[last])
   if not pos then
     local key = fk(h.keys.comment)
     return edit.refuse(why .. (key and (" ([" .. key .. "] in the files pane comments on the whole file)") or ""))
   end
-  return self:_new_comment(pos, position.label(file, pos), { bufpos = last - 1 })
+  return self:_new_comment(pos, position.label(file, pos), { bufpos = last - 1 }, pane.win)
 end
 
 --- Comment on the whole file shown.
@@ -1274,21 +1509,30 @@ function View:comment_file()
     return
   end
   local pos = position.file(file)
-  return self:_new_comment(pos, position.label(file, pos), { bufpos = 0 })
+  -- side by side, comments on the file are in the new side's box
+  local panes = self:_panes()
+  return self:_new_comment(pos, position.label(file, pos), { bufpos = 0 }, panes[#panes].win)
 end
 
--- the last row of thread `id` (0-based)
+-- the last row of thread `id` (0-based) and the box it is in
 ---@private
+---@return integer|nil
+---@return gg.ui.ReviewPane|nil
 function View:_thread_end(id)
-  local d = self.h.docs[self.h:buf(M.TAB)]
-  local last
-  for lnum = 1, d and #d.lines or 0 do
-    local info = d.rows[lnum]
-    if info and info.thread == id and info.kind ~= "gap" then
-      last = lnum
+  for _, p in ipairs(self:_panes()) do
+    local d = self.h.docs[p.buf]
+    local last
+    for lnum = 1, d and #d.lines or 0 do
+      local info = d.rows[lnum]
+      if info and info.thread == id and info.kind ~= "gap" then
+        last = lnum
+      end
+    end
+    if last then
+      return last - 1, p
     end
   end
-  return last and (last - 1) or nil
+  return nil, nil
 end
 
 --- `gc`: reply to the thread under the cursor; the reply joins the review,
@@ -1310,8 +1554,9 @@ function View:reply()
   if who and not (self.me and who == self.me.username) then
     seed = "@" .. who .. " "
   end
-  local after = self:_thread_end(t.id)
+  local after, pane = self:_thread_end(t.id)
   return self:_compose({
+    win = pane and pane.win or nil,
     what = "reply",
     busy = "Adding the reply to the review…",
     success = "Reply added to the review",
@@ -1320,7 +1565,7 @@ function View:reply()
     text = seed,
     place = after and { bufpos = after } or nil,
     col = 6,
-    width = math.floor(self.h:content_width() * 0.9) - 6,
+    width = math.floor(self:_width(pane and pane.win) * 0.9) - 6,
     resolve = t.resolvable and not t.resolved,
     labels = { submit = "Add to review", resolve = "Add & resolve" },
     alt = { key = self.h.keys.post_now, desc = "Post now", busy = "Sending the reply…", success = "Reply added" },
@@ -1363,16 +1608,22 @@ function View:edit_comment()
   if not note then
     return
   end
-  local d = self.h.docs[self.h:buf(M.TAB)]
-  local head
-  for lnum = 1, d and #d.lines or 0 do
-    local info = d.rows[lnum]
-    if info and info.note == note.id and info.thread == t.id then
-      head = lnum - 1
+  local head, win
+  for _, p in ipairs(self:_panes()) do
+    local d = self.h.docs[p.buf]
+    for lnum = 1, d and #d.lines or 0 do
+      local info = d.rows[lnum]
+      if info and info.note == note.id and info.thread == t.id then
+        head, win = lnum - 1, p.win
+        break
+      end
+    end
+    if head then
       break
     end
   end
   return self:_compose({
+    win = win,
     what = "comment",
     busy = "Editing the comment…",
     success = "Comment updated",

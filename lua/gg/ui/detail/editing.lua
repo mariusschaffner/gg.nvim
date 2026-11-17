@@ -277,6 +277,7 @@ end
 ---@field placeholder? string
 ---@field text? string seed
 ---@field place? { bottom: true }|{ bufpos: integer }
+---@field win? integer the window `place` is in (default: the content window)
 ---@field col? integer
 ---@field width? integer
 ---@field resolve? boolean offer "post & resolve"
@@ -299,7 +300,7 @@ function M.compose(h, o)
   end
   h:begin_edit({ kind = "composer" })
   return composer.open({
-    win = h.content_float.win,
+    win = o.win or h.content_float.win,
     place = o.place,
     col = o.col,
     width = o.width or h:content_width(),
@@ -339,14 +340,21 @@ function M.compose(h, o)
   })
 end
 
+---@class gg.ui.CursorHintOpts
+---@field win fun(): integer|nil the window showing the buffer (default: the content window, while `tab` is shown)
+---@field show? fun(win: integer): boolean draw now (e.g. only while the window has the focus)
+
 --- Show `text(info)` right-aligned on the cursor line of tab `tab` (e.g.
 --- "[x] toggle" on a task), redrawn as the cursor moves. When `text` also
 --- returns a place (`{ lnum, col }`, e.g. a comment's bottom border) the
---- chunks are laid over the text there instead.
+--- chunks are laid over the text there instead. With `opts`, `tab` is any
+--- buffer key of the host shown in `opts.win()`.
 ---@param h gg.ui.DetailHost
 ---@param tab string
 ---@param text fun(info: table, lnum: integer, rows: table<integer, table>): gg.ui.Chunk[]|nil, { lnum: integer, col: integer }|nil
-function M.cursor_hint(h, tab, text)
+---@param opts? gg.ui.CursorHintOpts
+---@return fun() draw redraw now
+function M.cursor_hint(h, tab, text, opts)
   local buf = h:buf(tab)
   local ns = vim.api.nvim_create_namespace("gg.ui.detail.cursor_hint")
   local function draw()
@@ -354,14 +362,22 @@ function M.cursor_hint(h, tab, text)
       return
     end
     vim.api.nvim_buf_clear_namespace(buf, ns, 0, -1)
-    if h.closed or h.editing or h.active ~= tab then
+    if h.closed or h.editing or (not opts and h.active ~= tab) then
       return
     end
-    local info, lnum = h:current()
-    if not (info and lnum) then
+    local win = opts and opts.win() or h.content_float.win
+    if not (win and vim.api.nvim_win_is_valid(win) and vim.api.nvim_win_get_buf(win) == buf) then
       return
     end
+    if opts and opts.show and not opts.show(win) then
+      return
+    end
+    local lnum = vim.api.nvim_win_get_cursor(win)[1]
     local d = h.docs[buf]
+    local info = d and d.rows[lnum]
+    if not info then
+      return
+    end
     local chunks, at = text(info, lnum, d and d.rows or {})
     if chunks and at then
       pcall(vim.api.nvim_buf_set_extmark, buf, ns, at.lnum - 1, at.col, { virt_text = chunks, virt_text_pos = "overlay" })

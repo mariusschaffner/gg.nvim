@@ -59,7 +59,6 @@ M.LINKS = {
   { "GitlabDiffLineNr", "LineNr" },
   { "GitlabDiffHunk", "GitlabDetailDim" },
   { "GitlabDiffGap", "GitlabDetailDim" },
-  { "GitlabDiffSeparator", "GitlabDetailBorder" }, -- between the sides of a side-by-side diff
   { "GitlabDiffViewed", "DiagnosticOk" },
   { "GitlabDiffCurrent", "Function" },
   -- pipelines

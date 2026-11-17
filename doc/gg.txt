@@ -945,11 +945,13 @@ Detail views                                                  *gg-ui-detail*
     a file opens it).
     `gx` marks a file viewed and goes to the next one that is not; the marks
     are kept per merge request and head commit under `stdpath("state")`.
-    `gV` shows the diff side by side, the old file on the left and the new
-    one on the right, and hides the files and threads panes for the room
-    (`gV` again brings them back). Lines too long for their side end in
-    `…`; tabs are shown as spaces. Comments and the other keys work on the
-    side the cursor is on; threads sit under their line across both sides.
+    `gV` shows the diff side by side: the old file in the left box, the new
+    one in a box on its right, line beside line (an empty row where one
+    side has nothing), scrolling together. The files and threads panes are
+    hidden for the room (`gV` again brings them back). A thread sits in the
+    box of its line; the key hints are in the box with the focus. `<Tab>`
+    switches between the boxes, on the same line. Comments and the other
+    keys work in either box.
     Comments: `i` on a line, or on the lines of a visual selection; `i` in
     the files pane comments on the whole file. The composer adds the
     comment to your pending review (`[<C-s>] Add to review`) or posts it at

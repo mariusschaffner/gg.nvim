@@ -21,12 +21,12 @@ function M.setup(opts)
   return ok, err
 end
 
---- Open the picker (issues, merge requests and pipelines; `<Tab>` switches).
+--- Open the picker (issues, merge requests, pipelines and artifacts; `<Tab>` switches).
 --- `opts.project`: `[host/]group/project` or a remote URL; without it, the
 --- `origin` remote of the current directory. `opts.host` with
 --- `opts.project` opens that target directly. `opts.view` picks the view
---- shown first: "issues" (default), "merge_requests" or "pipelines".
----@param opts? { project?: string, host?: string, cwd?: string, view?: "issues"|"merge_requests"|"pipelines" }
+--- shown first: "issues" (default), "merge_requests", "pipelines" or "artifacts".
+---@param opts? { project?: string, host?: string, cwd?: string, view?: "issues"|"merge_requests"|"pipelines"|"artifacts" }
 ---@return gg.ui.IssuesView|gg.ui.MrView|gg.ui.PipelinesView
 function M.open(opts)
   opts = opts or {}

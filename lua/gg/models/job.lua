@@ -11,7 +11,19 @@ local M = {}
 ---@field file_type string "archive", "trace", "junit", ...
 ---@field filename string|nil
 ---@field size integer|nil bytes
----@field file_format string|nil
+---@field file_format string|nil REST only
+---@field expire_at string|nil ISO time; nil = kept (never expires)
+---@field expired boolean|nil GraphQL only
+
+---@class gg.JobPipeline
+---@field id integer
+---@field iid integer|nil
+---@field ref string|nil
+---@field ref_path string|nil "refs/heads/<branch>" or "refs/tags/<tag>"
+---@field tag boolean|nil the ref is a tag; nil when GitLab did not say
+---@field status string|nil lowercase ("success", "failed", ...)
+---@field created_at string|nil
+---@field web_url string|nil
 
 ---@class gg.Job
 ---@field id integer
@@ -31,11 +43,51 @@ local M = {}
 ---@field web_url string|nil
 ---@field ref string|nil
 ---@field short_sha string|nil
----@field pipeline_id integer|nil REST only
+---@field pipeline_id integer|nil REST, and GraphQL `list_project`
+---@field pipeline gg.JobPipeline|nil GraphQL `list_project` only
 ---@field user gg.User|nil REST only
----@field artifacts gg.JobArtifact[]|nil REST only
+---@field artifacts gg.JobArtifact[]|nil REST, and GraphQL `list_project`
+---@field artifacts_truncated boolean|nil true when GitLab had more artifacts than were fetched
 
---- Map a GraphQL CiJob node (JobFields).
+local function artifacts_from_graphql(conn)
+  conn = util.value(conn)
+  if type(conn) ~= "table" then
+    return nil
+  end
+  return util.map(util.nodes(conn), function(a)
+    return {
+      file_type = util.lower(a.fileType),
+      filename = util.value(a.name),
+      size = tonumber(util.value(a.size)),
+      expire_at = util.value(a.expireAt),
+      expired = util.value(a.expired) == true,
+    }
+  end)
+end
+
+local function pipeline_from_graphql(node, origin)
+  node = util.value(node)
+  if type(node) ~= "table" then
+    return nil
+  end
+  local ref_path = util.value(node.refPath)
+  local tag = nil
+  if type(ref_path) == "string" then
+    tag = ref_path:match("^refs/tags/") ~= nil
+  end
+  return {
+    id = gid.tail(util.value(node.id)),
+    iid = tonumber(util.value(node.iid)),
+    ref = util.value(node.ref),
+    ref_path = ref_path,
+    tag = tag,
+    status = util.lower(node.status),
+    created_at = util.value(node.createdAt),
+    web_url = util.web_url(node.path, origin),
+  }
+end
+
+--- Map a GraphQL CiJob node (JobFields; `artifacts` and `pipeline` when selected).
 ---@param node table|nil
 ---@param ctx? { origin?: string }
 ---@return gg.Job|nil
@@ -45,6 +97,8 @@ function M.from_graphql(node, ctx)
     return nil
   end
   local stage = util.value(node.stage)
+  local origin = ctx and ctx.origin
+  local pipeline = pipeline_from_graphql(node.pipeline, origin)
   return {
     id = gid.tail(util.value(node.id)),
     name = util.value(node.name),
@@ -63,6 +117,10 @@ function M.from_graphql(node, ctx)
     web_url = util.web_url(node.webPath, ctx and ctx.origin),
     ref = util.value(node.refName),
     short_sha = util.value(node.shortSha),
+    pipeline_id = pipeline and pipeline.id or nil,
+    pipeline = pipeline,
+    artifacts = artifacts_from_graphql(node.artifacts),
+    artifacts_truncated = util.has_more(node.artifacts) or nil,
   }
 end
 
@@ -78,6 +136,7 @@ function M.from_rest(raw, ctx)
   local pipeline = util.value(raw.pipeline) or {}
   local commit = util.value(raw.commit) or {}
   local status = util.value(raw.status)
+  local expire_at = util.value(raw.artifacts_expire_at)
   return {
     id = tonumber(util.value(raw.id)),
     name = util.value(raw.name),
@@ -101,6 +160,7 @@ function M.from_rest(raw, ctx)
         filename = util.value(a.filename),
         size = tonumber(util.value(a.size)),
         file_format = util.value(a.file_format),
+        expire_at = expire_at,
       }
     end),
   }

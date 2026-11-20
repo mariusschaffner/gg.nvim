@@ -298,7 +298,7 @@ T["gg.ui.open can start on the pipelines view; it is in the <Tab> cycle"] = func
   eq(current.shell.active.name, "merge_requests")
   keys("<Tab>")
   eq(current.shell.active, current)
-  eq(require("gg.ui.components.picker").VIEWS, { "issues", "merge_requests", "pipelines" })
+  eq(require("gg.ui.components.picker").VIEWS, { "issues", "merge_requests", "pipelines", "artifacts" })
 end
 
 return T

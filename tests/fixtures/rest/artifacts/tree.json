@@ -1,0 +1,35 @@
+[
+  {
+    "meta": { "source": "docs.gitlab.com (api/job_artifacts: List all files in the artifacts archive); hand-made entries, two pages" },
+    "request": { "method": "GET", "path": "/api/v4/projects/my-group%2Fmy-project/jobs/42/artifacts/tree", "query_contains": { "recursive": "true", "per_page": "2" } },
+    "response": {
+      "status": 200,
+      "headers": { "x-next-page": "2", "x-page": "1", "x-per-page": "2" },
+      "body": [
+        { "name": "dist", "path": "dist/", "type": "directory", "mode": "040755" },
+        { "name": "app.tar.gz", "path": "dist/app.tar.gz", "type": "file", "size": 10276044, "mode": "100644" }
+      ]
+    }
+  },
+  {
+    "meta": { "source": "hand-made: second page" },
+    "request": { "method": "GET", "path": "/api/v4/projects/my-group%2Fmy-project/jobs/42/artifacts/tree", "query_contains": { "recursive": "true", "page": "2" } },
+    "response": {
+      "status": 200,
+      "headers": { "x-page": "2", "x-per-page": "2", "x-next-page": "" },
+      "body": [
+        { "name": "VERSION", "path": "VERSION", "type": "file", "size": 6, "mode": "100644" }
+      ]
+    }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com (api/job_artifacts): 404 when the job, artifacts, metadata or path are not found (also GitLab < 18.8)" },
+    "request": { "method": "GET", "path": "/api/v4/projects/my-group%2Fmy-project/jobs/44/artifacts/tree" },
+    "response": { "status": 404, "body": { "message": "404 Not Found" } }
+  },
+  {
+    "meta": { "source": "docs.gitlab.com (api/job_artifacts: Download the artifacts archive, file_type)" },
+    "request": { "method": "GET", "path": "/api/v4/projects/my-group%2Fmy-project/jobs/45/artifacts", "query": { "file_type": "junit" } },
+    "response": { "status": 200, "headers": { "Content-Type": "application/gzip" }, "body_base64": "H4sIAAAAAAAAA8tIzcnJBwCGphA2BQAAAA==" }
+  }
+]

@@ -588,6 +588,15 @@ gg.jobs.list({args}, {opts})                                   *gg.jobs.list()*
 gg.jobs.list_all({args}, {opts})                           *gg.jobs.list_all()*
     `{ host, project, pipeline_id, statuses?, include_retried? }`.
 
+gg.jobs.list_project({args}, {opts})                   *gg.jobs.list_project()*
+gg.jobs.list_project_all({args}, {opts})           *gg.jobs.list_project_all()*
+    `{ host, project, statuses?, with_artifacts? }`. A project's jobs, newest
+    first, each with `artifacts` (`{ file_type, filename, size, expire_at,
+    expired }`; `expire_at = nil` means kept), `artifacts_truncated` and a
+    `pipeline` summary (`{ id, iid, ref, ref_path, tag, status, created_at,
+    web_url }`). With `with_artifacts`, only jobs that have artifacts; a job
+    log counts as one.
+
 gg.jobs.get({args})                                             *gg.jobs.get()*
 
 gg.jobs.trace({args})                                         *gg.jobs.trace()*
@@ -608,7 +617,16 @@ All downloads are streamed. A partial file is removed on failure or cancel,
 and a redirect to object storage never carries the token.
 
 gg.artifacts.download({args})                         *gg.artifacts.download()*
-    `{ host, project, job_id, output }`: the job's archive.
+    `{ host, project, job_id, output, file_type? }`: the job's archive, or
+    with `file_type` (GitLab 19.4+) one report artifact such as "junit" or
+    "dotenv", written as served (reports are often gzip-compressed).
+
+gg.artifacts.tree({args}, {opts})                         *gg.artifacts.tree()*
+gg.artifacts.tree_all({args}, {opts})                 *gg.artifacts.tree_all()*
+    `{ host, project, job_id, path?, recursive? }`: the files and directories
+    in a job's archive, read from GitLab's metadata without downloading it
+    (GitLab 18.8+; older servers answer `not_found`). Each entry is
+    `{ name, path, type, size?, mode? }`; directory paths end with "/".
 
 gg.artifacts.download_file({args})               *gg.artifacts.download_file()*
     `{ host, project, job_id, artifact_path, output | on_chunk }`.
@@ -684,8 +702,8 @@ It needs the hosts from |gg-setup|; its own options are separate.
                                                                      *:Gitlab*
 :Gitlab [project]
     Open the picker over the whole editor, on the issues view (`<Tab>`
-    switches to merge requests and pipelines, see |gg-ui-mrs| and
-    |gg-ui-pipelines|). [project] is
+    switches to merge requests, pipelines and artifacts, see |gg-ui-mrs|,
+    |gg-ui-pipelines| and |gg-ui-artifacts|). [project] is
     `group/project`, `host/group/project` or a remote URL. Without it, the
     `origin` remote of the current directory is used (`git remote get-url
     origin`, run asynchronously). gg runs git only for this and for the
@@ -696,7 +714,8 @@ gg.ui.open({opts})                                               *gg.ui.open()*
     Open the picker from Lua. `{ project?, host?, cwd?, view? }`: `project`
     as for |:Gitlab|; `host` + `project` open that target directly; `cwd` is
     where to look for the git remote; `view` is "issues" (default),
-    "merge_requests" or "pipelines". Returns the view (`:close()` closes it).
+    "merge_requests", "pipelines" or "artifacts". Returns the view
+    (`:close()` closes it).
 
 gg.ui.setup({opts})                                             *gg.ui.setup()*
     Returns `true`, or `false, err` (the previous options stay). Defaults:
@@ -746,6 +765,11 @@ gg.ui.setup({opts})                                             *gg.ui.setup()*
         next_thread = "]c", prev_thread = "[c",
         review_focus = "<Tab>", pick_file = "f", toggle_viewed = "gx", toggle_split = "gV",
         submit_review = "gs", post_now = "<C-p>",
+        -- the artifacts view (|gg-ui-artifacts|); `za` is toggle_fold
+        toggle_node = { "<CR>", "l" }, close_parent = "h",
+        fold_open = "zo", fold_close = "zc",
+        fold_close_all = "zM", fold_open_all = "zR",
+        download = "d", open_file = "o", yank_path = "y", yank_url = "Y",
       },
       order = {},            -- { top?, milestones?, issues? } comparators
       pipeline_refresh_ms = 10000,    -- live refresh of active pipelines in
@@ -755,6 +779,14 @@ gg.ui.setup({opts})                                             *gg.ui.setup()*
       user_colors = {},      -- { ["username"] = "GitlabUser1" } pins a colour
       merge_squash = nil,    -- squash when merging; nil: the merge request's setting
       merge_delete_source_branch = nil, -- nil: the merge request's setting
+      artifacts = {          -- the artifacts view (|gg-ui-artifacts|)
+        show_expired = false,           -- expired: dimmed, not browsable
+        confirm_size = 50 * 1024 * 1024, -- ask before downloading a bigger
+                                        -- archive just to list it
+        download_dir = "~/Downloads",   -- `d` saves below <dir>/gitlab/
+        open = "tab",                   -- `o`: "tab", "split" or "vsplit"
+        icons = false,       -- file icons (mini.icons or nvim-web-devicons)
+      },
     })
 <
     `i` (and `I` for a milestone) opens the detail views, see
@@ -798,7 +830,7 @@ Keys                                                              *gg-ui-keys*
     `/` filter, `L` / `H` next / previous tab, `P` next page, `]m` / `[m`
     next / previous milestone, `i` / `I` open the issue / its milestone,
     `R` reload, `q` close, `<Tab>` / `<S-Tab>` switch between the issues,
-    merge requests and pipelines views. `c` creates what the table shows
+    merge requests, pipelines and artifacts views. `c` creates what the table shows
     (an issue, a merge request, a pipeline run), `C` in the issues table a
     milestone, see |gg-ui-create|. Filter: `<CR>` back to the table,
     `<Esc><Esc>` clear and go back. Closing either window closes both.
@@ -863,6 +895,58 @@ Pipelines                                                  *gg-ui-pipelines*
     e.g. `status:waiting`), `source:schedule`, `ref:main`, `@user` (who
     triggered it), `#4821` or `4821` (the id), `!87` (the merge request),
     other text: the ref, the commit title or the SHA.
+
+Artifacts                                                  *gg-ui-artifacts*
+    The fourth view of the picker (`<Tab>` three times): the CI job
+    artifacts of the project as a tree, pipeline → job › artifact →
+    folders → files. Columns: Name, Size (`6 B`, `12 KB`, `1.8 MB`) and
+    Expires (`kept`, `today`, `in 2d`, `expired`; within two days it is
+    highlighted). Narrow windows hide Expires, then Size. No tabs line.
+
+    A pipeline row shows its status icon, `#id`, the ref, when it ran and
+    how many artifacts it has; its size is the sum of them. Under it, one
+    row per artifact: the job name, then `›` and the file name, coloured by
+    extension. Archives open into folders and files; a folder's size is
+    the sum of its files and, while closed, it shows `N files`. Reports
+    (junit, dotenv, sarif, …) are single files. Job logs and the archive
+    metadata are not shown, nor are expired artifacts unless
+    `artifacts.show_expired` (then dimmed and struck through).
+
+    On open, the newest pipeline and the newest pipeline on the default
+    branch are expanded. Folds are kept while the picker is open, through
+    `R` and filtering.
+
+    Loading: jobs with artifacts (|gg.jobs.list_project()|), newest first,
+    until 20 pipelines are known; `P` shows 20 more (the title says
+    `[P] more` while there are). An archive is listed the first time it is
+    opened (`◐ loading…` under it): from |gg.artifacts.tree()| (GitLab
+    18.8+, nothing is downloaded), else by downloading the archive to
+    `stdpath("cache")/gg/artifacts/` and reading its file list (asking
+    first when it is bigger than `artifacts.confirm_size`). A failed listing
+    shows `✗ <message> · [R] retry`; `R` reloads and retries it.
+
+    Keys: `<CR>` / `l` open or close a pipeline, archive or folder (on a
+    file: as `o`); `h` closes the parent and moves to it; `za` `zo` `zc`
+    `zM` `zR` toggle / open / close / close all / open all (`zR` opens no
+    archive that is not listed yet).
+    `d` downloads below `artifacts.download_dir`/gitlab/<project>/<pipeline>/:
+    a file keeps its path in the archive; an artifact goes to
+    `<job>/<file name>` (an archive whole; a report as GitLab serves it,
+    often gzip; GitLab 19.4+); a folder downloads every file (asking above
+    20); a pipeline all its artifacts (always asking).
+    `o` opens a file read-only in a `gitlab://artifacts/<job id>/<path>`
+    buffer (filetype from the name) in a new tab or a split
+    (`artifacts.open`); the picker closes. Files over 5 MB ask first;
+    binary and compressed files offer `d` instead.
+    `y` copies the path inside the artifact, `Y` the GitLab web URL, to the
+    `"` and `+` registers.
+
+    Filter tokens: text (a file, folder or job name, a ref, `#id`),
+    `#4812` (the pipeline id starts with it), `ref:main`, `job:build`,
+    `type:archive` / `type:report`, `kept`, `expiring` (two days or less).
+    A token matches a node or one of its parents; matches show with their
+    parents, opened (only inside archives already listed: filtering never
+    downloads). Clearing the filter restores the folds.
 
 Detail views                                                  *gg-ui-detail*
     `i` on a row opens its detail view over the picker; detail views open
@@ -1110,6 +1194,15 @@ Highlights                                                  *gg-ui-highlights*
     Pipelines: `GitlabRefDefault` (Special) `GitlabRefTag` (Constant)
     `GitlabSha` (DiagnosticWarn) `GitlabPipelineSource` (Comment)
     `GitlabPipelineSourceSchedule` (DiagnosticWarn).
+    Artifacts: `GitlabTreeGuide` (NonText) `GitlabTreeChevron` (Function)
+    `GitlabTreeDir` (Directory's colour, bold) `GitlabTreeRoot` (bold
+    `#id`) `GitlabArtifactJob` (Comment) `GitlabArtifactKept` (DiagnosticOk)
+    `GitlabArtifactExpiring` (DiagnosticWarn) `GitlabArtifactExpired`
+    (NonText's colour, struck through), and by extension
+    `GitlabFileMarkdown` (String: md) `GitlabFileData` (DiagnosticWarn:
+    xml json yml yaml) `GitlabFileSecurity` (DiagnosticError: sarif)
+    `GitlabFileArchive` (Statement: gz tgz zip tar) `GitlabFileCode`
+    (Special: tf hcl) `GitlabFileEnv` (Type: env); other files are plain.
     Detail views: `GitlabDetail*` (breadcrumb, meta, labels, values),
     `GitlabPill*` (state pills: the linked group's colour as background),
     `GitlabChip_<hex>` (label chips in the label's colour),

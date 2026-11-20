@@ -94,6 +94,23 @@ local M = {}
 ---@field toggle_split gg.ui.Keymap Review: side by side ⇄ unified; side by side hides the files and threads panes (default "gV")
 ---@field submit_review gg.ui.Keymap Review: submit the pending comments (default "gs")
 ---@field post_now gg.ui.Keymap Review composer: post the comment at once instead of adding it to the review (default "<C-p>")
+---@field toggle_node gg.ui.Keymap Artifacts: open/close the node; on a file, open it (default { "<CR>", "l" })
+---@field close_parent gg.ui.Keymap Artifacts: close the parent and move to it (default "h")
+---@field fold_open gg.ui.Keymap Artifacts: open the node (default "zo")
+---@field fold_close gg.ui.Keymap Artifacts: close the node (default "zc")
+---@field fold_close_all gg.ui.Keymap Artifacts: close every node (default "zM")
+---@field fold_open_all gg.ui.Keymap Artifacts: open every node, archives only when already listed (default "zR")
+---@field download gg.ui.Keymap Artifacts: download the file, folder, artifact or pipeline (default "d")
+---@field open_file gg.ui.Keymap Artifacts: open the file in a read-only buffer (default "o")
+---@field yank_path gg.ui.Keymap Artifacts: copy the path inside the artifact (default "y")
+---@field yank_url gg.ui.Keymap Artifacts: copy the GitLab web URL (default "Y")
+
+---@class gg.ui.ArtifactsConfig
+---@field show_expired boolean show expired artifacts (dimmed, not browsable)
+---@field confirm_size integer ask before downloading an archive bigger than this to list it (bytes)
+---@field download_dir string where `d` saves; files go below `<dir>/gitlab/<project>/<pipeline>/`
+---@field open "tab"|"split"|"vsplit" where `o` opens a file
+---@field icons boolean file icons from mini.icons or nvim-web-devicons, when installed
 
 ---@class gg.ui.Order
 ---@field top? fun(a: gg.Issue, b: gg.Issue): boolean issues without a milestone
@@ -112,6 +129,7 @@ local M = {}
 ---@field user_colors table<string, string> username -> highlight group (e.g. "GitlabUser1")
 ---@field merge_squash boolean|nil squash when merging; nil: the merge request's own setting
 ---@field merge_delete_source_branch boolean|nil delete the source branch when merging; nil: the merge request's own setting
+---@field artifacts gg.ui.ArtifactsConfig the artifacts view
 
 local function defaults()
   return {
@@ -204,12 +222,29 @@ local function defaults()
       toggle_split = "gV",
       submit_review = "gs",
       post_now = "<C-p>",
+      toggle_node = { "<CR>", "l" },
+      close_parent = "h",
+      fold_open = "zo",
+      fold_close = "zc",
+      fold_close_all = "zM",
+      fold_open_all = "zR",
+      download = "d",
+      open_file = "o",
+      yank_path = "y",
+      yank_url = "Y",
     },
     order = {},
     pipeline_refresh_ms = 10000,
     pipeline_detail_poll_ms = 4000,
     job_log_poll_ms = 1500,
     user_colors = {},
+    artifacts = {
+      show_expired = false,
+      confirm_size = 50 * 1024 * 1024,
+      download_dir = "~/Downloads",
+      open = "tab",
+      icons = false,
+    },
   }
 end
 
@@ -249,6 +284,7 @@ local TOP = {
   user_colors = true,
   merge_squash = true,
   merge_delete_source_branch = true,
+  artifacts = true,
 }
 
 local function is_key(v)
@@ -270,6 +306,35 @@ local function check_keymap(v, key)
   return fail(key, "must be a key string, a list of them, or false to disable it")
 end
 local ORDER = { top = true, milestones = true, issues = true }
+
+local OPEN = { tab = true, split = true, vsplit = true }
+
+local function check_artifacts(a)
+  if a == nil then
+    return nil
+  end
+  if type(a) ~= "table" then
+    return fail("artifacts", "must be a table")
+  end
+  local known = { show_expired = true, confirm_size = true, download_dir = true, open = true, icons = true }
+  for k in pairs(a) do
+    if not known[k] then
+      return fail("artifacts." .. tostring(k), "unknown option")
+    end
+  end
+  for _, k in ipairs({ "show_expired", "icons" }) do
+    if a[k] ~= nil and type(a[k]) ~= "boolean" then
+      return fail("artifacts." .. k, "must be true or false")
+    end
+  end
+  if a.download_dir ~= nil and not is_key(a.download_dir) then
+    return fail("artifacts.download_dir", "must be a directory path")
+  end
+  if a.open ~= nil and not OPEN[a.open] then
+    return fail("artifacts.open", 'must be "tab", "split" or "vsplit"')
+  end
+  return check_int(a.confirm_size, "artifacts.confirm_size", 0)
+end
 
 --- Validate UI options without applying them.
 ---@param opts any
@@ -294,6 +359,7 @@ function M.validate(opts)
     or check_int(opts.job_log_poll_ms, "job_log_poll_ms", 0, 600000)
     or check_bool(opts.merge_squash, "merge_squash")
     or check_bool(opts.merge_delete_source_branch, "merge_delete_source_branch")
+    or check_artifacts(opts.artifacts)
   if err then
     return err
   end

@@ -1,5 +1,5 @@
--- Pagination: not applicable (artifacts has no list call; a job's artifact
--- list is part of gg.Job).
+-- Pagination: `tree` / `tree_all` (archive entries). A job's list of
+-- artifacts is part of gg.Job (`gg.jobs.list_project`).
 local H = require("tests.helpers")
 local artifacts = require("gg.resources.artifacts")
 local eq = MiniTest.expect.equality
@@ -73,6 +73,44 @@ T["404 is not_found and leaves no file"] = function()
   local _, err = H.await(artifacts.download({ host = HOST, project = MP, job_id = 44, output = out }))
   eq(err.kind, "not_found")
   eq(vim.uv.fs_stat(out), nil)
+end
+
+T["download: a report by file_type"] = function()
+  local fake = H.fake({ "rest/artifacts/tree.json" })
+  local out = vim.fn.tempname() .. ".gz"
+  local d = H.await(artifacts.download({ host = HOST, project = MP, job_id = 45, output = out, file_type = "junit" }))
+  eq(d.bytes > 0, true)
+  eq(H.read(out):sub(1, 2), string.char(0x1f, 0x8b))
+  eq(fake:last().query, { file_type = "junit" })
+  os.remove(out)
+  local _, err = H.await(artifacts.download({ host = HOST, project = MP, job_id = 45, output = out, file_type = "trace" }))
+  eq(err.kind, "validation")
+end
+
+T["tree: one page of entries"] = function()
+  local fake = H.fake({ "rest/artifacts/tree.json" })
+  local page = H.await(artifacts.tree({ host = HOST, project = MP, job_id = 42, recursive = true }, { per_page = 2 }))
+  eq(page.items, {
+    { name = "dist", path = "dist/", type = "directory", mode = "040755" },
+    { name = "app.tar.gz", path = "dist/app.tar.gz", type = "file", size = 10276044, mode = "100644" },
+  })
+  eq(page.next_cursor ~= nil, true)
+  eq(fake:last().query.recursive, "true")
+end
+
+T["tree_all: pages until done; limit required"] = function()
+  H.fake({ "rest/artifacts/tree.json" })
+  local res = H.await(artifacts.tree_all({ host = HOST, project = MP, job_id = 42, recursive = true }, { limit = 50, per_page = 2 }))
+  eq(#res.items, 3)
+  eq(res.items[3].path, "VERSION")
+  eq(res.truncated, false)
+  eq(select(2, H.await(artifacts.tree_all({ host = HOST, project = MP, job_id = 42 }))).kind, "validation")
+end
+
+T["tree: errors mapped (GitLab < 18.8 answers 404); paths stay inside"] = function()
+  H.fake({ "rest/artifacts/tree.json" })
+  eq(select(2, H.await(artifacts.tree({ host = HOST, project = MP, job_id = 44 }))).kind, "not_found")
+  eq(select(2, H.await(artifacts.tree({ host = HOST, project = MP, job_id = 42, path = "../x" }))).kind, "validation")
 end
 
 T["validation: a sink is required, paths stay inside the artifacts"] = function()

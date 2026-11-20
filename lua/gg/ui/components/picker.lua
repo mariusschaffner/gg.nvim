@@ -1,5 +1,5 @@
 --- The picker shell: a filter prompt above a table, shared by the views
---- (issues, merge requests, pipelines). `<Tab>` swaps the active view in the same
+--- (issues, merge requests, pipelines, artifacts). `<Tab>` swaps the active view in the same
 --- windows; every view keeps its own data, tab, filter text and selection.
 ---
 --- The shell owns the windows, the prompt, the list buffer (cursor rules),
@@ -30,11 +30,12 @@ local screens = require("gg.ui.components.stack")
 local M = {}
 
 --- The views `<Tab>` cycles through, in order, and their modules.
-M.VIEWS = { "issues", "merge_requests", "pipelines" }
+M.VIEWS = { "issues", "merge_requests", "pipelines", "artifacts" }
 M.MODULES = {
   issues = "gg.ui.issues.view",
   merge_requests = "gg.ui.merge_requests.view",
   pipelines = "gg.ui.pipelines.view",
+  artifacts = "gg.ui.artifacts.view",
 }
 
 M.CURSOR_MARK = "▌"
@@ -44,6 +45,7 @@ M.AFFECTS = {
   issues = { issue = true, milestone = true },
   merge_requests = { merge_request = true },
   pipelines = { pipeline = true, merge_request = true },
+  artifacts = { pipeline = true },
 }
 
 local TABLE_WIN_OPTS = {

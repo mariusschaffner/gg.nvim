@@ -206,6 +206,18 @@ M.PILLS = {
   { "GitlabChipRevert", "DiagnosticError" },
   { "GitlabChipOther", "Comment" },
   { "GitlabCommentAvatar", "Function" },
+  -- the artifacts tree
+  { "GitlabTreeGuide", "NonText" },
+  { "GitlabTreeChevron", "Function" },
+  { "GitlabArtifactJob", "Comment" },
+  { "GitlabArtifactKept", "DiagnosticOk" },
+  { "GitlabArtifactExpiring", "DiagnosticWarn" },
+  { "GitlabFileMarkdown", "String" },
+  { "GitlabFileData", "DiagnosticWarn" },
+  { "GitlabFileSecurity", "DiagnosticError" },
+  { "GitlabFileArchive", "Statement" },
+  { "GitlabFileCode", "Special" },
+  { "GitlabFileEnv", "Type" },
 }
 
 local function resolved(name)
@@ -246,6 +258,10 @@ function M.define()
   for _, p in ipairs(M.PILLS) do
     vim.api.nvim_set_hl(0, p[1], { fg = resolved(p[2]).fg, reverse = true, bold = true, default = true })
   end
+  -- the artifacts tree: bold folders and pipeline ids, struck-through expired artifacts
+  vim.api.nvim_set_hl(0, "GitlabTreeDir", { fg = resolved("Directory").fg, bold = true, default = true })
+  vim.api.nvim_set_hl(0, "GitlabTreeRoot", { fg = normal_fg, bold = true, default = true })
+  vim.api.nvim_set_hl(0, "GitlabArtifactExpired", { fg = resolved("NonText").fg, strikethrough = true, default = true })
   -- the table hides the cursor; blend = 100 makes it invisible
   vim.api.nvim_set_hl(0, "GitlabHiddenCursor", { blend = 100, nocombine = true, default = true })
 end

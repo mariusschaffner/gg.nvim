@@ -32,6 +32,61 @@ T["list_all: two pages, truncated; statuses and retried"] = function()
   eq(fake:last().variables, { fullPath = P, id = "gid://gitlab/Ci::Pipeline/1", first = 100, statuses = { "FAILED", "MANUAL" } })
 end
 
+T["list_project: jobs with artifacts and their pipeline"] = function()
+  local fake = H.fake({ "graphql/jobs/list_project.json" })
+  local page = H.await(jobs.list_project({ host = HOST, project = MP, with_artifacts = true }, { per_page = 2 }))
+  eq(fake:last().variables, { fullPath = MP, first = 2, withArtifacts = true })
+  eq(#page.items, 2)
+  local j = page.items[1]
+  eq({ j.id, j.name, j.pipeline_id }, { 91041, "test:checkov", 4819 })
+  eq(j.artifacts, {
+    { file_type = "trace", filename = "job.log", size = 2048, expired = false },
+    { file_type = "sarif", filename = "results.sarif", size = 317440, expire_at = "2026-11-26T09:01:41Z", expired = false },
+  })
+  eq(j.artifacts_truncated, nil)
+  eq(j.pipeline, {
+    id = 4819,
+    iid = 819,
+    ref = "feat/oci-edge-lb",
+    ref_path = "refs/heads/feat/oci-edge-lb",
+    tag = false,
+    status = "failed",
+    created_at = "2026-11-20T09:00:00Z",
+    web_url = "https://gitlab.example.com/my-group/my-project/-/pipelines/4819",
+  })
+  local k = page.items[2]
+  eq({ k.pipeline.tag, k.artifacts_truncated, k.artifacts[1].expire_at }, { true, true, nil })
+  eq(page.next_cursor ~= nil, true)
+end
+
+T["list_project_all: pages until done; statuses validated"] = function()
+  local fake = H.fake({ "graphql/jobs/list_project.json" })
+  local res = H.await(jobs.list_project_all({ host = HOST, project = MP, with_artifacts = true }, { limit = 10, per_page = 2 }))
+  eq(vim.tbl_map(function(j)
+    return j.id
+  end, res.items), { 91041, 91022, 91020 })
+  eq(res.truncated, false)
+  eq(fake:last().variables.after, "Mg")
+  eq(res.items[3].artifacts[1], { file_type = "dotenv", filename = ".env.gz", size = 512, expire_at = "2026-12-19T02:00:19Z", expired = false })
+  eq(select(2, H.await(jobs.list_project({ host = HOST, project = MP, statuses = { "nope" } }))).kind, "validation")
+  eq(select(2, H.await(jobs.list_project_all({ host = HOST, project = MP }))).kind, "validation")
+end
+
+T["list_project: errors are mapped, partial data is not dropped silently"] = function()
+  local fake = H.fake()
+  fake:add({ request = { operation = "JobsListProject" }, response = { status = 401, body = { message = "401 Unauthorized" } } })
+  eq(select(2, H.await(jobs.list_project({ host = HOST, project = MP }))).kind, "auth")
+  fake:reset():add({
+    request = { operation = "JobsListProject" },
+    response = { body = { data = { project = { jobs = { nodes = {}, pageInfo = { hasNextPage = false } } } }, errors = { { message = "artifacts unavailable" } } } },
+  })
+  local _, err = H.await(jobs.list_project({ host = HOST, project = MP }))
+  eq(err.kind, "graphql")
+  eq(err.details.partial ~= nil, true)
+  fake:reset():add({ request = { operation = "JobsListProject" }, response = { body = { data = { project = vim.NIL } } } })
+  eq(select(2, H.await(jobs.list_project({ host = HOST, project = "nope/missing" }))).kind, "not_found")
+end
+
 T["get"] = function()
   local fake = H.fake({ "graphql/jobs/get.json" })
   local j = H.await(jobs.get({ host = HOST, project = P, id = 17795132454 }))

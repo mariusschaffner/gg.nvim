@@ -2,6 +2,8 @@
 ---
 --- Backends:
 ---   * list (a pipeline's jobs), get: GraphQL (`pipeline.jobs`, `project.job`).
+---   * list_project (a project's jobs with artifacts and pipeline): GraphQL
+---     (`project.jobs`, `withArtifacts`).
 ---   * trace (the job log): REST `/jobs/:id/trace`, always streamed to a file
 ---     or a callback, never buffered whole in Lua.
 ---   * retry, cancel, play: REST (`POST /jobs/:id/retry|cancel|play`).
@@ -113,6 +115,77 @@ end
 ---@return gg.Task
 function M.list_all(args, opts)
   return list_all(args, opts)
+end
+
+---@class gg.JobProjectListArgs
+---@field host string
+---@field project string|integer
+---@field statuses? string[] job statuses to include
+---@field with_artifacts? boolean only jobs that have artifacts (a job log counts as one)
+
+local PROJECT_SPEC = {
+  host = "host",
+  project = "project",
+  statuses = "strings?",
+  with_artifacts = "boolean?",
+}
+
+local function fetch_project_page(args, o)
+  local err = common.check(args, PROJECT_SPEC)
+  if err then
+    return task.failed(err)
+  end
+  for _, s in ipairs(common.list(args.statuses) or {}) do
+    if not vim.tbl_contains(STATUSES, s) then
+      return task.failed(common.invalid("statuses", "must contain only: " .. table.concat(STATUSES, ", ")))
+    end
+  end
+  local origin = common.origin(args.host)
+  return task.run(function()
+    local path, perr = graphql.project_path(args.host, args.project):await()
+    if not path then
+      return nil, perr
+    end
+    local vars = { fullPath = path, withArtifacts = args.with_artifacts }
+    if args.statuses then
+      vars.statuses = vim.tbl_map(string.upper, common.list(args.statuses))
+    end
+    local page, gerr = graphql.page(args.host, "jobs_list_project", vars, "project.jobs", {
+      cursor = o.cursor,
+      per_page = o.per_page,
+      default_per_page = M.DEFAULT_PER_PAGE,
+      what = "project " .. path,
+    }):await()
+    if not page then
+      return nil, gerr
+    end
+    return {
+      items = vim.tbl_map(function(n)
+        return job_model.from_graphql(n, { origin = origin })
+      end, page.items),
+      next_cursor = page.next_cursor,
+    }
+  end)
+end
+
+local list_project, list_project_all = common.lists(fetch_project_page)
+
+--- One page of a project's jobs, newest first, each with its `artifacts`
+--- (file type, name, size, expiry) and `pipeline` summary. Resolves with
+--- `gg.Page<gg.Job>`.
+---@param args gg.JobProjectListArgs
+---@param opts? { per_page?: integer, cursor?: string } per_page default 100
+---@return gg.Task
+function M.list_project(args, opts)
+  return list_project(args, opts)
+end
+
+--- A project's jobs up to `opts.limit`. Resolves with `{ items: gg.Job[], truncated: boolean }`.
+---@param args gg.JobProjectListArgs
+---@param opts { limit: integer, per_page?: integer, on_page?: fun(items: gg.Job[]) }
+---@return gg.Task
+function M.list_project_all(args, opts)
+  return list_project_all(args, opts)
 end
 
 --- One job.

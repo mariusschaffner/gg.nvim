@@ -148,6 +148,9 @@ T["pure UI modules do not touch vim.api"] = function()
     "lua/gg/ui/pipelines/filter.lua", "lua/gg/ui/pipelines/model.lua", "lua/gg/ui/pipelines/columns.lua",
     "lua/gg/ui/pipelines/render.lua", "lua/gg/ui/create/layout.lua", "lua/gg/ui/create/model.lua",
     "lua/gg/ui/create/placeholders.lua", "lua/gg/ui/create/variables.lua", "lua/gg/ui/create/mr.lua",
+    "lua/gg/ui/artifacts/zip.lua", "lua/gg/ui/artifacts/expires.lua", "lua/gg/ui/artifacts/model.lua",
+    "lua/gg/ui/artifacts/filter.lua", "lua/gg/ui/artifacts/columns.lua", "lua/gg/ui/artifacts/render.lua",
+    "lua/gg/ui/artifacts/paths.lua",
     "lua/gg/ui/detail" }
   -- under lua/gg/ui/detail everything but the windows is pure
   local impure = { ["view.lua"] = true, ["host.lua"] = true, ["init.lua"] = true, ["edit.lua"] = true, ["editing.lua"] = true, ["fields.lua"] = true }

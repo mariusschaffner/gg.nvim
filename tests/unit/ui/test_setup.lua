@@ -26,6 +26,12 @@ T["config: defaults and merge"] = function()
   -- creation popups
   eq({ c.keymaps.create, c.keymaps.create_milestone, c.keymaps.create_cancel, c.keymaps.create_source, c.keymaps.create_target }, { "c", "C", "<Esc><Esc>", "gB", "gd" })
   eq({ c.keymaps.next_placeholder, c.keymaps.add_variable, c.keymaps.toggle_variable_type }, { "<C-n>", "a", "t" })
+  -- the artifacts view
+  eq(c.artifacts, { show_expired = false, confirm_size = 50 * 1024 * 1024, download_dir = "~/Downloads", open = "tab", icons = false })
+  eq({ c.keymaps.toggle_node, c.keymaps.close_parent, c.keymaps.download, c.keymaps.open_file, c.keymaps.yank_path, c.keymaps.yank_url }, { { "<CR>", "l" }, "h", "d", "o", "y", "Y" })
+  eq(config.setup({ artifacts = { open = "vsplit" } }), true)
+  eq({ config.get().artifacts.open, config.get().artifacts.show_expired }, { "vsplit", false })
+  config.setup()
   eq(config.setup({ merge_squash = true, merge_delete_source_branch = false }), true)
   eq({ config.get().merge_squash, config.get().merge_delete_source_branch }, { true, false })
   config.setup()
@@ -55,6 +61,13 @@ T["config: validation keeps the previous options"] = function()
     { { pipeline_refresh_ms = -1 }, "ui.pipeline_refresh_ms" },
     { { pipeline_refresh_ms = 1.5 }, "ui.pipeline_refresh_ms" },
     { { pipeline_refresh_ms = 600001 }, "ui.pipeline_refresh_ms" },
+    { { artifacts = "x" }, "ui.artifacts" },
+    { { artifacts = { nope = 1 } }, "ui.artifacts.nope" },
+    { { artifacts = { open = "float" } }, "ui.artifacts.open" },
+    { { artifacts = { confirm_size = -1 } }, "ui.artifacts.confirm_size" },
+    { { artifacts = { show_expired = "yes" } }, "ui.artifacts.show_expired" },
+    { { artifacts = { download_dir = "" } }, "ui.artifacts.download_dir" },
+    { { keymaps = { download = 1 } }, "ui.keymaps.download" },
     { "string", "ui.opts" },
   }
   for _, case in ipairs(bad) do

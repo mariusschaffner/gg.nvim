@@ -1,7 +1,9 @@
---- Job artifacts: downloads, always streamed to a file or a callback.
+--- Job artifacts: archive listings, and downloads always streamed to a file
+--- or a callback.
 ---
 --- Backend: REST (docs.gitlab.com/api/job_artifacts):
----   * GET /projects/:id/jobs/:job_id/artifacts                       (archive)
+---   * GET /projects/:id/jobs/:job_id/artifacts                       (archive, or a report with file_type)
+---   * GET /projects/:id/jobs/:job_id/artifacts/tree                  (archive entries, GitLab 18.8+)
 ---   * GET /projects/:id/jobs/:job_id/artifacts/*artifact_path        (one file)
 ---   * GET /projects/:id/jobs/artifacts/:ref_name/download?job=name   (archive, latest successful pipeline)
 ---   * GET /projects/:id/jobs/artifacts/:ref_name/raw/*artifact_path?job=name
@@ -12,10 +14,41 @@
 --- cancel, so `output` only ever holds a complete download.
 local common = require("gg.resources.common")
 local download = require("gg.models.download")
+local entry_model = require("gg.models.artifact_entry")
 local rest = require("gg.rest.client")
 local task = require("gg.core.task")
 
 local M = {}
+
+M.DEFAULT_PER_PAGE = 100
+
+--- Report types `download` accepts as `file_type` (docs.gitlab.com/api/job_artifacts).
+M.FILE_TYPES = {
+  "accessibility",
+  "api_fuzzing",
+  "archive",
+  "browser_performance",
+  "cluster_image_scanning",
+  "cobertura",
+  "codequality",
+  "container_scanning",
+  "cyclonedx",
+  "dast",
+  "dependency_scanning",
+  "dotenv",
+  "jacoco",
+  "junit",
+  "license_scanning",
+  "load_performance",
+  "lsif",
+  "metrics",
+  "performance",
+  "requirements",
+  "requirements_v2",
+  "sarif",
+  "sast",
+  "secret_detection",
+}
 
 -- "dir/sub file.txt" -> "dir/sub%20file.txt" (each segment encoded, slashes kept)
 local function encode_path(p)
@@ -55,15 +88,71 @@ local function check_sink(args, file_only)
   return nil
 end
 
---- Download a job's artifacts archive to a file.
----@param args { host: string, project: string|integer, job_id: integer, output: string }
+--- Download a job's artifacts archive to a file. With `file_type`, download
+--- that report artifact instead (GitLab 19.4+; reports such as junit are
+--- usually gzip-compressed and are written as served).
+---@param args { host: string, project: string|integer, job_id: integer, output: string, file_type?: string }
 ---@return gg.Task resolves with gg.Download
 function M.download(args)
-  local err = common.check(args, { host = "host", project = "project", job_id = "id", output = "string?" }) or check_sink(args or {}, true)
+  local spec = { host = "host", project = "project", job_id = "id", output = "string?", file_type = common.enum(true, unpack(M.FILE_TYPES)) }
+  local err = common.check(args, spec) or check_sink(args or {}, true)
   if err then
     return task.failed(err)
   end
-  return fetch(args, ("/projects/%s/jobs/%d/artifacts"):format(rest.project(args.project), common.int(args.job_id)))
+  local query = args.file_type and args.file_type ~= "archive" and { file_type = args.file_type } or nil
+  return fetch(args, ("/projects/%s/jobs/%d/artifacts"):format(rest.project(args.project), common.int(args.job_id)), query)
+end
+
+---@class gg.ArtifactTreeArgs
+---@field host string
+---@field project string|integer
+---@field job_id integer
+---@field path? string directory to list, default the root
+---@field recursive? boolean every entry below `path`, default false
+
+local TREE_SPEC = { host = "host", project = "project", job_id = "id", path = "string?", recursive = "boolean?" }
+
+local function fetch_tree_page(args, o)
+  local err = common.check(args, TREE_SPEC)
+  if err then
+    return task.failed(err)
+  end
+  if args.path and not valid_artifact_path(args.path) then
+    return task.failed(common.invalid("path", "must be a relative path inside the artifacts"))
+  end
+  return task.run(function()
+    local path = ("/projects/%s/jobs/%d/artifacts/tree"):format(rest.project(args.project), common.int(args.job_id))
+    local page, rerr = rest.page(args.host, path, {
+      query = { path = args.path, recursive = args.recursive },
+      per_page = o.per_page,
+      default_per_page = M.DEFAULT_PER_PAGE,
+      cursor = o.cursor,
+    }):await()
+    if not page then
+      return nil, rerr
+    end
+    return { items = vim.tbl_map(entry_model.from_rest, page.items), next_cursor = page.next_cursor }
+  end)
+end
+
+local tree, tree_all = common.lists(fetch_tree_page)
+
+--- One page of the files and directories in a job's artifacts archive, read
+--- from GitLab's metadata without downloading the archive (GitLab 18.8+; older
+--- servers answer `not_found`). Resolves with `gg.Page<gg.ArtifactEntry>`.
+---@param args gg.ArtifactTreeArgs
+---@param opts? { per_page?: integer, cursor?: string } per_page default 100
+---@return gg.Task
+function M.tree(args, opts)
+  return tree(args, opts)
+end
+
+--- Archive entries up to `opts.limit`. Resolves with `{ items: gg.ArtifactEntry[], truncated: boolean }`.
+---@param args gg.ArtifactTreeArgs
+---@param opts { limit: integer, per_page?: integer, on_page?: fun(items: gg.ArtifactEntry[]) }
+---@return gg.Task
+function M.tree_all(args, opts)
+  return tree_all(args, opts)
 end
 
 --- Download one file from a job's artifacts.

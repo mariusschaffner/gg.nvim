@@ -1,0 +1,39 @@
+#import "job"
+# A project's jobs, newest first, with their artifacts and pipeline summary.
+# The nested artifacts connection requests pageInfo so truncation is reported.
+query JobsListProject($fullPath: ID!, $first: Int, $after: String, $statuses: [CiJobStatus!], $withArtifacts: Boolean) {
+  project(fullPath: $fullPath) {
+    jobs(first: $first, after: $after, statuses: $statuses, withArtifacts: $withArtifacts) {
+      nodes {
+        ...JobFields
+        artifacts(first: 50) {
+          nodes {
+            fileType
+            name
+            size
+            expireAt
+            expired
+          }
+          pageInfo {
+            hasNextPage
+          }
+        }
+        pipeline {
+          id
+          iid
+          path
+          ... on Pipeline {
+            ref
+            refPath
+            status
+            createdAt
+          }
+        }
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+    }
+  }
+}
